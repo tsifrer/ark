@@ -1,0 +1,13 @@
+__pycache__/
+_build/
+.cache/
+.coverage
+*.egg-info/
+*.DS_Store
+*.sublime-*
+*.py[co]
+*.python-version
+*.pytest_cache
+build/
+dist/
+htmlcov/
