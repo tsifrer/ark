@@ -1,0 +1,9 @@
+aiopg
+click
+flake8
+flake8-import-order
+flake8-quotes
+peewee
+peewee-async==0.6.0a0
+peewee-migrate
+pip-tools

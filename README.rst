@@ -1,5 +1,5 @@
 *********************************************
-Ark Blokchaing implemented in Python
+Ark Core implemented in Python
 *********************************************
 
-Work in progress
+WIP

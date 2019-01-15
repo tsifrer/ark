@@ -3,3 +3,10 @@ test:
 
 remove-pyc:
 	find . -name "*.pyc" -delete
+
+
+create-migrations:
+	cd ark/plugins/database_peewee; python create_migrations.py
+
+migrate:
+	cd ark/plugins/database_peewee; python migrate.py
