@@ -1,6 +1,7 @@
 from peewee import BigIntegerField, CharField, IntegerField, Model, SmallIntegerField
 
 
+
 class Block(Model):
     id = CharField(max_length=64, primary_key=True)
     version = SmallIntegerField()
