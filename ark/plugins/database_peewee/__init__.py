@@ -7,8 +7,8 @@ class Plugin(IPlugin):
     name = 'database'
     pass
 
-    def register(self, loop):
-        db = Database(loop)
+    def register(self):
+        db = Database()
         db.connect()
         return db
 

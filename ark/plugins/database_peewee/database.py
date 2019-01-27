@@ -1,16 +1,16 @@
-from peewee_async import PostgresqlDatabase, Manager
+from peewee import PostgresqlDatabase
 
 from .models.block import Block
 
 # TODO: inherit from interface
 class Database(object):
 
-    def __init__(self, loop):
+    def __init__(self):
         super().__init__()
-        self.loop = loop
+        # self.loop = loop
 
     def connect(self):
-        database = PostgresqlDatabase(
+        self.db = PostgresqlDatabase(
             database='postgres',
             user='postgres',
             host='127.0.0.1',
@@ -18,10 +18,8 @@ class Database(object):
             # password='password'
         )
 
-        database.set_allow_sync(False)
-        Block._meta.database = database
-        self.objects = Manager(database=database, loop=self.loop)
-        return self.objects
+        # database.set_allow_sync(False)
+        Block._meta.database = self.db
 
-    async def get_last_block(self):
-        return await self.objects.count(Block.select())
+    def get_last_block(self):
+        return Block.select()

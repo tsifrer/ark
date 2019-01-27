@@ -11,7 +11,7 @@ INSTALLED_PLUGINS = [
 PLUGINS = {}
 
 
-def load_plugins(loop):
+def load_plugins():
     for module in INSTALLED_PLUGINS:
         module = import_module(module)
         for attr in dir(module):
@@ -22,4 +22,4 @@ def load_plugins(loop):
                 if not name:
                     raise Exception('Pluigin is missing a name')  # TODO: improve this exception
 
-                PLUGINS[plugin.name] = plugin.register(loop)
+                PLUGINS[plugin.name] = plugin.register()
