@@ -4,8 +4,9 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
--e git+git://github.com/tsifrer/peewee-async.git#egg=peewee-async
+-e git+git://github.com/tsifrer/python-binary.git#egg=binary
 aiopg==0.15.0
+avocato==0.1.0
 cached-property==1.5.1    # via peewee-migrate
 click==7.0
 flake8-import-order==0.18

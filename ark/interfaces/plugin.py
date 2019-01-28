@@ -17,7 +17,7 @@ class IPlugin(abc.ABC):
     # def x(self, val):
     #     print(val)
 
-    def register(self):
+    def register(self, app):
         pass
 
     def deregister(self):

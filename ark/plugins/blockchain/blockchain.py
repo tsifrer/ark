@@ -6,9 +6,10 @@ from .state_machine import BlockchainMachine
 
 class Blockchain(IBlockchain):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.machine = BlockchainMachine()
+        self.app = app
+        self.machine = BlockchainMachine(app, self.database)
 
     @property
     def state(self):
@@ -20,7 +21,6 @@ class Blockchain(IBlockchain):
 
     def start(self):
         self.machine.start()
-        # self.machine.stooopid()
 
     def stop(self):
         self.machine.stop()

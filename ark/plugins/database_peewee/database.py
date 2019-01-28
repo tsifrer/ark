@@ -22,4 +22,10 @@ class Database(object):
         Block._meta.database = self.db
 
     def get_last_block(self):
-        return Block.select()
+        """Get the last block
+        Returns None if block can't be found.
+        """
+        try:
+            return Block.select().order_by(Block.height.desc()).get()
+        except Block.DoesNotExist:
+            return None

@@ -1,11 +1,11 @@
 aiopg
+avocato
 click
 flake8
 flake8-import-order
 flake8-quotes
 peewee
-#peewee-async==0.6.0a0
--e git://github.com/tsifrer/peewee-async.git#egg=peewee-async
 peewee-migrate
 pip-tools
 transitions
+-e git://github.com/tsifrer/python-binary.git#egg=binary
