@@ -1,9 +1,5 @@
-aiopg
-avocato
 click
-flake8
-flake8-import-order
-flake8-quotes
+black
 peewee
 peewee-migrate
 pip-tools
