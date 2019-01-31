@@ -8,7 +8,6 @@ class Plugin(IPlugin):
 
     def register(self, app):
         blockchain = Blockchain(app)
-        # print(blockchain.state)
         blockchain.start()
         print(blockchain.state)
         return blockchain

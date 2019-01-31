@@ -3,30 +3,8 @@ from binascii import hexlify, unhexlify
 from binary.unsigned_integer import (
     write_bit32, write_bit8, write_bit64, read_bit32, read_bit64, read_bit8
 )
-# import avocato
 
 from ark.crypto.models.transaction import Transaction
-# class Block(avocato.Serializer):
-#     id = avocato.StrField(null=True)
-#     id_hex = avocato.StrField(null=True)
-
-#     timestamp = avocato.IntField()
-#     version = avocato.IntField()
-#     height = avocato.IntField()
-#     previous_block_hex = avocato.StrField(null=True)
-#     previous_block = avocato.StrField()
-#     number_of_transactions = avocato.IntField()
-#     total_amount = avocato.DecimalField()
-#     total_fee = avocato.DecimalField()
-#     reward = avocato.DecimalField()
-#     payload_length = avocato.IntField()
-#     payload_hash = avocato.StrField()
-#     generator_public_key = avocato.StrField()
-
-#     block_signature = avocato.StrField(null=True)
-#     # serialized = avocato.StrField(null=True)
-#     # transactions = 
-
 
 class Block(object):
     # field name, json field name, required
@@ -49,29 +27,9 @@ class Block(object):
         # 'serialized',
         ('transactions', 'transactions', False,),
     ]
-    # id = avocato.StrField(null=True)
-    # id_hex = avocato.StrField(null=True)
-
-    # timestamp = avocato.IntField()
-    # version = avocato.IntField()
-    # height = avocato.IntField()
-    # previous_block_hex = avocato.StrField(null=True)
-    # previous_block = avocato.StrField()
-    # number_of_transactions = avocato.IntField()
-    # total_amount = avocato.DecimalField()
-    # total_fee = avocato.DecimalField()
-    # reward = avocato.DecimalField()
-    # payload_length = avocato.IntField()
-    # payload_hash = avocato.StrField()
-    # generator_public_key = avocato.StrField()
-
-    # block_signature = avocato.StrField(null=True)
-    # serialized = avocato.StrField(null=True)
-    # transactions = 
 
     def __init__(self, data):
         if isinstance(data, (str, bytes,)):
-            print('DESERIALZIING')
             self.deserialize(data)
         else:
             for field, json_field, required in self.fields:
@@ -79,7 +37,6 @@ class Block(object):
                 if required and value is None:
                     raise Exception('Missing field {}'.format(field))  # TODO: change exception
                 setattr(self, field, value)
-
 
     @staticmethod
     def to_bytes_hex(value):
@@ -89,36 +46,24 @@ class Block(object):
         hex_num = ''
         if value is not None:
             hex_num = format(value, 'x')
-        return '{}{}'.format('0' * (16 - len(hex_num)), hex_num)
+        return ('{}{}'.format('0' * (16 - len(hex_num)), hex_num)).encode('utf-8')
 
-    
     def get_id_hex(self):
         payload_hash = self.serialize()
-        full_hash = sha256(payload_hash.encode('utf-8')).hexdigest()
-        print(full_hash)
-        # take first 8 characters and reverse them
+        full_hash = sha256(unhexlify(payload_hash)).digest()
         small_hash = full_hash[:8][::-1]
-        # small_hash = ''
-        # for x in range(8):
-        #     small_hash += full_hash[7-x]
-        # print(small_hash)
-        print(small_hash)
-        print(hexlify(small_hash.encode()))
-        return small_hash
+        return hexlify(small_hash)
 
     def get_id(self):
         id_hex = self.get_id_hex()
-        return int(hexlify(id_hex.encode()), 16)
-
-
-
+        return int(id_hex, 16)
 
     def serialize(self, include_signature=True):
         # TODO: make this a serializer that correctly converts input and checks that it's correct
         # on init
         self.previous_block_hex = Block.to_bytes_hex(int(self.previous_block))
 
-        bytes_data = bytes()# bytes() or bytes(512)?
+        bytes_data = bytes()
         bytes_data += write_bit32(self.version)
         bytes_data += write_bit32(self.timestamp)
         bytes_data += write_bit32(self.height)
@@ -154,25 +99,17 @@ class Block(object):
         bytes_data += all_transaction_bytes
         return hexlify(bytes_data).decode()
 
-
-
     def _deserialize_transactions(self, bytes_data):
         transaction_lenghts = []
         for x in range(self.number_of_transactions):
-            #TODO: make this with offset
-            transaction_lenghts.append(read_bit32(bytes_data[x * 4:(x+1) * 4]))
+            transaction_lenghts.append(read_bit32(bytes_data, offset=x * 4))
 
         self.transactions = []
         start = 4 * self.number_of_transactions
         for trans_len in transaction_lenghts:
             serialized_hex = hexlify(bytes_data[start:start+trans_len])
-            # print(serialized_hex)
-            self.transactions.append(Transaction(serialized_hex))# TODO
+            self.transactions.append(Transaction(serialized_hex))
             start += trans_len
-            
-
-
-
 
     def deserialize(self, serialized_hex, header_only=False):
         bytes_data = unhexlify(serialized_hex)
@@ -196,51 +133,10 @@ class Block(object):
         self.block_signature = hexlify(bytes_data[117:signature_to])
 
         remaining_bytes = bytes_data[signature_to:]
-        # TODO: maybe If header_only = True, and there is no hex left to be processed, set header_only to
-        # false, to avoid erroring
-        # header_only = header_only or len(remaining_bytes) == 0
+        header_only = header_only or len(remaining_bytes) == 0
         if not header_only:
             self._deserialize_transactions(remaining_bytes)
 
-        # TODO: implement deserialize completely, missing a couple of things still, like id, idhex and outlooktable
-        # self.id_hex = self.get_id_hex()
-        # self.id = self.get_id()
-
-
-
-
-        # print(self.version)
-        # print(self.timestamp)
-        # print(self.previous_block_hex)
-        # print(self.previous_block)
-        # print(self.number_of_transactions)
-        # print(self.total_amount)
-        # print(self.total_fee)
-        # print(self.reward)
-        # print(self.payload_length)
-        # print(self.payload_hash)
-        # print(self.generator_public_key)
-        # print(self.block_signature)
-        # print(self.id_hex)
-        # print(self.id)
-
-        # self.previous_block_hex = 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.id_hex = self.get_id_hex()
+        self.id = self.get_id()
+        # TODO: implement edge cases (outlookTable thingy) where some block ids are broken

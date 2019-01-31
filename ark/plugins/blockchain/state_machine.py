@@ -53,7 +53,6 @@ class BlockchainMachine(Machine):
 
             if not block:
                 print('No block found in the database')
-                
 
             print(self.app.config['genesis_block'])
 
