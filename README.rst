@@ -12,6 +12,8 @@ patient if something is weird for the time being :)
 
 If you have any questions/suggestions or whatever, find me on Ark Slack @tsifrer.
 
+CURRENTLY I DON'T ACCEPT PULL REQUESTS!
+I will accept them later on in the project though.
 
 If you're looking at the code and commits, you might find weird code, messages,
 text and other stuff, as this is how I develop and remember things. In the end,
