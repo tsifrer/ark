@@ -6,7 +6,10 @@
 #
 -e git+git://github.com/tsifrer/python-binary.git#egg=binary
 aiopg==0.15.0
+atomicwrites==1.2.1       # via pytest
+attrs==18.2.0             # via pytest
 avocato==0.1.0
+base58==1.0.3
 cached-property==1.5.1    # via peewee-migrate
 click==7.0
 flake8-import-order==0.18
@@ -14,12 +17,16 @@ flake8-quotes==1.0.0
 flake8==3.6.0
 mccabe==0.6.1             # via flake8
 mock==2.0.0               # via peewee-migrate
+more-itertools==5.0.0     # via pytest
 pbr==5.1.1                # via mock
 peewee-migrate==1.1.4
 peewee==3.8.1
 pip-tools==3.2.0
+pluggy==0.8.1             # via pytest
 psycopg2==2.7.6.1         # via aiopg
+py==1.7.0                 # via pytest
 pycodestyle==2.4.0        # via flake8, flake8-import-order
 pyflakes==2.0.0           # via flake8
-six==1.12.0               # via mock, pip-tools, transitions
+pytest==4.1.1
+six==1.12.0               # via mock, more-itertools, pip-tools, pytest, transitions
 transitions==0.6.9

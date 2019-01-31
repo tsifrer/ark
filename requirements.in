@@ -9,3 +9,5 @@ peewee-migrate
 pip-tools
 transitions
 -e git://github.com/tsifrer/python-binary.git#egg=binary
+pytest
+base58
