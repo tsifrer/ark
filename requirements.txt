@@ -7,11 +7,18 @@
 -e git+git://github.com/tsifrer/python-binary.git#egg=binary
 appdirs==1.4.3            # via black
 atomicwrites==1.2.1       # via pytest
-attrs==18.2.0             # via black, pytest
+attrs==18.2.0             # via black, flake8-bugbear, pytest
 base58==1.0.3
 black==18.9b0
 cached-property==1.5.1    # via peewee-migrate
 click==7.0
+entrypoints==0.3          # via flake8
+flake8-broken-line==0.1.0
+flake8-bugbear==18.8.0
+flake8-import-order==0.18
+flake8-quotes==1.0.0
+flake8==3.7.3
+mccabe==0.6.1             # via flake8
 mock==2.0.0               # via peewee-migrate
 more-itertools==5.0.0     # via pytest
 pbr==5.1.1                # via mock
@@ -20,6 +27,8 @@ peewee==3.8.1
 pip-tools==3.2.0
 pluggy==0.8.1             # via pytest
 py==1.7.0                 # via pytest
+pycodestyle==2.5.0        # via flake8, flake8-import-order
+pyflakes==2.1.0           # via flake8
 pytest==4.1.1
 six==1.12.0               # via mock, more-itertools, pip-tools, pytest, transitions
 toml==0.10.0              # via black

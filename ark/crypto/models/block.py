@@ -1,7 +1,7 @@
 from hashlib import sha256
 from binascii import hexlify, unhexlify
 from binary.unsigned_integer import (
-    write_bit32, write_bit8, write_bit64, read_bit32, read_bit64, read_bit8
+    write_bit32, write_bit64, read_bit32, read_bit64
 )
 
 from ark.crypto.models.transaction import Transaction
