@@ -1,9 +1,18 @@
 from peewee import PostgresqlDatabase
 
+from playhouse.shortcuts import model_to_dict
+
+from ark.crypto.models.block import Block as CryptoBlock
+
 from .models.block import Block
+from .models.transaction import Transaction
+
 
 # TODO: inherit from interface
 class Database(object):
+
+    restoredDatabaseIntegrity = False
+
     def __init__(self):
         super().__init__()
         # self.loop = loop
@@ -25,6 +34,31 @@ class Database(object):
         Returns None if block can't be found.
         """
         try:
-            return Block.select().order_by(Block.height.desc()).get()
+            block = Block.select().order_by(Block.height.desc()).get()
         except Block.DoesNotExist:
             return None
+        else:
+            return CryptoBlock(model_to_dict(block))
+
+
+    def save_block(self, block):
+        if not isinstance(block, CryptoBlock):
+            raise Exception('Block must be a type of crypto.models.Block')  # TODO: better exception
+
+        with self.db.atomic() as db_txn:
+            try:
+                db_block = Block.from_crypto(block)
+                # db_block.save()
+
+                for transaction in block.transactions:
+                    db_transaction = Transaction.from_crypto(transaction)
+                    # db_transaction.save()
+            except Exception as e:  # TODO: Make this not so broad!
+                print('Got an exception yo')
+                db_txn.rollback()
+                print(e)  # TODO: replace with logger.error
+
+        print(db_block)
+        print(db_transaction)
+
+

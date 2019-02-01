@@ -38,7 +38,18 @@ class Block(object):
                     raise Exception(
                         'Missing field {}'.format(field)
                     )  # TODO: change exception
+
+                if field == 'transactions':
+                    transactions = []
+                    for transaction_data in value:
+                        transactions.append(Transaction(transaction_data))
+                    value = transactions
+                    setattr(self, 'number_of_transactions', len(value))
+
                 setattr(self, field, value)
+
+        # TODO: implement other stuffz
+
 
     @staticmethod
     def to_bytes_hex(value):
@@ -61,8 +72,8 @@ class Block(object):
         return int(id_hex, 16)
 
     def serialize(self, include_signature=True):
-        # TODO: make this a serializer that correctly converts input and checks that it's correct
-        # on init
+        # TODO: make this a serializer that correctly converts input and checks that
+        # it's correct on init
         self.previous_block_hex = Block.to_bytes_hex(int(self.previous_block))
 
         bytes_data = bytes()

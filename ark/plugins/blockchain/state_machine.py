@@ -1,15 +1,17 @@
 from transitions import Machine
 
+from ark.crypto.models.block import Block
+
 STATE_STOPPED = 'stopped'
 STATE_STARTING = 'starting'
 STATE_STARTED = 'started'
-STATE_EXIT = 'exit'
+STATE_EXITING = 'exiting'
 
 STATES = [
     {'name': STATE_STOPPED},
     {'name': STATE_STARTING, 'on_enter': ['on_start']},
     {'name': STATE_STARTED},
-    {'name': STATE_EXIT},
+    {'name': STATE_EXITING},
 ]
 
 TRANSITIONS = [
@@ -18,9 +20,9 @@ TRANSITIONS = [
     {
         'trigger': 'exit',
         'source': STATE_STARTING,
-        'dest': STATE_EXIT,
+        'dest': STATE_EXITING,
         'before': ['on_exit'],
-    },
+    }
 ]
 
 
@@ -33,14 +35,23 @@ class BlockchainMachine(Machine):
         )
 
     def on_start(self):
+        # TODO: change prints to loggers
         print('Starting the blockchain')
         try:
             block = self.db.get_last_block()
 
+            # If block is not found in the db, insert a genesis block
             if not block:
                 print('No block found in the database')
-
-            print(self.app.config['genesis_block'])
+                block = Block(self.app.config['genesis_block'])
+                if block.payload_hash != self.app.config['network']['nethash']:
+                    print(
+                        'FATAL: The genesis block payload hash is different from '
+                        'the configured nethash'
+                    )
+                    self.exit()
+                    return
+                self.db.save_block(block)
 
             self.set_started()
         except Exception as e:

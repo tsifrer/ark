@@ -34,3 +34,21 @@ class Transaction(Model):
                 False,
             ),
         )
+
+    @classmethod
+    def from_crypto(cls, transaction):
+        # TODO: figure out how to improve this
+        model = cls()
+        model.id = transaction.id
+        model.version = transaction.version
+        model.block_id = transaction.block_id
+        model.sequence = transaction.sequence
+        model.timestamp = transaction.timestamp
+        model.sender_public_key = transaction.sender_public_key
+        model.recipient_id = transaction.recipient_id
+        model.type = transaction.type
+        model.vendor_field_hex = transaction.vendor_field_hex
+        model.amount = transaction.amount
+        model.fee = transaction.fee
+        model.serialized = transaction.serialize()
+        return model
