@@ -22,14 +22,14 @@ def test_creating_a_block_from_hex_header_only_correctly_sets_all_attributes(
 ):
     block = Block(dummy_block_hash)
     assert block.version == 0
-    assert block.timestamp == 24_760_440
-    assert block.height == 2_243_161
+    assert block.timestamp == 24760440
+    assert block.height == 2243161
     assert block.previous_block_hex == b'2b324b8b33a85802'
-    assert block.previous_block == 3_112_633_353_705_641_986
+    assert block.previous_block == 3112633353705641986
     assert block.number_of_transactions == 7
-    assert block.total_amount == 3_890_300
-    assert block.total_fee == 70_000_000
-    assert block.reward == 200_000_000
+    assert block.total_amount == 3890300
+    assert block.total_fee == 70000000
+    assert block.reward == 200000000
     assert block.payload_length == 224
     assert block.payload_hash == (
         b'3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
@@ -41,7 +41,7 @@ def test_creating_a_block_from_hex_header_only_correctly_sets_all_attributes(
         b'3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022'
         b'0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
     )
-    assert block.id == 7_176_646_138_626_297_930
+    assert block.id == 7176646138626297930
     assert block.id_hex == b'639891a3bb7fd04a'
     assert getattr(block, 'transactions', None) is None
 
@@ -51,14 +51,14 @@ def test_creating_a_block_from_hex_sets_all_attributes_including_transactions(
 ):
     block = Block(dummy_block_full_hash)
     assert block.version == 0
-    assert block.timestamp == 24_760_440
-    assert block.height == 2_243_161
+    assert block.timestamp == 24760440
+    assert block.height == 2243161
     assert block.previous_block_hex == b'2b324b8b33a85802'
-    assert block.previous_block == 3_112_633_353_705_641_986
+    assert block.previous_block == 3112633353705641986
     assert block.number_of_transactions == 7
-    assert block.total_amount == 3_890_300
-    assert block.total_fee == 70_000_000
-    assert block.reward == 200_000_000
+    assert block.total_amount == 3890300
+    assert block.total_fee == 70000000
+    assert block.reward == 200000000
     assert block.payload_length == 224
     assert block.payload_hash == (
         b'3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
@@ -70,7 +70,7 @@ def test_creating_a_block_from_hex_sets_all_attributes_including_transactions(
         b'3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022'
         b'0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
     )
-    assert block.id == 7_176_646_138_626_297_930
+    assert block.id == 7176646138626297930
     assert block.id_hex == b'639891a3bb7fd04a'
     assert len(block.transactions) == 7
 
@@ -94,4 +94,4 @@ def test_get_id_hex_returns_correct_hex(dummy_block):
 
 def test_get_id_returns_correct_id(dummy_block):
     block = Block(dummy_block)
-    assert block.get_id() == 7_176_646_138_626_297_930
+    assert block.get_id() == 7176646138626297930

@@ -75,8 +75,8 @@ def dummy_block():
     return {
         'id': '7176646138626297930',
         'version': 0,
-        'height': 2_243_161,
-        'timestamp': 24_760_440,
+        'height': 2243161,
+        'timestamp': 24760440,
         'previousBlock': '3112633353705641986',
         'numberOfTransactions': 7,
         'totalAmount': '3890300',
@@ -96,10 +96,10 @@ def dummy_block():
         'transactions': [
             {
                 'type': 0,
-                'amount': 555_760,
-                'fee': 10_000_000,
+                'amount': 555760,
+                'fee': 10000000,
                 'recipientId': 'DB4gFuDztmdGALMb8i1U4Z4R5SktxpNTAY',
-                'timestamp': 24_760_418,
+                'timestamp': 24760418,
                 'asset': {},
                 'vendorField': 'Goose Voter - True Block Weight',
                 'senderPublicKey': (
@@ -125,10 +125,10 @@ def dummy_block():
             },
             {
                 'type': 0,
-                'amount': 555_750,
-                'fee': 10_000_000,
+                'amount': 555750,
+                'fee': 10000000,
                 'recipientId': 'DGExsNogZR7JFa2656ZFP9TMWJYJh5djzQ',
-                'timestamp': 24_760_416,
+                'timestamp': 24760416,
                 'asset': {},
                 'vendorField': 'Goose Voter - True Block Weight',
                 'senderPublicKey': (
@@ -154,10 +154,10 @@ def dummy_block():
             },
             {
                 'type': 0,
-                'amount': 555_770,
-                'fee': 10_000_000,
+                'amount': 555770,
+                'fee': 10000000,
                 'recipientId': 'DHGK5np6LuMMErfRfC5CmjpGu3ME85c25n',
-                'timestamp': 24_760_420,
+                'timestamp': 24760420,
                 'asset': {},
                 'vendorField': 'Goose Voter - True Block Weight',
                 'senderPublicKey': (
@@ -183,10 +183,10 @@ def dummy_block():
             },
             {
                 'type': 0,
-                'amount': 555_750,
-                'fee': 10_000_000,
+                'amount': 555750,
+                'fee': 10000000,
                 'recipientId': 'D7pcLJNGe197ibmWEmT8mM9KKU1htrcDyW',
-                'timestamp': 24_760_417,
+                'timestamp': 24760417,
                 'asset': {},
                 'vendorField': 'Goose Voter - True Block Weight',
                 'senderPublicKey': (
@@ -212,10 +212,10 @@ def dummy_block():
             },
             {
                 'type': 0,
-                'amount': 555_760,
-                'fee': 10_000_000,
+                'amount': 555760,
+                'fee': 10000000,
                 'recipientId': 'DD4yhwzryQdNGqKtezmycToQv63g27Tqqq',
-                'timestamp': 24_760_418,
+                'timestamp': 24760418,
                 'asset': {},
                 'vendorField': 'Goose Voter - True Block Weight',
                 'senderPublicKey': (
@@ -241,10 +241,10 @@ def dummy_block():
             },
             {
                 'type': 0,
-                'amount': 555_760,
-                'fee': 10_000_000,
+                'amount': 555760,
+                'fee': 10000000,
                 'recipientId': 'D5LiYGXL5keycWuTF6AFFwSRc6Mt4uEHMu',
-                'timestamp': 24_760_419,
+                'timestamp': 24760419,
                 'asset': {},
                 'vendorField': 'Goose Voter - True Block Weight',
                 'senderPublicKey': (
@@ -270,10 +270,10 @@ def dummy_block():
             },
             {
                 'type': 0,
-                'amount': 555_750,
-                'fee': 10_000_000,
+                'amount': 555750,
+                'fee': 10000000,
                 'recipientId': 'DPopNLwMvv4zSjdZnqUk8HFH13Mcb7NbEK',
-                'timestamp': 24_760_416,
+                'timestamp': 24760416,
                 'asset': {},
                 'vendorField': 'Goose Voter - True Block Weight',
                 'senderPublicKey': (

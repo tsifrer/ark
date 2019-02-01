@@ -22,7 +22,7 @@ TRANSITIONS = [
         'source': STATE_STARTING,
         'dest': STATE_EXITING,
         'before': ['on_exit'],
-    }
+    },
 ]
 
 

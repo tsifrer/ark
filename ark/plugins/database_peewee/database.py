@@ -40,10 +40,11 @@ class Database(object):
         else:
             return CryptoBlock(model_to_dict(block))
 
-
     def save_block(self, block):
         if not isinstance(block, CryptoBlock):
-            raise Exception('Block must be a type of crypto.models.Block')  # TODO: better exception
+            raise Exception(
+                'Block must be a type of crypto.models.Block'
+            )  # TODO: better exception
 
         with self.db.atomic() as db_txn:
             try:
@@ -60,5 +61,3 @@ class Database(object):
 
         print(db_block)
         print(db_transaction)
-
-

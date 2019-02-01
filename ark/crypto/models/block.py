@@ -50,7 +50,6 @@ class Block(object):
 
         # TODO: implement other stuffz
 
-
     @staticmethod
     def to_bytes_hex(value):
         """Converts integer value to hex representation

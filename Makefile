@@ -13,7 +13,7 @@ migrate:
 
 
 black:
-	black -S .
+	black .
 
 black-check:
-	black -S --check .
+	black --check .
