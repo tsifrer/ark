@@ -107,7 +107,7 @@ class Block(object):
         self.transactions = []
         start = 4 * self.number_of_transactions
         for trans_len in transaction_lenghts:
-            serialized_hex = hexlify(bytes_data[start:start+trans_len])
+            serialized_hex = hexlify(bytes_data[start:start + trans_len])
             self.transactions.append(Transaction(serialized_hex))
             start += trans_len
 
