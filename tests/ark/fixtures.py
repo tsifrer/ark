@@ -71,7 +71,53 @@ def dummy_block_hash():
 
 
 @pytest.fixture
-def dummy_block():
+def dummy_transaction_hash():
+    return (
+        'ff011e0062d079010265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58'
+        'b4c080969800000000001f476f6f736520566f746572202d205472756520426c6f636b20576569'
+        '676874f07a080000000000000000001e40fad23d21da7a4fd4decb5c49726ea22f5e6bf6304402'
+        '204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010121ab2'
+        '82f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb97830450221008327862f0b91'
+        '78d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2e'
+        'fde3327917731344332724522c75c2799a14f78717'
+    )
+
+
+@pytest.fixture
+def dummy_transaction():
+    return {
+        'type': 0,
+        'amount': 555760,
+        'fee': 10000000,
+        'recipientId': 'DB4gFuDztmdGALMb8i1U4Z4R5SktxpNTAY',
+        'timestamp': 24760418,
+        'asset': {},
+        'vendorField': 'Goose Voter - True Block Weight',
+        'senderPublicKey': (
+            '0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0'
+        ),
+        'signature': (
+            '304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8ee'
+            'f0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9'
+            'abdfb978'
+        ),
+        'signSignature': (
+            '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66c'
+            'df945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c279'
+            '9a14f78717'
+        ),
+        'id': (
+            '170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11'
+        ),
+        'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
+        'hop': 2,
+        'broadcast': False,
+        'blockId': '7176646138626297930',
+    }
+
+
+@pytest.fixture
+def dummy_block(dummy_transaction):
     return {
         'id': '7176646138626297930',
         'version': 0,
@@ -94,35 +140,7 @@ def dummy_block():
             '0220277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
         ),
         'transactions': [
-            {
-                'type': 0,
-                'amount': 555760,
-                'fee': 10000000,
-                'recipientId': 'DB4gFuDztmdGALMb8i1U4Z4R5SktxpNTAY',
-                'timestamp': 24760418,
-                'asset': {},
-                'vendorField': 'Goose Voter - True Block Weight',
-                'senderPublicKey': (
-                    '0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0'
-                ),
-                'signature': (
-                    '304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8ee'
-                    'f0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9'
-                    'abdfb978'
-                ),
-                'signSignature': (
-                    '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66c'
-                    'df945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c279'
-                    '9a14f78717'
-                ),
-                'id': (
-                    '170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11'
-                ),
-                'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
-                'hop': 2,
-                'broadcast': False,
-                'blockId': '7176646138626297930',
-            },
+            dummy_transaction,
             {
                 'type': 0,
                 'amount': 555750,

@@ -24,7 +24,6 @@ class Block(object):
         ('payload_hash', 'payloadHash', True),
         ('generator_public_key', 'generatorPublicKey', True),
         ('block_signature', 'blockSignature', False),
-        # 'serialized',
         ('transactions', 'transactions', False),
     ]
 
@@ -38,17 +37,30 @@ class Block(object):
                     raise Exception(
                         'Missing field {}'.format(field)
                     )  # TODO: change exception
-
-                if field == 'transactions':
-                    transactions = []
-                    for transaction_data in value:
-                        transactions.append(Transaction(transaction_data))
-                    value = transactions
-                    setattr(self, 'number_of_transactions', len(value))
-
                 setattr(self, field, value)
 
+            if self.transactions:
+                transactions = []
+                for index, transaction_data in enumerate(self.transactions):
+                    # override blockId and timestamp so all transactions match
+                    # with the current block
+                    # TODO: put this back
+                    # transaction_data['blockId'] = self.id
+                    # transaction_data['timestamp'] = self.timestamp
+                    # add sequence to keep the data in sequence when storing it to db
+                    transaction_data['sequence'] = index
+                    transactions.append(Transaction(transaction_data))
+                self.transactions = transactions
+                self.number_of_transactions = len(self.transactions)
+
+            self.id_hex = self.get_id_hex()
+            self.id = self.get_id()
+
+            # print('IIIIDDD', self.id)
+            # print(self.id_hex)
+
         # TODO: implement other stuffz
+        # TODO: figure out these things how they should work and implement them
 
     @staticmethod
     def to_bytes_hex(value):
@@ -57,7 +69,7 @@ class Block(object):
         """
         hex_num = ''
         if value is not None:
-            hex_num = format(value, 'x')
+            hex_num = format(int(value), 'x')
         return ('{}{}'.format('0' * (16 - len(hex_num)), hex_num)).encode('utf-8')
 
     def get_id_hex(self):
@@ -73,7 +85,7 @@ class Block(object):
     def serialize(self, include_signature=True):
         # TODO: make this a serializer that correctly converts input and checks that
         # it's correct on init
-        self.previous_block_hex = Block.to_bytes_hex(int(self.previous_block))
+        self.previous_block_hex = Block.to_bytes_hex(self.previous_block)
 
         bytes_data = bytes()
         bytes_data += write_bit32(self.version)
@@ -104,7 +116,8 @@ class Block(object):
 
         all_transaction_bytes = bytes()
         for transaction in self.transactions:
-            serialized_transaction = Transaction(transaction).serialize()
+            # serialized_transaction = Transaction(transaction).serialize()
+            serialized_transaction = transaction.serialize()
             bytes_data += write_bit32(len(unhexlify(serialized_transaction)))
             all_transaction_bytes += unhexlify(serialized_transaction)
 
