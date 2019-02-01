@@ -14,6 +14,4 @@ class Wallet(Model):
 
     class Meta:
         table_name = 'wallets'
-        indexes = (
-            (('public_key', 'vote'), True),
-        )
+        indexes = ((('public_key', 'vote'), True),)

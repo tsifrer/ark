@@ -1,5 +1,11 @@
 from peewee import (
-    BigIntegerField, BlobField, CharField, ForeignKeyField, IntegerField, Model, SmallIntegerField
+    BigIntegerField,
+    BlobField,
+    CharField,
+    ForeignKeyField,
+    IntegerField,
+    Model,
+    SmallIntegerField,
 )
 
 from .block import Block
@@ -23,5 +29,8 @@ class Transaction(Model):
     class Meta:
         table_name = 'transactions'
         indexes = (
-            (('sender_public_key', 'recipient_id', 'vendor_field_hex', 'timestamp'), False),
+            (
+                ('sender_public_key', 'recipient_id', 'vendor_field_hex', 'timestamp'),
+                False,
+            ),
         )

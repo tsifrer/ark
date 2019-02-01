@@ -10,3 +10,10 @@ create-migrations:
 
 migrate:
 	cd ark/plugins/database_peewee; python migrate.py
+
+
+black:
+	black -S .
+
+black-check:
+	black -S --check .

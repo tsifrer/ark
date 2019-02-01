@@ -4,7 +4,6 @@ from .models.block import Block
 
 # TODO: inherit from interface
 class Database(object):
-
     def __init__(self):
         super().__init__()
         # self.loop = loop

@@ -1,41 +1,43 @@
-from hashlib import sha256
 from binascii import hexlify, unhexlify
-from binary.unsigned_integer import (
-    write_bit32, write_bit64, read_bit32, read_bit64
-)
+from hashlib import sha256
+
+from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_bit64
 
 from ark.crypto.models.transaction import Transaction
+
 
 class Block(object):
     # field name, json field name, required
     fields = [
-        ('id', 'id', False,),
-        ('id_hex', 'idHex', False,),
-        ('timestamp', 'timestamp', True,),
-        ('version', 'version', True,),
-        ('height', 'height', True,),
-        ('previous_block_hex', 'previousBlockHex', False,),
-        ('previous_block', 'previousBlock', False,),
-        ('number_of_transactions', 'numberOfTransactions', True,),
-        ('total_amount', 'totalAmount', True,),
-        ('total_fee', 'totalFee', True,),
-        ('reward', 'reward', True,),
-        ('payload_length', 'payloadLength', True,),
-        ('payload_hash', 'payloadHash', True,),
-        ('generator_public_key', 'generatorPublicKey', True,),
-        ('block_signature', 'blockSignature', False,),
+        ('id', 'id', False),
+        ('id_hex', 'idHex', False),
+        ('timestamp', 'timestamp', True),
+        ('version', 'version', True),
+        ('height', 'height', True),
+        ('previous_block_hex', 'previousBlockHex', False),
+        ('previous_block', 'previousBlock', False),
+        ('number_of_transactions', 'numberOfTransactions', True),
+        ('total_amount', 'totalAmount', True),
+        ('total_fee', 'totalFee', True),
+        ('reward', 'reward', True),
+        ('payload_length', 'payloadLength', True),
+        ('payload_hash', 'payloadHash', True),
+        ('generator_public_key', 'generatorPublicKey', True),
+        ('block_signature', 'blockSignature', False),
         # 'serialized',
-        ('transactions', 'transactions', False,),
+        ('transactions', 'transactions', False),
     ]
 
     def __init__(self, data):
-        if isinstance(data, (str, bytes,)):
+        if isinstance(data, (str, bytes)):
             self.deserialize(data)
         else:
             for field, json_field, required in self.fields:
                 value = data.get(json_field)
                 if required and value is None:
-                    raise Exception('Missing field {}'.format(field))  # TODO: change exception
+                    raise Exception(
+                        'Missing field {}'.format(field)
+                    )  # TODO: change exception
                 setattr(self, field, value)
 
     @staticmethod
@@ -107,7 +109,7 @@ class Block(object):
         self.transactions = []
         start = 4 * self.number_of_transactions
         for trans_len in transaction_lenghts:
-            serialized_hex = hexlify(bytes_data[start:start + trans_len])
+            serialized_hex = hexlify(bytes_data[start : start + trans_len])
             self.transactions.append(Transaction(serialized_hex))
             start += trans_len
 
@@ -117,7 +119,7 @@ class Block(object):
         self.version = read_bit32(bytes_data)
         self.timestamp = read_bit32(bytes_data, offset=4)
         self.height = read_bit32(bytes_data, offset=8)
-        self.previous_block_hex = hexlify(bytes_data[12:8 + 12])
+        self.previous_block_hex = hexlify(bytes_data[12 : 8 + 12])
 
         self.previous_block = int(self.previous_block_hex, 16)
         self.number_of_transactions = read_bit32(bytes_data, offset=20)
@@ -125,8 +127,8 @@ class Block(object):
         self.total_fee = read_bit64(bytes_data, offset=32)
         self.reward = read_bit64(bytes_data, offset=40)
         self.payload_length = read_bit32(bytes_data, offset=48)
-        self.payload_hash = hexlify(bytes_data[52:32 + 52])
-        self.generator_public_key = hexlify(bytes_data[84:33 + 84])
+        self.payload_hash = hexlify(bytes_data[52 : 32 + 52])
+        self.generator_public_key = hexlify(bytes_data[84 : 33 + 84])
         # TODO: test the case where block signature is not present
         signature_len = int(hexlify(bytes_data[118:119]), 16)
         signature_to = signature_len + 2 + 117

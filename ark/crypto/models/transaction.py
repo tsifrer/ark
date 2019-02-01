@@ -1,13 +1,23 @@
 from binascii import hexlify, unhexlify
 from binary.hex import write_high, write_low
 from binary.unsigned_integer import (
-    write_bit32, write_bit8, write_bit64, read_bit32, read_bit64, read_bit8
+    write_bit32,
+    write_bit8,
+    write_bit64,
+    read_bit32,
+    read_bit64,
+    read_bit8,
 )
 from ark.crypto.constants import (
-    TRANSACTION_TYPE_TRANSFER, TRANSACTION_TYPE_TIMELOCK_TRANSFER,
-    TRANSACTION_TYPE_SECOND_SIGNATURE, TRANSACTION_TYPE_DELEGATE_REGISTRATION,
-    TRANSACTION_TYPE_VOTE, TRANSACTION_TYPE_MULTI_SIGNATURE, TRANSACTION_TYPE_IPFS,
-    TRANSACTION_TYPE_MULTI_PAYMENT, TRANSACTION_TYPE_DELEGATE_RESIGNATION
+    TRANSACTION_TYPE_TRANSFER,
+    TRANSACTION_TYPE_TIMELOCK_TRANSFER,
+    TRANSACTION_TYPE_SECOND_SIGNATURE,
+    TRANSACTION_TYPE_DELEGATE_REGISTRATION,
+    TRANSACTION_TYPE_VOTE,
+    TRANSACTION_TYPE_MULTI_SIGNATURE,
+    TRANSACTION_TYPE_IPFS,
+    TRANSACTION_TYPE_MULTI_PAYMENT,
+    TRANSACTION_TYPE_DELEGATE_RESIGNATION,
 )
 from base58 import b58decode_check, b58encode_check
 from ark.crypto.address import address_from_public_key
@@ -42,19 +52,24 @@ class Transaction(object):
     ]
 
     def __init__(self, data):
-        if isinstance(data, (str, bytes,)):
+        if isinstance(data, (str, bytes)):
             self.deserialize(data)
 
         else:
             for field, json_field, required in self.fields:
                 value = data.get(json_field)
                 if required and value is None:
-                    raise Exception('Missing field {}'.format(field))  # TODO: change exception
+                    raise Exception(
+                        'Missing field {}'.format(field)
+                    )  # TODO: change exception
                 setattr(self, field, value)
 
     @staticmethod
     def can_have_vendor_field(transaction_type):
-        return transaction_type in [TRANSACTION_TYPE_TRANSFER, TRANSACTION_TYPE_TIMELOCK_TRANSFER]
+        return transaction_type in [
+            TRANSACTION_TYPE_TRANSFER,
+            TRANSACTION_TYPE_TIMELOCK_TRANSFER,
+        ]
 
     def _serialize_vendor_field(self):
         """Serialize vendor field of the transaction
@@ -84,7 +99,9 @@ class Transaction(object):
             bytes_data += write_high(hexlify(b58decode_check(self.recipient_id)))
 
         elif self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
-            bytes_data += unhexlify(self.asset['signature']['publicKey'].encode('utf-8'))
+            bytes_data += unhexlify(
+                self.asset['signature']['publicKey'].encode('utf-8')
+            )
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             delegate_bytes = hexlify(self.asset['delegate']['username'].encode('utf-8'))
@@ -150,17 +167,19 @@ class Transaction(object):
 
         if self.signatures:
             # add 0xff separator to signal start of multi-signature transactions
-            bytes_data += write_bit8(0xff)
+            bytes_data += write_bit8(0xFF)
             bytes_data += unhexlify(''.join(self.signatures))
         return bytes_data
 
     def serialize(self):
         """Serialize Transaction
         """
-        bytes_data = bytes()# bytes() or bytes(512)?
-        bytes_data += write_bit8(0xff)  # fill, to distinguish between v1 and v2
+        bytes_data = bytes()  # bytes() or bytes(512)?
+        bytes_data += write_bit8(0xFF)  # fill, to distinguish between v1 and v2
         bytes_data += write_bit8(self.version or 0x01)
-        bytes_data += write_bit8(self.network or 30)#TODO:  or network_config['pubKeyHash']
+        bytes_data += write_bit8(
+            self.network or 30
+        )  # TODO:  or network_config['pubKeyHash']
         bytes_data += write_bit8(self.type)
         bytes_data += write_bit32(self.timestamp)
         bytes_data += write_high(self.sender_public_key.encode('utf-8'))
@@ -173,19 +192,16 @@ class Transaction(object):
 
         return hexlify(bytes_data).decode()
 
-
     def _deserialize_type(self, bytes_data):
         # TODO: test this extensively
         if self.type == TRANSACTION_TYPE_TRANSFER:
             self.amount = read_bit64(bytes_data)
             self.expiration = read_bit32(bytes_data, offset=8)
-            self.recipientId = b58encode_check(bytes_data[12:21 + 12])
+            self.recipientId = b58encode_check(bytes_data[12 : 21 + 12])
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
-            self.asset['signature'] = {
-                'publicKey': hexlify(bytes_data[:33])
-            }
+            self.asset['signature'] = {'publicKey': hexlify(bytes_data[:33])}
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
@@ -201,7 +217,7 @@ class Transaction(object):
 
             start = 1
             for x in range(vote_length):
-                vote = hexlify(bytes_data[start:34 + start])
+                vote = hexlify(bytes_data[start : 34 + start])
                 operator = '+' if vote[1] == '1' else '-'
                 self.asset['votes'].append('{}{}'.format(operator, vote[2:]))
                 start += 34
@@ -217,23 +233,21 @@ class Transaction(object):
             keys_num = read_bit8(bytes_data, offset=1)
             start = 3
             for x in range(keys_num):
-                key = hexlify(bytes_data[start: 33 + start])
+                key = hexlify(bytes_data[start : 33 + start])
                 self.asset['multisignature']['keysgroup'].append(key)
                 start += 33
             return bytes_data[start:]
 
         elif self.type == TRANSACTION_TYPE_IPFS:
             dag_length = read_bit8(bytes_data)
-            self.asset['ipfs'] = {
-                'dag': hexlify(bytes_data[1:dag_length])
-            }
+            self.asset['ipfs'] = {'dag': hexlify(bytes_data[1:dag_length])}
             return bytes_data[dag_length:]
 
         elif self.type == TRANSACTION_TYPE_TIMELOCK_TRANSFER:
             self.amount = read_bit64(bytes_data)
             self.timelock_type = read_bit8(bytes_data, offset=8)
             self.timelock = read_bit64(bytes_data, offset=9)
-            self.recipient_id = b58encode_check(bytes_data[17:21 + 17])
+            self.recipient_id = b58encode_check(bytes_data[17 : 21 + 17])
             return bytes_data[38:]
 
         elif self.type == TRANSACTION_TYPE_MULTI_PAYMENT:
@@ -243,10 +257,14 @@ class Transaction(object):
             amount = 0
             for x in total:
                 payment_amount = read_bit64(bytes_data, offset=offset)
-                self.asset['payments'].append({
-                    'amount': payment_amount,
-                    'recipientId': b58encode_check(bytes_data[offset + 8:21 + offset + 8])
-                })
+                self.asset['payments'].append(
+                    {
+                        'amount': payment_amount,
+                        'recipientId': b58encode_check(
+                            bytes_data[offset + 8 : 21 + offset + 8]
+                        ),
+                    }
+                )
                 amount += payment_amount
                 offset += 8 + 21
 
@@ -258,13 +276,11 @@ class Transaction(object):
         else:
             raise Exception('Transaction type is invalid')  # TODO: better exception
 
-
     def _deserialize_signature(self, bytes_data):
         # Signature
         if len(bytes_data) > 0:
             signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
             self.signature = hexlify(bytes_data[:signature_length])
-
 
         bytes_data = bytes_data[signature_length:]
         # Second signature
@@ -314,9 +330,6 @@ class Transaction(object):
     #     }
     #     """
 
-
-
-
     def deserialize(self, serialized_hex):
         bytes_data = unhexlify(serialized_hex)
 
@@ -324,7 +337,7 @@ class Transaction(object):
         self.network = read_bit8(bytes_data, offset=2)
         self.type = read_bit8(bytes_data, offset=3)
         self.timestamp = read_bit32(bytes_data, offset=4)
-        self.sender_public_key = hexlify(bytes_data[8:33 + 8])
+        self.sender_public_key = hexlify(bytes_data[8 : 33 + 8])
         self.fee = read_bit64(bytes_data, offset=41)
         self.amount = 0
         self.asset = {}
@@ -332,20 +345,16 @@ class Transaction(object):
         if Transaction.can_have_vendor_field(self.type):
             vendor_length = read_bit8(bytes_data, offset=49)
             if vendor_length > 0:
-                self.vendor_field_hex = hexlify(bytes_data[49:vendor_length + 49])
+                self.vendor_field_hex = hexlify(bytes_data[49 : vendor_length + 49])
 
-            remaining_bytes = bytes_data[49 + 1 + vendor_length:]
+            remaining_bytes = bytes_data[49 + 1 + vendor_length :]
         else:
-            remaining_bytes = bytes_data[49 + 1:]
+            remaining_bytes = bytes_data[49 + 1 :]
 
         signature_bytes = self._deserialize_type(remaining_bytes)
         self._deserialize_signature(signature_bytes)
 
         # self._apply_v1_compatibility()
-
-
-
-
 
         # print(self.version)
         # print(self.network)
@@ -360,11 +369,3 @@ class Transaction(object):
         # print(self.signature)
         # print(self.second_signature)
         # print('---------------')
-
-
-
-
-
-
-
-

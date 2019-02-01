@@ -1,4 +1,3 @@
-
 from ark.interfaces.plugin import IPlugin
 
 from .database import Database

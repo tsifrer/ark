@@ -4,10 +4,7 @@ from importlib import import_module
 from ark.interfaces.plugin import IPlugin
 
 
-INSTALLED_PLUGINS = [
-    'ark.plugins.database_peewee',
-    'ark.plugins.blockchain',
-]
+INSTALLED_PLUGINS = ['ark.plugins.database_peewee', 'ark.plugins.blockchain']
 
 
 PLUGINS = {}
@@ -22,6 +19,8 @@ def load_plugins(app):
                 plugin = obj()
                 name = getattr(plugin, 'name', None)
                 if not name:
-                    raise Exception('Pluigin is missing a name')  # TODO: improve this exception
+                    raise Exception(
+                        'Pluigin is missing a name'
+                    )  # TODO: improve this exception
 
                 PLUGINS[plugin.name] = plugin.register(app)

@@ -9,6 +9,4 @@ class Round(Model):
 
     class Meta:
         table_name = 'rounds'
-        indexes = (
-            (('round', 'public_key'), True),
-        )
+        indexes = ((('round', 'public_key'), True),)

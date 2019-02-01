@@ -2,6 +2,7 @@ from ark.interfaces.plugin import IPlugin
 
 from .blockchain import Blockchain
 
+
 class Plugin(IPlugin):
     name = 'database'
     pass

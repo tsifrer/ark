@@ -2,7 +2,6 @@ import abc
 
 
 class IBlockchain(metaclass=abc.ABCMeta):
-
     @property
     @abc.abstractmethod
     def state(self):
