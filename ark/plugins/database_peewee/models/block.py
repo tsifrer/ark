@@ -1,4 +1,4 @@
-from peewee import BigIntegerField, CharField, IntegerField, Model, SmallIntegerField
+from peewee import BigIntegerField, CharField, IntegerField, Model, SmallIntegerField, fn
 
 
 class Block(Model):
@@ -37,3 +37,28 @@ class Block(Model):
         model.generator_public_key = block.generator_public_key
         model.block_signature = block.block_signature
         return model
+
+    # @staticmethod
+    # def count():
+    #     return Block.select(fn.COUNT(Block.height.distinct())).scalar()
+
+    @staticmethod
+    def statistics():
+        """Returns statistics about Blocks table
+
+        Returns a tuple containing:
+        (total number of transactions, total fee, total amount, height)
+        """
+        stats = Block.select(
+            fn.SUM(Block.number_of_transactions),
+            fn.SUM(Block.total_fee),
+            fn.SUM(Block.total_amount),
+            fn.COUNT(Block.height.distinct()),
+        ).scalar(as_tuple=True)
+
+        return {
+            'transactions_count': stats[0],
+            'total_fee': stats[1],
+            'total_amount': stats[2],
+            'blocks_count': stats[3],
+        }

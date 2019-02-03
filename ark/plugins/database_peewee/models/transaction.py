@@ -2,6 +2,7 @@ from peewee import (
     BigIntegerField,
     BlobField,
     CharField,
+    fn,
     ForeignKeyField,
     IntegerField,
     Model,
@@ -52,3 +53,19 @@ class Transaction(Model):
         model.fee = transaction.fee
         model.serialized = transaction.serialize()
         return model
+
+    @staticmethod
+    def statistics():
+        """Returns statistics about Blocks table
+        """
+        stats = Transaction.select(
+            fn.COUNT(Transaction.id),
+            fn.SUM(Transaction.fee),
+            fn.SUM(Transaction.amount),
+        ).scalar(as_tuple=True)
+
+        return {
+            'transactions_count': stats[0],
+            'total_fee': stats[1],
+            'total_amount': stats[2],
+        }

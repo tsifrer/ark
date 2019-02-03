@@ -44,6 +44,7 @@ class BlockchainMachine(Machine):
             if not block:
                 print('No block found in the database')
                 block = Block(self.app.config['genesis_block'])
+
                 if block.payload_hash != self.app.config['network']['nethash']:
                     print(
                         'FATAL: The genesis block payload hash is different from '
@@ -51,7 +52,23 @@ class BlockchainMachine(Machine):
                     )
                     self.exit()
                     return
-                self.db.save_block(block)
+
+                else:
+                    self.db.save_block(block)
+
+
+            # If database did not just restore database integrity, verify the blockchain
+            if not self.db.restored_database_integrity:
+                print('Verifying database integrity')
+
+
+            print(self.db.verify_blockchain())
+                # audit = self.db.verify
+
+
+        
+
+
 
             self.set_started()
         except Exception as e:
