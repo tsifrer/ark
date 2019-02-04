@@ -1,3 +1,4 @@
+import math
 from peewee import PostgresqlDatabase
 
 from playhouse.shortcuts import model_to_dict
@@ -12,9 +13,11 @@ from .models.transaction import Transaction
 class Database(object):
 
     restored_database_integrity = False
+    forging_delegates = []
 
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
+        self.app = app
         # self.loop = loop
 
     def connect(self):
@@ -41,10 +44,11 @@ class Database(object):
         else:
             return CryptoBlock(model_to_dict(block))
 
-
     def save_block(self, block):
         if not isinstance(block, CryptoBlock):
-            raise Exception('Block must be a type of crypto.models.Block')  # TODO: better exception
+            raise Exception(
+                'Block must be a type of crypto.models.Block'
+            )  # TODO: better exception
 
         with self.db.atomic() as db_txn:
             try:
@@ -96,8 +100,10 @@ class Database(object):
         # Block.number_of_transactions in the database
         if block_stats['transactions_count'] != transaction_stats['transactions_count']:
             errors.append(
-                ('Number of transactions: {}, '
-                 'number of transactions included in blocks: {}').format(
+                (
+                    'Number of transactions: {}, '
+                    'number of transactions included in blocks: {}'
+                ).format(
                     transaction_stats['transactions_count'],
                     block_stats['transactions_count'],
                 )
@@ -108,10 +114,8 @@ class Database(object):
             errors.append(
                 (
                     'Total transaction fees: {}, '
-                    'total transaction fees included in blocks: {}').format(
-                    transaction_stats['total_fee'],
-                    block_stats['total_fee'],
-                )
+                    'total transaction fees included in blocks: {}'
+                ).format(transaction_stats['total_fee'], block_stats['total_fee'])
             )
 
         # Sum of all transaction amounts must equal to the sum of Block.total_amount
@@ -119,37 +123,25 @@ class Database(object):
             errors.append(
                 (
                     'Total transaction amounts: {}, '
-                    'total transaction amount included in blocks: {}').format(
-                    transaction_stats['total_amount'],
-                    block_stats['total_amount'],
-                )
+                    'total transaction amount included in blocks: {}'
+                ).format(transaction_stats['total_amount'], block_stats['total_amount'])
             )
 
         is_valid = len(errors) == 0
         return is_valid, errors
 
+    def get_active_delegates(self, height, delegates=None):
+        """Get the top 51 delegates
+        """
 
+        max_delegates = self.app.config.get_milestone(height)['activeDelegates']
+        delegate_round = math.floor((height - 1) / max_delegates) + 1
 
+        if (
+            len(self.forging_delegates) > 0
+            and self.forging_delegates[0].round == delegate_round
+        ):
+            return self.forging_delegates
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        print('harambe')
+        print(max_delegates)

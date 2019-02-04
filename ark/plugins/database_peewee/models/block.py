@@ -1,4 +1,11 @@
-from peewee import BigIntegerField, CharField, IntegerField, Model, SmallIntegerField, fn
+from peewee import (
+    BigIntegerField,
+    CharField,
+    IntegerField,
+    Model,
+    SmallIntegerField,
+    fn,
+)
 
 
 class Block(Model):

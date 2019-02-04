@@ -1,16 +1,16 @@
 from ark.config import Config
-from ark.settings import load_plugins
 from ark.crypto.time import Time
+from ark.settings import load_plugins
+
 
 class App(object):
     _config = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.time = Time(self)
 
         load_plugins(self)
-
-        self.time = Time()
 
     @property
     def config(self):

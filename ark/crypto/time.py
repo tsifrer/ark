@@ -5,7 +5,6 @@ from dateutil.parser import parse
 
 # TODO: move this to utils or someting
 class Time(object):
-
     def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = app

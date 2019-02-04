@@ -1,6 +1,8 @@
 import json
 
 from operator import itemgetter
+
+
 # def get_config():
 #     config = {}
 #     with open('ark/genesis_block.json') as f:
@@ -13,7 +15,6 @@ from operator import itemgetter
 
 
 class Config(dict):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -8,6 +8,6 @@ class Plugin(IPlugin):
     pass
 
     def register(self, app):
-        db = Database()
+        db = Database(app)
         db.connect()
         return db

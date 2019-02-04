@@ -13,7 +13,7 @@ STATES = [
     {'name': STATE_STARTING, 'on_enter': ['on_start']},
     {'name': STATE_STARTED},
     {'name': STATE_EXITING},
-    {'name': STATE_ROLLBACKING, 'on_enter': ['on_rollback']}
+    {'name': STATE_ROLLBACKING, 'on_enter': ['on_rollback']},
 ]
 
 TRANSITIONS = [
@@ -66,7 +66,7 @@ class BlockchainMachine(Machine):
                 if not is_valid:
                     print('FATAL: Database is corrupted')
                     print(errors)
-                    return self.rollback()
+                    # return self.rollback() # TODO: uncomment
             else:
                 print(
                     'Skipping database integrity check after successful database '
@@ -82,7 +82,7 @@ class BlockchainMachine(Machine):
             milestone = self.app.config.get_milestone(block.height)
 
             # TODO: Watafak
-            #stateStorage.setLastBlock(block);
+            # stateStorage.setLastBlock(block);
             # stateStorage.lastDownloadedBlock = block;
 
             # if (stateStorage.networkStart) {
@@ -110,17 +110,12 @@ class BlockchainMachine(Machine):
             print('Fast rebuild: {}'.format(fast_rebuild))
             if fast_rebuild:
                 # self.rebuild() # TODO: this is a rabit hole
-                return
+                # return
+                pass
 
-            
-
-
-
-
+            active_delegates = self.db.get_active_delegates(block.height)
 
             # TODO: the rest of the stuff
-
-
 
             self.set_started()
         except Exception as e:

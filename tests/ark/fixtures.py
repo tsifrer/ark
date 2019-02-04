@@ -106,9 +106,7 @@ def dummy_transaction():
             'df945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c279'
             '9a14f78717'
         ),
-        'id': (
-            '170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11'
-        ),
+        'id': ('170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11'),
         'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
         'hop': 2,
         'broadcast': False,
