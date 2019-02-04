@@ -8,7 +8,7 @@ class Blockchain(IBlockchain):
     def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = app
-        self.machine = BlockchainMachine(app, self.database)
+        self.machine = BlockchainMachine(self, app, self.database)
 
     @property
     def state(self):
@@ -23,3 +23,9 @@ class Blockchain(IBlockchain):
 
     def stop(self):
         self.machine.stop()
+
+
+    def rollback_current_round(self):
+        # TODO: implement this
+        print('Rollback current round is not yet implemented')
+        pass

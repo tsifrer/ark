@@ -15,6 +15,7 @@ from operator import itemgetter
 
 
 class Config(dict):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -25,9 +26,6 @@ class Config(dict):
             self['network'] = json.loads(f.read())
 
         self._load_milestones()
-
-        # TODO: get this from config somewhere
-        self['fast_rebuild'] = False
 
     def _load_milestones(self):
         with open('ark/milestones.json') as f:

@@ -1,4 +1,6 @@
 import math
+from hashlib import sha256
+
 from peewee import PostgresqlDatabase
 
 from playhouse.shortcuts import model_to_dict
@@ -6,6 +8,7 @@ from playhouse.shortcuts import model_to_dict
 from ark.crypto.models.block import Block as CryptoBlock
 
 from .models.block import Block
+from .models.round import Round
 from .models.transaction import Transaction
 
 
@@ -30,8 +33,10 @@ class Database(object):
         )
 
         # database.set_allow_sync(False)
+        # TODO: figure this out
         Block._meta.database = self.db
         Transaction._meta.database = self.db
+        Round._meta.database = self.db
 
     def get_last_block(self):
         """Get the last block
@@ -132,8 +137,9 @@ class Database(object):
 
     def get_active_delegates(self, height, delegates=None):
         """Get the top 51 delegates
-        """
 
+        TODO: this function is potentially very broken
+        """
         max_delegates = self.app.config.get_milestone(height)['activeDelegates']
         delegate_round = math.floor((height - 1) / max_delegates) + 1
 
@@ -143,5 +149,30 @@ class Database(object):
         ):
             return self.forging_delegates
 
-        print('harambe')
-        print(max_delegates)
+        if not delegates or len(delegates) == 0:
+            # TODO: Does this return only the first 51 delegates???
+            delegates = (
+                Round.select()
+                .where(Round.round == delegate_round)
+                .order_by(Round.balance.desc(), Round.public_key.asc())
+            )
+
+        seed = sha256(str(delegate_round).encode('utf-8')).digest()
+        # TODO: Look into why we don't reorder every 5th element (the second index += 1
+        # skips it). Also why do we create another seed, that is always the same after
+        # the first run?
+        index = 0
+        while index < len(delegates):
+            for x in range(min(4, len(delegates) - index)):
+                new_index = seed[x] % len(delegates)
+                # Swap delegate on index with the delegate on new_index
+                delegates[new_index], delegates[index] = (
+                    delegates[index],
+                    delegates[new_index],
+                )
+                index += 1
+            index += 1
+            seed = sha256(seed).digest()
+
+        self.forging_delegates = delegates
+        return self.forging_delegates

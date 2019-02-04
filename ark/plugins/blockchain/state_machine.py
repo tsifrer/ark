@@ -30,8 +30,9 @@ TRANSITIONS = [
 
 
 class BlockchainMachine(Machine):
-    def __init__(self, app, database):
+    def __init__(self, blockchain, app, database):
         self.app = app
+        self.blockchain = blockchain
         self.db = database
         super().__init__(
             self, states=STATES, transitions=TRANSITIONS, initial=STATE_STOPPED
@@ -67,6 +68,7 @@ class BlockchainMachine(Machine):
                     print('FATAL: Database is corrupted')
                     print(errors)
                     # return self.rollback() # TODO: uncomment
+                print('Verified database integrity')
             else:
                 print(
                     'Skipping database integrity check after successful database '
@@ -104,16 +106,13 @@ class BlockchainMachine(Machine):
             # }
 
             print('Last block in database: {}'.format(block.height))
-            # Fast rebuild is only available if last block is older than a week
-            block_age = self.app.time.get_time() - block.timestamp
-            fast_rebuild = block_age > 3600 * 24 * 7 and self.app.config['fast_rebuild']
-            print('Fast rebuild: {}'.format(fast_rebuild))
-            if fast_rebuild:
-                # self.rebuild() # TODO: this is a rabit hole
-                # return
-                pass
 
             active_delegates = self.db.get_active_delegates(block.height)
+            if not active_delegates:
+                self.blockchain.rollback_current_round()
+
+
+            # TODO: Rebuild SPV stuff
 
             # TODO: the rest of the stuff
 
