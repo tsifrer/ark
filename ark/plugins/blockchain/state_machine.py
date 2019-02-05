@@ -1,24 +1,35 @@
-from transitions import Machine
-
+# from transitions import Machine
+from transitions.extensions import HierarchicalMachine as Machine
 from ark.crypto.models.block import Block
 
 STATE_STOPPED = 'stopped'
 STATE_STARTING = 'starting'
-STATE_STARTED = 'started'
 STATE_EXITING = 'exiting'
 STATE_ROLLBACKING = 'rollbacking'
+STATE_SYNC = 'sync'
+STATE_SYNC_SYNCING = 'syncing'
+STATE_SYNC_DOWNLOADING = 'downloading'
+STATE_NESTED_SYNC_SYNCING = '{}_{}'.format(STATE_SYNC, STATE_SYNC_SYNCING)
+STATE_NESTED_SYNC_DOWNLOADING = '{}_{}'.format(STATE_SYNC, STATE_SYNC_DOWNLOADING)
 
 STATES = [
     {'name': STATE_STOPPED},
     {'name': STATE_STARTING, 'on_enter': ['on_start']},
-    {'name': STATE_STARTED},
+    {
+        'name': STATE_SYNC,
+        'children': [
+            {'name': STATE_SYNC_SYNCING, 'on_enter': ['on_sync_syncing']},
+            {'name': STATE_SYNC_DOWNLOADING, 'on_enter': ['on_sync_downloading']},
+        ],
+        'initial': STATE_SYNC_SYNCING,
+    },
     {'name': STATE_EXITING},
     {'name': STATE_ROLLBACKING, 'on_enter': ['on_rollback']},
 ]
 
 TRANSITIONS = [
     {'trigger': 'start', 'source': STATE_STOPPED, 'dest': STATE_STARTING},
-    {'trigger': 'set_started', 'source': STATE_STARTING, 'dest': STATE_STARTED},
+    {'trigger': 'set_started', 'source': STATE_STARTING, 'dest': STATE_SYNC},
     {
         'trigger': 'exit',
         'source': STATE_STARTING,
@@ -26,6 +37,8 @@ TRANSITIONS = [
         'before': ['on_exit'],
     },
     {'trigger': 'rollback', 'source': STATE_STARTING, 'dest': STATE_ROLLBACKING},
+
+    {'trigger': 'download_blocks', 'source': STATE_NESTED_SYNC_SYNCING, 'dest': STATE_NESTED_SYNC_DOWNLOADING},
 ]
 
 
@@ -37,6 +50,19 @@ class BlockchainMachine(Machine):
         super().__init__(
             self, states=STATES, transitions=TRANSITIONS, initial=STATE_STOPPED
         )
+
+    def on_sync_downloading(self):
+        print('downloading harambe')
+        block = self.db.get_last_block()
+
+
+
+
+
+    def on_sync_syncing(self):
+        # TODO: this has much more functionality other than just downloading blocks
+        self.download_blocks()
+
 
     def on_start(self):
         # TODO: change prints to loggers
@@ -109,6 +135,7 @@ class BlockchainMachine(Machine):
 
             active_delegates = self.db.get_active_delegates(block.height)
             if not active_delegates:
+                # TODO: rollback_current_round doesn't do anything ATM
                 self.blockchain.rollback_current_round()
 
 

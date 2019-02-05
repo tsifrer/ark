@@ -138,7 +138,7 @@ class Database(object):
     def get_active_delegates(self, height, delegates=None):
         """Get the top 51 delegates
 
-        TODO: this function is potentially very broken
+        TODO: this function is potentially very broken and returns all rounds?
         """
         max_delegates = self.app.config.get_milestone(height)['activeDelegates']
         delegate_round = math.floor((height - 1) / max_delegates) + 1
@@ -176,3 +176,14 @@ class Database(object):
 
         self.forging_delegates = delegates
         return self.forging_delegates
+
+
+    def get_recent_block_ids():
+        """Get most 10 most recent block ids
+        """
+        blocks = Block.select(Block.id).order_by(Block.timestamp.desc()).limit(10).tuples()
+
+        print(blocks)
+
+
+

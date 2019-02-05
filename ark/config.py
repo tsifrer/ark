@@ -25,6 +25,9 @@ class Config(dict):
         with open('ark/network.json') as f:
             self['network'] = json.loads(f.read())
 
+        with open('ark/peers.json') as f:
+            self['peers'] = json.loads(f.read())
+
         self._load_milestones()
 
     def _load_milestones(self):

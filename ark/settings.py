@@ -4,7 +4,11 @@ from importlib import import_module
 from ark.interfaces.plugin import IPlugin
 
 
-INSTALLED_PLUGINS = ['ark.plugins.database_peewee', 'ark.plugins.blockchain']
+INSTALLED_PLUGINS = [
+    'ark.plugins.database_peewee',
+    'ark.plugins.blockchain',
+    'ark.plugins.p2p',
+]
 
 
 PLUGINS = {}

@@ -9,6 +9,7 @@ class App(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.time = Time(self)
+        self.version = '0.0.1'
 
         load_plugins(self)
 

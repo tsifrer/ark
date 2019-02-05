@@ -18,6 +18,10 @@ class Blockchain(IBlockchain):
     def database(self):
         return PLUGINS['database']
 
+    @property
+    def p2p(self):
+        return PLUGINS['p2p']
+
     def start(self):
         self.machine.start()
 
