@@ -3,7 +3,7 @@ from datetime import datetime
 from dateutil.tz import tzutc
 from dateutil.parser import parse
 
-# TODO: move this to utils or someting
+# TODO: move this to utils or someting and out of crypto?
 class Time(object):
     def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)

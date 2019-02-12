@@ -6,8 +6,8 @@ from ark.interfaces.plugin import IPlugin
 
 INSTALLED_PLUGINS = [
     'ark.plugins.database_peewee',
-    'ark.plugins.blockchain',
     'ark.plugins.p2p',
+    'ark.plugins.blockchain',
 ]
 
 

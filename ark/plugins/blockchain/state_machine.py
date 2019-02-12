@@ -1,6 +1,8 @@
+import json
 # from transitions import Machine
 from transitions.extensions import HierarchicalMachine as Machine
 from ark.crypto.models.block import Block
+from .utils import is_block_chained, is_block_exception
 
 STATE_STOPPED = 'stopped'
 STATE_STARTING = 'starting'
@@ -11,6 +13,7 @@ STATE_SYNC_SYNCING = 'syncing'
 STATE_SYNC_DOWNLOADING = 'downloading'
 STATE_NESTED_SYNC_SYNCING = '{}_{}'.format(STATE_SYNC, STATE_SYNC_SYNCING)
 STATE_NESTED_SYNC_DOWNLOADING = '{}_{}'.format(STATE_SYNC, STATE_SYNC_DOWNLOADING)
+STATE_IDLE = 'IDLE'
 
 STATES = [
     {'name': STATE_STOPPED},
@@ -25,6 +28,7 @@ STATES = [
     },
     {'name': STATE_EXITING},
     {'name': STATE_ROLLBACKING, 'on_enter': ['on_rollback']},
+    {'name': STATE_IDLE}
 ]
 
 TRANSITIONS = [
@@ -37,8 +41,10 @@ TRANSITIONS = [
         'before': ['on_exit'],
     },
     {'trigger': 'rollback', 'source': STATE_STARTING, 'dest': STATE_ROLLBACKING},
+    {'trigger': 'sync_blocks', 'source': STATE_NESTED_SYNC_SYNCING, 'dest': STATE_NESTED_SYNC_DOWNLOADING},
+    {'trigger': 'set_syncing', 'source': STATE_NESTED_SYNC_DOWNLOADING, 'dest': STATE_NESTED_SYNC_SYNCING},
+    {'trigger': 'set_idle', 'source': STATE_NESTED_SYNC_SYNCING, 'dest': STATE_IDLE},
 
-    {'trigger': 'download_blocks', 'source': STATE_NESTED_SYNC_SYNCING, 'dest': STATE_NESTED_SYNC_DOWNLOADING},
 ]
 
 
@@ -53,7 +59,31 @@ class BlockchainMachine(Machine):
 
     def on_sync_downloading(self):
         print('downloading harambe')
-        block = self.db.get_last_block()
+        last_block = self.db.get_last_block()
+        blocks = self.blockchain.p2p.download_blocks(last_block.height)
+
+
+        if blocks:
+            is_chained = is_block_chained(self.app, last_block, blocks[0]) or is_block_exception(self.app, blocks[0])
+            if is_chained:
+                print('Downloaded {} new blocks accounting for a total of {} transactions'.format(
+                    len(blocks), sum([x.number_of_transactions for x in blocks])
+                ))
+
+                for block in blocks:
+                    self.blockchain.process_block(block)
+                # TODO:
+                # blockchain.enqueueBlocks(blocks);
+                # blockchain.dispatch("DOWNLOADED");
+
+            else:
+                print('Downloaded block not accepted: {}'.format(blocks[0])) # TODO: output block data
+                print('Last downloaded block: {}'.format(last_block)) # TODO: output block data
+        else:
+            print('No new block found on this peer')
+
+        self.set_syncing()
+
 
 
 
@@ -61,7 +91,13 @@ class BlockchainMachine(Machine):
 
     def on_sync_syncing(self):
         # TODO: this has much more functionality other than just downloading blocks
-        self.download_blocks()
+        print('on_sync_syncing')
+
+        if self.blockchain.is_synced():
+            print('Blockhain is syced!')
+            self.set_idle()
+        else:
+            self.sync_blocks()
 
 
     def on_start(self):

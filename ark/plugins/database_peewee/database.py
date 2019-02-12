@@ -42,6 +42,7 @@ class Database(object):
         """Get the last block
         Returns None if block can't be found.
         """
+        print('LLALA', Block.select().count())
         try:
             block = Block.select().order_by(Block.height.desc()).get()
         except Block.DoesNotExist:
@@ -58,18 +59,15 @@ class Database(object):
         with self.db.atomic() as db_txn:
             try:
                 db_block = Block.from_crypto(block)
-                # db_block.save()
+                db_block.save(force_insert=True)
 
                 for transaction in block.transactions:
                     db_transaction = Transaction.from_crypto(transaction)
-                    # db_transaction.save()
+                    db_transaction.save(force_insert=True)
             except Exception as e:  # TODO: Make this not so broad!
                 print('Got an exception yo')
                 db_txn.rollback()
                 print(e)  # TODO: replace with logger.error
-
-        print(db_block)
-        print(db_transaction)
 
     def verify_blockchain(self):
         """ Verify that the blockchain stored in the db is not corrupted
@@ -178,12 +176,19 @@ class Database(object):
         return self.forging_delegates
 
 
-    def get_recent_block_ids():
+    def get_recent_block_ids(self):
         """Get most 10 most recent block ids
         """
         blocks = Block.select(Block.id).order_by(Block.timestamp.desc()).limit(10).tuples()
+        print([x[0] for x in blocks])
+        return [x[0] for x in blocks]
 
-        print(blocks)
 
-
+    def get_block_by_id(self, block_id):
+        try:
+            block = Block.get(Block.id == block_id)
+        except Block.DoesNotExist:
+            return None
+        else:
+            return CryptoBlock(model_to_dict(block))
 

@@ -12,5 +12,6 @@ peewee-migrate
 pip-tools
 pytest
 python-dateutil
+requests
 semver
 transitions

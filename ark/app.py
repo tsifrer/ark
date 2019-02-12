@@ -1,5 +1,6 @@
 from ark.config import Config
 from ark.crypto.time import Time
+from ark.crypto.slots import Slots
 from ark.settings import load_plugins
 
 
@@ -9,7 +10,8 @@ class App(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.time = Time(self)
-        self.version = '0.0.1'
+        self.slots = Slots(self)
+        self.version = '0.0.1'  # TODO: get this from somewhere else
 
         load_plugins(self)
 
