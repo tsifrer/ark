@@ -41,7 +41,6 @@ class Blockchain(IBlockchain):
 
     def is_synced(self):
         block = self.database.get_last_block()
-
         time = self.app.time.get_time()
         blocktime = self.app.config.get_milestone(block.height)['blocktime']
         return (time - block.timestamp) < (3 * blocktime)

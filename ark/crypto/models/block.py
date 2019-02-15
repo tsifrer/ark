@@ -32,7 +32,12 @@ class Block(object):
             self.deserialize(data)
         else:
             for field, json_field, required in self.fields:
-                value = data.get(json_field)
+                # If data is passed in as dict, expect camelcase fields,
+                # otherwise expect snakecase fields
+                if isinstance(data, dict):
+                    value = data.get(json_field)
+                else:
+                    value = getattr(data, field, None)
                 if required and value is None:
                     raise Exception(
                         'Missing field {}'.format(field)
@@ -44,17 +49,24 @@ class Block(object):
                 for index, transaction_data in enumerate(self.transactions):
                     # override blockId and timestamp so all transactions match
                     # with the current block
-                    # TODO: put this back
-                    # transaction_data['blockId'] = self.id
-                    # transaction_data['timestamp'] = self.timestamp
+                    transaction_data['blockId'] = self.id
+                    transaction_data['timestamp'] = self.timestamp
                     # add sequence to keep the data in sequence when storing it to db
                     transaction_data['sequence'] = index
                     transactions.append(Transaction(transaction_data))
                 self.transactions = transactions
                 self.number_of_transactions = len(self.transactions)
 
-            self.id_hex = self.get_id_hex()
-            self.id = self.get_id()
+            if self.height == 1:
+                # For genesis blocks, we should not recalculate the id as it is, or all
+                # the current ID's are calculated wrong.
+                # The comment from the core above this "fix" describes the problem
+                # perfectly:
+                # "// TODO genesis block calculated id is wrong for some reason"
+                self.id_hex = Block.to_bytes_hex(self.id)
+            else:
+                self.id_hex = self.get_id_hex()
+                self.id = self.get_id()
 
             # print('IIIIDDD', self.id)
             # print(self.id_hex)

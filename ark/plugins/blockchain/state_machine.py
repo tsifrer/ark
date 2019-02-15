@@ -62,8 +62,8 @@ class BlockchainMachine(Machine):
         last_block = self.db.get_last_block()
         blocks = self.blockchain.p2p.download_blocks(last_block.height)
 
-
         if blocks:
+            print(is_block_chained(self.app, last_block, blocks[0]))
             is_chained = is_block_chained(self.app, last_block, blocks[0]) or is_block_exception(self.app, blocks[0])
             if is_chained:
                 print('Downloaded {} new blocks accounting for a total of {} transactions'.format(
@@ -110,7 +110,6 @@ class BlockchainMachine(Machine):
             if not block:
                 print('No block found in the database')
                 block = Block(self.app.config['genesis_block'])
-
                 if block.payload_hash != self.app.config['network']['nethash']:
                     print(
                         'FATAL: The genesis block payload hash is different from '

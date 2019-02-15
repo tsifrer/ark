@@ -20,7 +20,10 @@ class Config(dict):
         super().__init__(*args, **kwargs)
 
         with open('ark/genesis_block.json') as f:
-            self['genesis_block'] = json.loads(f.read())
+            genesis_block = json.loads(f.read())
+            for transaction in genesis_block['transactions']:
+                transaction['version'] = 1
+            self['genesis_block'] = genesis_block
 
         with open('ark/network.json') as f:
             self['network'] = json.loads(f.read())

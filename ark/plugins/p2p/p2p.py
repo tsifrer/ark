@@ -49,9 +49,11 @@ class P2P(object):
     def _get_random_peer_to_download_blocks(self):
         peer = self.get_random_peer(download_size=100)
         if not peer:
-            return None
+            raise Exception('Can not find any valid peers')
         recent_block_ids = self.database.get_recent_block_ids()
         if not peer.has_common_blocks(recent_block_ids):
+            # TODO: implement guard
+            peer.no_common_blocks = True
             return self._get_random_peer_to_download_blocks()
         return peer
 

@@ -12,6 +12,7 @@ class Peer(object):
         self.port = port
         self.healthy = True
         self.download_size = None
+        self.no_common_blocks = False
 
         self.headers = {
             'version': self.app.version,
@@ -59,8 +60,9 @@ class Peer(object):
         return {}
 
     def has_common_blocks(self, block_ids):
+        print(block_ids)
         params = {
-            'ids': block_ids,
+            'ids': '11736050606814390998'#block_ids,
         }
 
         # TODO: This might not work as if only one block_id is passed in, othe relays
