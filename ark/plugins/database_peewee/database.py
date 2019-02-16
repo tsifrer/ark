@@ -22,6 +22,7 @@ class Database(object):
         # self.loop = loop
 
     def connect(self):
+        # TODO:
         self.db = PostgresqlDatabase(
             database='postgres',
             user='postgres',
@@ -62,8 +63,6 @@ class Database(object):
                 db_txn.rollback()
                 print(e)  # TODO: replace with logger.error
                 return
-
-        print(db_block.id)
 
         with self.db.atomic() as db_txn:
             try:

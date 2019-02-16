@@ -1,5 +1,5 @@
 test:
-	py.test -v -s -x $(ARGS)
+	py.test -vv -s -x $(ARGS)
 
 remove-pyc:
 	find . -name "*.pyc" -delete

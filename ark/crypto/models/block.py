@@ -6,38 +6,46 @@ from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_b
 from ark.crypto.models.transaction import Transaction
 
 
+from ark.config import Config
+
+from ark.crypto.utils import verify_hash
+from ark.crypto import slots, time
+
 class Block(object):
-    # field name, json field name, required
+    # TODO: make this mapping better
+    # field name, json field name, required, default, to_type
     fields = [
-        ('id', 'id', False),
-        ('id_hex', 'idHex', False),
-        ('timestamp', 'timestamp', True),
-        ('version', 'version', True),
-        ('height', 'height', True),
-        ('previous_block_hex', 'previousBlockHex', False),
-        ('previous_block', 'previousBlock', False),
-        ('number_of_transactions', 'numberOfTransactions', True),
-        ('total_amount', 'totalAmount', True),
-        ('total_fee', 'totalFee', True),
-        ('reward', 'reward', True),
-        ('payload_length', 'payloadLength', True),
-        ('payload_hash', 'payloadHash', True),
-        ('generator_public_key', 'generatorPublicKey', True),
-        ('block_signature', 'blockSignature', False),
-        ('transactions', 'transactions', False),
+        ('id', 'id', False, None, None),
+        ('id_hex', 'idHex', False, None, None),
+        ('timestamp', 'timestamp', True, None, None),
+        ('version', 'version', True, None, None),
+        ('height', 'height', True, None, None),
+        ('previous_block_hex', 'previousBlockHex', False, None, None),
+        ('previous_block', 'previousBlock', False, None, None),
+        ('number_of_transactions', 'numberOfTransactions', True, None, None),
+        ('total_amount', 'totalAmount', True, 0, int),
+        ('total_fee', 'totalFee', True, 0, int),
+        ('reward', 'reward', True, 0, int),
+        ('payload_length', 'payloadLength', True, None, None),
+        ('payload_hash', 'payloadHash', True, None, None),
+        ('generator_public_key', 'generatorPublicKey', True, None, None),
+        ('block_signature', 'blockSignature', False, None, None),
+        ('transactions', 'transactions', False, [], None),
     ]
 
     def __init__(self, data):
         if isinstance(data, (str, bytes)):
             self.deserialize(data)
         else:
-            for field, json_field, required in self.fields:
+            for field, json_field, required, default, to_type in self.fields:
                 # If data is passed in as dict, expect camelcase fields,
                 # otherwise expect snakecase fields
                 if isinstance(data, dict):
-                    value = data.get(json_field)
+                    value = data.get(json_field, default)
                 else:
-                    value = getattr(data, field, None)
+                    value = getattr(data, field, default)
+                if to_type:
+                    value = to_type(value)
                 if required and value is None:
                     raise Exception(
                         'Missing field {}'.format(field)
@@ -49,6 +57,7 @@ class Block(object):
                 for index, transaction_data in enumerate(self.transactions):
                     # override blockId and timestamp so all transactions match
                     # with the current block
+                    # TODO: these next two lines break tests
                     transaction_data['blockId'] = self.id
                     transaction_data['timestamp'] = self.timestamp
                     # add sequence to keep the data in sequence when storing it to db
@@ -177,3 +186,93 @@ class Block(object):
         self.id_hex = self.get_id_hex()
         self.id = self.get_id()
         # TODO: implement edge cases (outlookTable thingy) where some block ids are broken
+
+    def verify_signature(self):
+        """Verify signature associated with this block
+        """
+        bytes_data = unhexlify(self.serialize(include_signature=False))
+        is_verified = verify_hash(
+            bytes_data,
+            self.block_signature,
+            self.generator_public_key,
+        )
+        return is_verified
+
+    def verify(self):
+        errors = []
+        print('VERIFYING')
+
+        # TODO: find a better way to get milestone data
+        config = Config()
+        milestone = config.get_milestone(self.height)
+
+        # Check that the previous block is set if it's not a genesis block
+        if self.height > 1 and not self.previous_block:
+            errors.append('Invalid previous block')
+
+        # Chech that the block reward matches with the one specified in config
+        if self.reward != milestone['reward']:
+            errors.append('Invalid block reward: {} expected: {}'.format(
+                self.reward, milestone['reward']
+            ))
+
+        # Verify block signature
+        is_valid_signature = self.verify_signature()
+        if not is_valid_signature:
+            errors.append('Failed to verify block signature')
+
+        # Check if version is correct on the block
+        if self.version != milestone['block']['version']:
+            errors.append('Invalid block version')
+
+        # Check that the block timestamp is not in the future
+        is_invalid_timestamp = (
+            slots.get_slot_number(self.height, self.timestamp) > slots.get_slot_number(self.height, time.get_time())
+        )
+        if is_invalid_timestamp:
+            errors.append('Invalid block timestamp')
+
+        # Check if all transactions are valid
+        invalid_transactions = [
+            trans for trans in self.transactions if not trans.verify()
+        ]
+        if len(invalid_transactions) > 0:
+            errors.append('One or more transactions are not verified')
+
+        # Check that number of transactions and block.number_of_transactions match
+        if len(self.transactions) != self.number_of_transactions:
+            errors.append('Invalid number of transactions')
+
+        # Check that number of transactions is not too high (except for genesis block)
+        if self.height > 1 and len(self.transactions) > milestone['block']['maxTransactions']:
+            errors.append('Too many transactions')
+
+        # Check if transactions add u pto the block values
+        applied_transactions = []
+        total_amount = 0
+        total_fee = 0
+        bytes_data = bytes()
+        for transaction in self.transactions:
+            if transaction.id in applied_transactions:
+                errors.append(
+                    'Encountered duplicate transaction: {}'.format(transaction.id)
+                )
+
+            applied_transactions.append(transaction.id)
+            total_amount += transaction.amount
+            total_fee += transaction.fee
+            bytes_data += unhexlify(transaction.id)
+
+        if total_amount != self.total_amount:
+            errors.append('Invalid total amount')
+
+        if total_fee != self.total_fee:
+            errors.append('Invalid total fee')
+
+        if len(bytes_data) > milestone['block']['maxPayload']:
+            errors.append('Payload is too large')
+
+        if sha256(bytes_data).hexdigest() != self.payload_hash:
+            errors.append('Invalid payload hash')
+
+        return len(errors) == 0, errors

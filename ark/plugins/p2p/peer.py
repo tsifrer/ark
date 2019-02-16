@@ -81,4 +81,5 @@ class Peer(object):
         }
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
+        print(blocks)
         return [Block(block) for block in blocks]

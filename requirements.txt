@@ -6,14 +6,17 @@
 #
 -e git+git://github.com/tsifrer/python-binary.git#egg=binary
 appdirs==1.4.3            # via black
+asn1crypto==0.24.0        # via coincurve
 atomicwrites==1.2.1       # via pytest
 attrs==18.2.0             # via black, flake8-bugbear, pytest
 base58==1.0.3
 black==18.9b0
 cached-property==1.5.1    # via peewee-migrate
 certifi==2018.11.29       # via requests
+cffi==1.12.0              # via coincurve
 chardet==3.0.4            # via requests
 click==7.0
+coincurve==11.0.0
 entrypoints==0.3          # via flake8
 flake8-broken-line==0.1.0
 flake8-bugbear==18.8.0
@@ -31,6 +34,7 @@ pip-tools==3.2.0
 pluggy==0.8.1             # via pytest
 py==1.7.0                 # via pytest
 pycodestyle==2.5.0        # via flake8, flake8-import-order
+pycparser==2.19           # via cffi
 pyflakes==2.1.0           # via flake8
 pytest==4.1.1
 python-dateutil==2.7.5

@@ -2,15 +2,14 @@ from peewee import (
     BigIntegerField,
     BlobField,
     CharField,
-    fn,
     ForeignKeyField,
     IntegerField,
     Model,
     SmallIntegerField,
+    fn,
 )
 
 from .block import Block
-from .wallet import Wallet
 
 
 class Transaction(Model):
@@ -20,7 +19,7 @@ class Transaction(Model):
     sequence = SmallIntegerField()
     timestamp = IntegerField(index=True)
     sender_public_key = CharField(max_length=66, index=True)
-    recipient_id = ForeignKeyField(Wallet)
+    recipient_id = CharField(max_length=66, null=True, index=True)
     type = SmallIntegerField()
     vendor_field_hex = BlobField(null=True)
     amount = BigIntegerField()

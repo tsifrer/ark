@@ -3,21 +3,26 @@ from hashlib import sha256
 from operator import itemgetter
 
 
-# def get_config():
-#     config = {}
-#     with open('ark/genesis_block.json') as f:
-#         config['genesis_block'] = json.loads(f.read())
+class Singleton(type):
+    _instances = {}
 
-#     with open('ark/network.json') as f:
-#         config['network'] = json.loads(f.read())
-
-#     return config
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
-class Config(dict):
+class Config(dict, metaclass=Singleton):
+    """
+    TODO: Make this an object with fields like:
+    self.genesis_block = data
+    self.peers = [peers]
+    self.milestones = [milestones]
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        print('INITIALZING CONFIG')
 
         with open('ark/genesis_block.json') as f:
             genesis_block = json.loads(f.read())

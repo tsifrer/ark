@@ -66,6 +66,25 @@ def migrate(migrator, database, fake=False, **kwargs):
             indexes = [(('round', 'public_key'), True)]
 
     @migrator.create_model
+    class Transaction(pw.Model):
+        id = pw.CharField(max_length=64, primary_key=True)
+        version = pw.SmallIntegerField()
+        block_id = pw.ForeignKeyField(backref='transaction_set', column_name='block_id', field='id', model=migrator.orm['blocks'])
+        sequence = pw.SmallIntegerField()
+        timestamp = pw.IntegerField(index=True)
+        sender_public_key = pw.CharField(index=True, max_length=66)
+        recipient_id = pw.CharField(index=True, max_length=66, null=True)
+        type = pw.SmallIntegerField()
+        vendor_field_hex = pw.BlobField(null=True)
+        amount = pw.BigIntegerField()
+        fee = pw.BigIntegerField()
+        serialized = pw.BlobField()
+
+        class Meta:
+            table_name = "transactions"
+            indexes = [(('sender_public_key', 'recipient_id', 'vendor_field_hex', 'timestamp'), False)]
+
+    @migrator.create_model
     class Wallet(pw.Model):
         address = pw.CharField(max_length=36, primary_key=True)
         public_key = pw.CharField(max_length=66, unique=True)
@@ -81,44 +100,6 @@ def migrate(migrator, database, fake=False, **kwargs):
             table_name = "wallets"
             indexes = [(('public_key', 'vote'), True)]
 
-    @migrator.create_model
-    class Transaction(pw.Model):
-        id = pw.CharField(max_length=64, primary_key=True)
-        version = pw.SmallIntegerField()
-        block_id = pw.ForeignKeyField(
-            backref='transaction_set',
-            column_name='block_id',
-            field='id',
-            model=migrator.orm['blocks'],
-        )
-        sequence = pw.SmallIntegerField()
-        timestamp = pw.IntegerField(index=True)
-        sender_public_key = pw.CharField(index=True, max_length=66)
-        recipient_id = pw.ForeignKeyField(
-            backref='transaction_set',
-            column_name='recipient_id',
-            field='address',
-            model=migrator.orm['wallets'],
-        )
-        type = pw.SmallIntegerField()
-        vendor_field_hex = pw.BlobField(null=True)
-        amount = pw.BigIntegerField()
-        fee = pw.BigIntegerField()
-        serialized = pw.BlobField()
-
-        class Meta:
-            table_name = "transactions"
-            indexes = [
-                (
-                    (
-                        'sender_public_key',
-                        'recipient_id',
-                        'vendor_field_hex',
-                        'timestamp',
-                    ),
-                    False,
-                )
-            ]
 
 
 def rollback(migrator, database, fake=False, **kwargs):

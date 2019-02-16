@@ -2,6 +2,7 @@
 base58
 black
 click
+coincurve
 flake8
 flake8-broken-line
 flake8-bugbear

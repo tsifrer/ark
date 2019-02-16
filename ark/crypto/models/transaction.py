@@ -1,3 +1,4 @@
+from struct import pack
 from binascii import hexlify, unhexlify
 from binary.hex import write_high, write_low
 from binary.unsigned_integer import (
@@ -21,34 +22,38 @@ from ark.crypto.constants import (
 )
 from base58 import b58decode_check, b58encode_check
 from ark.crypto.address import address_from_public_key
+from ark.config import Config
+from hashlib import sha256
+from ark.crypto.utils import verify_hash
 
 
 class Transaction(object):
-    # field name, json field name, required
+    # TODO: make this mapping better
+    # field name, json field name, required, default, to_type
     fields = [
-        ('version', 'version', False),
-        ('network', 'network', False),
-        ('type', 'type', True),
-        ('timestamp', 'timestamp', True),
-        ('sender_public_key', 'senderPublicKey', True),
-        ('fee', 'fee', True),
-        ('amount', 'amount', True),
-        ('expiration', 'expiration', False),
-        ('recipient_id', 'recipientId', False),
-        ('asset', 'asset', False),
-        ('vendor_field', 'vendorField', False),
-        ('vendor_field_hex', 'vendorFieldHex', False),
-        ('id', 'id', False),
-        ('signature', 'signature', False),
-        ('second_signature', 'secondSignature', False),
-        ('sign_signature', 'signSignature', False),
-        ('signatures', 'signatures', False),
-        ('block_id', 'blockId', False),
-        ('sequence', 'sequence', False),
-        ('timelock', 'timelock', False),
-        ('timelock_type', 'timelockType', False),
-        ('ipfs_hash', 'ipfsHash', False),
-        ('payments', 'payments', False),
+        ('version', 'version', False, None, None),
+        ('network', 'network', False, None, None),
+        ('type', 'type', True, None, None),
+        ('timestamp', 'timestamp', True, None, None),
+        ('sender_public_key', 'senderPublicKey', True, None, None),
+        ('fee', 'fee', True, 0, int),
+        ('amount', 'amount', True, 0, int),
+        ('expiration', 'expiration', False, None, None),
+        ('recipient_id', 'recipientId', False, None, None),
+        ('asset', 'asset', False, None, None),
+        ('vendor_field', 'vendorField', False, None, None),
+        ('vendor_field_hex', 'vendorFieldHex', False, None, None),
+        ('id', 'id', False, None, None),
+        ('signature', 'signature', False, None, None),
+        ('second_signature', 'secondSignature', False, None, None),
+        ('sign_signature', 'signSignature', False, None, None),
+        ('signatures', 'signatures', False, None, None),
+        ('block_id', 'blockId', False, None, None),
+        ('sequence', 'sequence', False, None, None),
+        ('timelock', 'timelock', False, None, None),
+        ('timelock_type', 'timelockType', False, None, None),
+        ('ipfs_hash', 'ipfsHash', False, None, None),
+        ('payments', 'payments', False, None, None),
     ]
 
     def __init__(self, data):
@@ -56,8 +61,10 @@ class Transaction(object):
             self.deserialize(data)
 
         else:
-            for field, json_field, required in self.fields:
-                value = data.get(json_field)
+            for field, json_field, required, default, to_type in self.fields:
+                value = data.get(json_field, default)
+                if to_type:
+                    value = to_type(value)
                 if required and value is None:
                     raise Exception(
                         'Missing field {}'.format(field)
@@ -139,7 +146,7 @@ class Transaction(object):
             bytes_data += write_bit64(self.amount)
             bytes_data += write_bit8(self.timelock_type)
             bytes_data += write_bit64(self.timelock)
-            bytes_data += hexlify(b58decode_check(self.recipientId))
+            bytes_data += hexlify(b58decode_check(self.recipient_id))
 
         elif self.type == TRANSACTION_TYPE_MULTI_PAYMENT:
             bytes_data += write_bit32(len(self.asset['payments']))
@@ -197,7 +204,7 @@ class Transaction(object):
         if self.type == TRANSACTION_TYPE_TRANSFER:
             self.amount = read_bit64(bytes_data)
             self.expiration = read_bit32(bytes_data, offset=8)
-            self.recipientId = b58encode_check(bytes_data[12 : 21 + 12])
+            self.recipient_id = b58encode_check(bytes_data[12 : 21 + 12])
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
@@ -232,7 +239,7 @@ class Transaction(object):
             }
             keys_num = read_bit8(bytes_data, offset=1)
             start = 3
-            for x in range(keys_num):
+            for _ in range(keys_num):
                 key = hexlify(bytes_data[start : 33 + start])
                 self.asset['multisignature']['keysgroup'].append(key)
                 start += 33
@@ -364,8 +371,93 @@ class Transaction(object):
         # print(self.fee)
         # print(self.amount)
         # print(self.expiration)
-        # print(self.recipientId)
+        # print(self.recipient_id)
         # print(self.asset)
         # print(self.signature)
         # print(self.second_signature)
         # print('---------------')
+
+
+    def get_bytes(self, skip_signature=False, skip_second_signature=False):
+        # TODO: rename to to_bytes which makes more sense than get_bytes
+        if self.version and self.version != 1:
+            raise Exception('Invalid transaction version')  # TODO: better exception
+
+        bytes_data = bytes()
+        bytes_data += write_bit8(self.type)
+        bytes_data += write_bit32(self.timestamp)
+        bytes_data += write_high(self.sender_public_key)
+
+        # Apply a fix for broken type 1 (second signature) and 4 (multi signature)
+        # transactions, which were erroneously calculated with a recipient id,
+        # also apply a fix for all other broken transactions
+        config = Config()
+        is_broken_transaction = self.id in config['exceptions']['transactions']
+        is_broken_type = (
+            self.type == TRANSACTION_TYPE_SECOND_SIGNATURE
+            or self.type == TRANSACTION_TYPE_MULTI_SIGNATURE
+        )
+
+        if not self.recipient_id or (is_broken_transaction or is_broken_type):
+            bytes_data += pack('21x')
+            print('DOING THIS')
+        else:
+            # bytes_data += write_high(hexlify(b58decode_check(self.recipient_id)))
+            bytes_data += b58decode_check(self.recipient_id)
+            print('OR THIS')
+
+        if self.vendor_field_hex:
+            bytes_data += hexlify(self.vendor_field_hex)
+            bytes_data += pack('{}x'.format(64 - len(hexlify(self.vendor_field_hex))))
+        elif self.vendor_field:
+            bytes_data += self.vendor_field
+            bytes_data += pack('{}x'.format(64 - len(self.vendor_field)))
+        else:
+            bytes_data += pack('64x')
+
+        bytes_data += write_bit64(self.amount)
+        bytes_data += write_bit64(self.fee)
+
+        if self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
+            public_key = self.asset['signature']['publicKey']
+            bytes_data += unhexlify(public_key)
+        elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
+            bytes_data += self.asset['delegate']['username'].encode()
+        elif self.type == TRANSACTION_TYPE_VOTE:
+            bytes_data += ''.join(self.asset['votes']).encode()
+        elif self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
+            bytes_data += write_bit8(self.asset['multisignature']['min'])
+            bytes_data += write_bit8(self.asset['multisignature']['lifetime'])
+            bytes_data += ''.join(self.asset['multisignature']['keysgroup']).encode()
+
+        if not skip_signature and self.signature:
+            bytes_data += write_high(self.signature)
+
+        if not skip_second_signature and self.sign_signature:
+            bytes_data += write_high(self.signSignature)
+
+        return bytes_data
+
+    def get_hash(self, skip_signature=False, skip_second_signature=False):
+        # TODO: this lives in crypto package in the javascript world
+        if self.version and self.version != 1:
+            raise Exception('Invalid transaction version')  # TODO: better exception
+
+        transaction_bytes = self.get_bytes(skip_signature, skip_second_signature)
+        return sha256(transaction_bytes).digest()
+
+    def verify(self):
+        if self.version and self.version != 1:
+            return False
+
+        if not self.signature:
+            return False
+
+        transaction_hash = self.get_hash(skip_signature=True, skip_second_signature=True)
+        is_verified = verify_hash(
+            transaction_hash,
+            self.signature,
+            self.sender_public_key,
+        )
+        return is_verified
+

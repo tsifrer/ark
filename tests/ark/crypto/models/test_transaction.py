@@ -1,3 +1,5 @@
+from binascii import hexlify
+
 from ark.crypto.models.transaction import Transaction
 
 # TODO: MOARD TESTS!!!
@@ -6,92 +8,69 @@ from ark.crypto.models.transaction import Transaction
 def test_serialize_correctly_serializes_transaction(
     dummy_transaction, dummy_transaction_hash
 ):
-    block = Transaction(dummy_transaction)
-    serialized = block.serialize()
+    transaction = Transaction(dummy_transaction)
+    serialized = transaction.serialize()
     assert serialized == dummy_transaction_hash
 
 
-# def test_serialize_correctly_serializes_just_the_block(dummy_block, dummy_block_hash):
-#     block = Block(dummy_block)
-#     serialized = block.serialize()
-#     assert serialized == dummy_block_hash
+def test_get_bytes_returns_correct_data():
+    data = {
+        'type': 0,
+        'amount': 1000,
+        'fee': 2000,
+        'recipientId': 'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff',
+        'timestamp': 141738,
+        'asset': {},
+        'senderPublicKey': '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
+        'signature':
+            '618a54975212ead93df8c881655c625544bce8ed7ccdfe6f08a42eecfb1adebd051307be5014bb051617baf7815d50f62129e70918190361e5d4dd4796541b0a',
+        'id': '13987348420913138422',
+    }
+
+    transaction = Transaction(data)
+    bytes_data = transaction.get_bytes()
+    assert isinstance(bytes_data, bytes)
+    assert len(bytes_data) == 202
+    assert hexlify(bytes_data) == b'00aa2902005d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09171dfc69b54c7fe901e91d5a9ab78388645e2427ea00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e803000000000000d007000000000000618a54975212ead93df8c881655c625544bce8ed7ccdfe6f08a42eecfb1adebd051307be5014bb051617baf7815d50f62129e70918190361e5d4dd4796541b0a'
 
 
-# def test_creating_a_block_from_hex_header_only_correctly_sets_all_attributes(
-#     dummy_block_hash
-# ):
-#     block = Block(dummy_block_hash)
-#     assert block.version == 0
-#     assert block.timestamp == 24760440
-#     assert block.height == 2243161
-#     assert block.previous_block_hex == b'2b324b8b33a85802'
-#     assert block.previous_block == 3112633353705641986
-#     assert block.number_of_transactions == 7
-#     assert block.total_amount == 3890300
-#     assert block.total_fee == 70000000
-#     assert block.reward == 200000000
-#     assert block.payload_length == 224
-#     assert block.payload_hash == (
-#         b'3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
-#     )
-#     assert block.generator_public_key == (
-#         b'020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325'
-#     )
-#     assert block.block_signature == (
-#         b'3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022'
-#         b'0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
-#     )
-#     assert block.id == 7176646138626297930
-#     assert block.id_hex == b'639891a3bb7fd04a'
-#     assert getattr(block, 'transactions', None) is None
+
+def test_bla():
+    data = {
+        'type': 0,
+        'amount': 1000,
+        'fee': 2000,
+        'recipientId': 'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff',
+        'timestamp': 141738,
+        'asset': {},
+        'senderPublicKey': '03d04acca0ad922998d258438cc453ce50222b0e761ae9a499ead6a11f3a44b70b',
+        'signature':
+            '3045022100f5c4ec7b3f9a2cb2e785166c7ae185abbff0aa741cbdfe322cf03b914002efee02206261cd419ea9074b5d4a007f1e2fffe17a38338358f2ac5fcc65d810dbe773fe',
+        # 'id': '13987348420913138422',
+    }
+
+    transaction = Transaction(data)
+    print(transaction.verify())
 
 
-# def test_creating_a_block_from_hex_sets_all_attributes_including_transactions(
-#     dummy_block, dummy_block_full_hash
-# ):
-#     block = Block(dummy_block_full_hash)
-#     assert block.version == 0
-#     assert block.timestamp == 24760440
-#     assert block.height == 2243161
-#     assert block.previous_block_hex == b'2b324b8b33a85802'
-#     assert block.previous_block == 3112633353705641986
-#     assert block.number_of_transactions == 7
-#     assert block.total_amount == 3890300
-#     assert block.total_fee == 70000000
-#     assert block.reward == 200000000
-#     assert block.payload_length == 224
-#     assert block.payload_hash == (
-#         b'3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
-#     )
-#     assert block.generator_public_key == (
-#         b'020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325'
-#     )
-#     assert block.block_signature == (
-#         b'3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022'
-#         b'0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
-#     )
-#     assert block.id == 7176646138626297930
-#     assert block.id_hex == b'639891a3bb7fd04a'
-#     assert len(block.transactions) == 7
-
-#     for transaction, expected in zip(block.transactions, dummy_block['transactions']):
-#         assert transaction.version == 1
-#         assert transaction.network == 30
-#         assert transaction.type == expected['type']
-#         assert transaction.timestamp == expected['timestamp']
-#         assert transaction.sender_public_key == expected['senderPublicKey'].encode(
-#             'utf-8'
-#         )
-#         assert transaction.fee == expected['fee']
-#         assert transaction.amount == expected['amount']
-#         assert transaction.asset == expected['asset']
 
 
-# def test_get_id_hex_returns_correct_hex(dummy_block):
-#     block = Block(dummy_block)
-#     assert block.get_id_hex() == b'639891a3bb7fd04a'
+# def test_omg():
+#     data = {
+#         'version': 1,
+#         'network': 30,
+#         'type': 0,
+#         'timestamp': 45021209,
+#         'senderPublicKey': '03d3fdad9c5b25bf8880e6b519eb3611a5c0b31adebc8455f0e096175b28321aff',
+#         'fee': 10000000,
+#         'amount': 5100000000,
+#         'expiration': 0,
+#         'recipientId': 'D8vKwaX6ksU3mWg7tJDm7v1dbxy4cMo4dh',
+#         'signature': '3045022100f6914de508a19326148f3774456508270607fc2bee6c56acb2f7e2eb6999179c022043f9005f7d254bb0ecff2a14b035fc8aa83bd0e55135ff8c3181993606f2efe5',
+#         'id': '35904cf41b4df8f2e45d1aac366eca8fce25118d19b94333502cc66973adc815',
+#         'blockId': '10172429794310518146'
+#       }
 
-
-# def test_get_id_returns_correct_id(dummy_block):
-#     block = Block(dummy_block)
-#     assert block.get_id() == 7176646138626297930
+#     transaction = Transaction(data)
+#     print(len(transaction.get_bytes()))
+#     print(transaction.verify())

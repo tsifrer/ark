@@ -3,11 +3,15 @@ from ark.settings import PLUGINS
 
 from .state_machine import BlockchainMachine
 from .utils import is_block_exception
-
+from ark.crypto import time
 
 BLOCK_ACCEPTED = 'accepted'
 BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED = 'discarded_but_can_be_broadcasted'
 BLOCK_REJECTED = 'rejected'
+
+
+# def verify_block(block):
+
 
 
 class Blockchain(IBlockchain):
@@ -41,9 +45,9 @@ class Blockchain(IBlockchain):
 
     def is_synced(self):
         block = self.database.get_last_block()
-        time = self.app.time.get_time()
+        current_time = time.get_time()
         blocktime = self.app.config.get_milestone(block.height)['blocktime']
-        return (time - block.timestamp) < (3 * blocktime)
+        return (current_time - block.timestamp) < (3 * blocktime)
 
 
 
@@ -58,12 +62,16 @@ class Blockchain(IBlockchain):
 
 
     def _handle_accepted_block(self, block):
+        # TODO: implement thiiiiis
         pass
 
 
     def process_block(self, block):
         if is_block_exception(self.app, block):
             return self._handle_exception_block(block)
+
+        print('VERIFIED', block.verify())
+        print(block.number_of_transactions)
             
 
 
