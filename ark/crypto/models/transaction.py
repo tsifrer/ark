@@ -400,11 +400,9 @@ class Transaction(object):
 
         if not self.recipient_id or (is_broken_transaction or is_broken_type):
             bytes_data += pack('21x')
-            print('DOING THIS')
         else:
             # bytes_data += write_high(hexlify(b58decode_check(self.recipient_id)))
             bytes_data += b58decode_check(self.recipient_id)
-            print('OR THIS')
 
         if self.vendor_field_hex:
             bytes_data += hexlify(self.vendor_field_hex)
@@ -438,26 +436,21 @@ class Transaction(object):
 
         return bytes_data
 
-    def get_hash(self, skip_signature=False, skip_second_signature=False):
-        # TODO: this lives in crypto package in the javascript world
-        if self.version and self.version != 1:
-            raise Exception('Invalid transaction version')  # TODO: better exception
-
-        transaction_bytes = self.get_bytes(skip_signature, skip_second_signature)
-        return sha256(transaction_bytes).digest()
-
     def verify(self):
         if self.version and self.version != 1:
             return False
 
         if not self.signature:
+            print('missing signature')
             return False
 
-        transaction_hash = self.get_hash(skip_signature=True, skip_second_signature=True)
+        transaction_bytes = self.get_bytes(
+            skip_signature=True,
+            skip_second_signature=True
+        )
         is_verified = verify_hash(
-            transaction_hash,
+            transaction_bytes,
             self.signature,
             self.sender_public_key,
         )
         return is_verified
-
