@@ -36,6 +36,8 @@ class Peer(object):
     def _get(self, url, params=None, timeout=None):
         scheme = 'https' if self.port == 443 else 'http'
         full_url = '{}://{}:{}{}'.format(scheme, self.ip, self.port, url)
+        print(full_url)
+        print(params)
         response = requests.get(
             full_url,
             params=params,
@@ -62,7 +64,8 @@ class Peer(object):
     def has_common_blocks(self, block_ids):
         print(block_ids)
         params = {
-            'ids': '11736050606814390998'#block_ids,
+            # 'ids': '11736050606814390998'#block_ids,
+            'ids': block_ids,
         }
 
         # TODO: This might not work as if only one block_id is passed in, othe relays
@@ -81,5 +84,4 @@ class Peer(object):
         }
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
-        print(blocks)
         return [Block(block) for block in blocks]

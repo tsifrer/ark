@@ -405,8 +405,8 @@ class Transaction(object):
             bytes_data += b58decode_check(self.recipient_id)
 
         if self.vendor_field_hex:
-            bytes_data += hexlify(self.vendor_field_hex)
-            bytes_data += pack('{}x'.format(64 - len(hexlify(self.vendor_field_hex))))
+            bytes_data += unhexlify(self.vendor_field_hex)
+            bytes_data += pack('{}x'.format(64 - len(unhexlify(self.vendor_field_hex))))
         elif self.vendor_field:
             bytes_data += self.vendor_field
             bytes_data += pack('{}x'.format(64 - len(self.vendor_field)))
@@ -441,7 +441,6 @@ class Transaction(object):
             return False
 
         if not self.signature:
-            print('missing signature')
             return False
 
         transaction_bytes = self.get_bytes(

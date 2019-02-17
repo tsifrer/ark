@@ -54,28 +54,45 @@ class Block(object):
 
             if self.transactions:
                 transactions = []
-                for index, transaction_data in enumerate(self.transactions):
-                    # override blockId and timestamp so all transactions match
-                    # with the current block
-                    # TODO: these next two lines break tests
-                    transaction_data['blockId'] = self.id
-                    transaction_data['timestamp'] = self.timestamp
-                    # add sequence to keep the data in sequence when storing it to db
-                    transaction_data['sequence'] = index
+                for transaction_data in self.transactions:
                     transactions.append(Transaction(transaction_data))
                 self.transactions = transactions
-                self.number_of_transactions = len(self.transactions)
 
-            if self.height == 1:
-                # For genesis blocks, we should not recalculate the id as it is, or all
-                # the current ID's are calculated wrong.
-                # The comment from the core above this "fix" describes the problem
-                # perfectly:
-                # "// TODO genesis block calculated id is wrong for some reason"
-                self.id_hex = Block.to_bytes_hex(self.id)
-            else:
-                self.id_hex = self.get_id_hex()
-                self.id = self.get_id()
+        if self.transactions:
+            transactions = []
+            for index, transaction in enumerate(self.transactions):
+                # override blockId and timestamp so all transactions match
+                # with the current block
+                transaction.block_id = self.id
+                # TODO: these next line breaks tests # THIS LOOKS LIKE IT'S A LIE
+                # AS NOTHING WORKS CORRECTLY IF WE OVERRIDE TRANSACTION TIMESTAMP
+                # WITH BLOCK TIMESTAMP
+                # transaction.timestamp = self.timestamp
+                # add sequence to keep the data in sequence when storing it to db
+                transaction.sequence = index
+        self.number_of_transactions = len(self.transactions)
+
+        if self.height == 1:
+            # For genesis blocks, we should not recalculate the id as it is, or all
+            # the current ID's are calculated wrong.
+            # The comment from the core above this "fix" describes the problem
+            # perfectly:
+            # "// TODO genesis block calculated id is wrong for some reason"
+            self.id_hex = Block.to_bytes_hex(self.id)
+        else:
+            self.id_hex = self.get_id_hex()
+            self.id = self.get_id()
+        # // order of transactions messed up in mainnet V1
+        # // TODO: move this to network constants exception using block ids
+        # if (
+        #     this.transactions &&
+        #     this.data.numberOfTransactions === 2 &&
+        #     (this.data.height === 3084276 || this.data.height === 34420)
+        # ) {
+        #     const temp = this.transactions[0];
+        #     this.transactions[0] = this.transactions[1];
+        #     this.transactions[1] = temp;
+        # }
 
             # print('IIIIDDD', self.id)
             # print(self.id_hex)
@@ -149,7 +166,6 @@ class Block(object):
         transaction_lenghts = []
         for x in range(self.number_of_transactions):
             transaction_lenghts.append(read_bit32(bytes_data, offset=x * 4))
-
         self.transactions = []
         start = 4 * self.number_of_transactions
         for trans_len in transaction_lenghts:
@@ -180,11 +196,13 @@ class Block(object):
 
         remaining_bytes = bytes_data[signature_to:]
         header_only = header_only or len(remaining_bytes) == 0
+        self.transactions = []
         if not header_only:
             self._deserialize_transactions(remaining_bytes)
 
-        self.id_hex = self.get_id_hex()
-        self.id = self.get_id()
+        # TODO: setting id_hex and id is done in constructor
+        # self.id_hex = self.get_id_hex()
+        # self.id = self.get_id()
         # TODO: implement edge cases (outlookTable thingy) where some block ids are broken
 
     def verify_signature(self):
@@ -237,6 +255,7 @@ class Block(object):
             trans for trans in self.transactions if not trans.verify()
         ]
         if len(invalid_transactions) > 0:
+            print(invalid_transactions[0].__dict__)
             errors.append('One or more transactions are not verified')
 
         # Check that number of transactions and block.number_of_transactions match
