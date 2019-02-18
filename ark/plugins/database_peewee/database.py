@@ -8,6 +8,7 @@ from ark.crypto.models.block import Block as CryptoBlock
 from .models.block import Block
 from .models.round import Round
 from .models.transaction import Transaction
+from .wallet_manager import WalletManager
 
 
 # TODO: inherit from interface
@@ -19,10 +20,7 @@ class Database(object):
     def __init__(self, app):
         super().__init__()
         self.app = app
-        # self.loop = loop
 
-    def connect(self):
-        # TODO:
         self.db = PostgresqlDatabase(
             database='postgres',
             user='postgres',
@@ -36,6 +34,9 @@ class Database(object):
         Block._meta.database = self.db
         Transaction._meta.database = self.db
         Round._meta.database = self.db
+
+        self.wallets = WalletManager(self.db)
+
 
     def get_last_block(self):
         """Get the last block

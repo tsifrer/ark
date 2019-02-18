@@ -12,6 +12,17 @@ from peewee import (
 from .block import Block
 
 
+class BytesField(BlobField):
+    """BlobField adapted to our needs
+    Default BlobField returns memoryview when getting data from the db. We always want
+    bytes.
+    """
+    def adapt(self, value):
+        if value and isinstance(value, memoryview):
+            return value.tobytes()
+        return value
+
+
 class Transaction(Model):
     id = CharField(max_length=64, primary_key=True)
     version = SmallIntegerField()
@@ -21,10 +32,10 @@ class Transaction(Model):
     sender_public_key = CharField(max_length=66, index=True)
     recipient_id = CharField(max_length=66, null=True, index=True)
     type = SmallIntegerField()
-    vendor_field_hex = BlobField(null=True)
+    vendor_field_hex = BytesField(null=True)
     amount = BigIntegerField()
     fee = BigIntegerField()
-    serialized = BlobField()
+    serialized = BytesField()
 
     class Meta:
         table_name = 'transactions'

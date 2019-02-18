@@ -59,7 +59,6 @@ class Transaction(object):
     def __init__(self, data):
         if isinstance(data, (str, bytes)):
             self.deserialize(data)
-
         else:
             for field, json_field, required, default, to_type in self.fields:
                 value = data.get(json_field, default)

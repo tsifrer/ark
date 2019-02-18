@@ -3,7 +3,7 @@ from ark.settings import PLUGINS
 
 from .state_machine import BlockchainMachine
 from .utils import is_block_exception
-from ark.crypto import time
+from ark.crypto import time, slots
 
 BLOCK_ACCEPTED = 'accepted'
 BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED = 'discarded_but_can_be_broadcasted'
@@ -61,17 +61,40 @@ class Blockchain(IBlockchain):
         return self._handle_accepted_block(block)
 
 
+
+    def _hande_verification_failed(self, block):
+        # TODO:
+        # this.blockchain.transactionPool.purgeSendersWithInvalidTransactions(this.block);
+        return BLOCK_REJECTED
+
+
     def _handle_accepted_block(self, block):
         # TODO: implement thiiiiis
         pass
+
+
+
+    def _validate_generator(self, block):
+        delegates = self.database.get_active_delegates(block.height)
+        slot_number = slots.get_slot_number(block.height, block.timestamp)
+        forging_delegate = delegates[slot_number % len(delegates)]
+        # generator_username = 
+
+
 
 
     def process_block(self, block):
         if is_block_exception(self.app, block):
             return self._handle_exception_block(block)
 
-        print('VERIFIED', block.verify())
-        print(block.number_of_transactions)
-            
+        is_verified, _ = block.verify()
+        if not is_verified:
+            return self._hande_verification_failed(block)
+
+
+
+
+
+
 
 

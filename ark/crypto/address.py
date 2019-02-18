@@ -1,9 +1,12 @@
 import hashlib
+import re
 from binascii import unhexlify
 
 from base58 import b58encode_check
 
 from binary.unsigned_integer import write_bit8
+
+from ark.config import Config
 
 
 def address_from_public_key(public_key, network_version=None):
@@ -16,18 +19,14 @@ def address_from_public_key(public_key, network_version=None):
     Returns:
         bytes:
     """
-    # TODO: also check if public key matches the regex, same as in core
-    # ```
-    #      const pubKeyRegex = /^[0-9A-Fa-f]{66}$/;
-    #    if (!pubKeyRegex.test(publicKey)) {
-    #        throw new Error(`publicKey '${publicKey}' is invalid`);
-    #   }
-    #    ```
-    # TODO: resolve the network vesion to get it from the config somehow
-    # if not network_version:
-    #     network = get_network()
-    #     network_version = network['version']
+    match = re.fullmatch('^[0-9A-Fa-f]{66}$', public_key)
+    if not match:
+        raise Exception('Invalid public key')  # TODO: better exception
+
+    if not network_version:
+        config = Config()
+        network_version = config['network']['pubKeyHash']
 
     ripemd160 = hashlib.new('ripemd160', unhexlify(public_key.encode()))
-    seed = write_bit8(network_version) + ripemd160.digest()
-    return b58encode_check(seed).decode()
+    payload = write_bit8(network_version) + ripemd160.digest()
+    return b58encode_check(payload).decode()

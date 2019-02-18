@@ -56,6 +56,7 @@ class Block(Model):
         Returns a tuple containing:
         (total number of transactions, total fee, total amount, height)
         """
+        # TODO: check if this actually returns correct values
         stats = Block.select(
             fn.SUM(Block.number_of_transactions),
             fn.SUM(Block.total_fee),

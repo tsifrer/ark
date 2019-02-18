@@ -178,6 +178,11 @@ class BlockchainMachine(Machine):
 
             # TODO: the rest of the stuff
 
+            # Rebuild wallets
+            self.db.wallets.build()
+
+
+
             self.set_started()
         except Exception as e:
             raise e  # TODO:
