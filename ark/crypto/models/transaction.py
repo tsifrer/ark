@@ -211,23 +211,23 @@ class Transaction(object):
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
-            username_length = read_bit8(bytes_data)
+            username_length = read_bit8(bytes_data) // 2
+            username_end = username_length + 1
             self.asset['delegate'] = {
-                'username': hexlify(bytes_data[1:username_length])
+                'username': bytes_data[1:username_end]
             }
-            return bytes_data[username_length:]
+            return bytes_data[username_end:]
 
         elif self.type == TRANSACTION_TYPE_VOTE:
             vote_length = read_bit8(bytes_data)
             self.asset['votes'] = []
 
             start = 1
-            for x in range(vote_length):
+            for _ in range(vote_length):
                 vote = hexlify(bytes_data[start : 34 + start])
                 operator = '+' if vote[1] == '1' else '-'
                 self.asset['votes'].append('{}{}'.format(operator, vote[2:]))
                 start += 34
-
             return bytes_data[start:]
 
         elif self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
@@ -287,8 +287,8 @@ class Transaction(object):
         if len(bytes_data) > 0:
             signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
             self.signature = hexlify(bytes_data[:signature_length])
+            bytes_data = bytes_data[signature_length:]
 
-        bytes_data = bytes_data[signature_length:]
         # Second signature
         if len(bytes_data) > 0:
             is_multi_sig = read_bit8(bytes_data) == 255

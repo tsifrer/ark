@@ -1,7 +1,7 @@
 from ark.crypto import slots
 
 
-def is_block_chained(app, previous_block, next_block):
+def is_block_chained(previous_block, next_block):
     follows_previous = next_block.previous_block == previous_block.id
     is_plus_one = next_block.height == previous_block.height + 1
 

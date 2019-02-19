@@ -63,8 +63,7 @@ class BlockchainMachine(Machine):
         blocks = self.blockchain.p2p.download_blocks(last_block.height)
 
         if blocks:
-            print(is_block_chained(self.app, last_block, blocks[0]))
-            is_chained = is_block_chained(self.app, last_block, blocks[0]) or is_block_exception(self.app, blocks[0])
+            is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(self.app, blocks[0])
             if is_chained:
                 print('Downloaded {} new blocks accounting for a total of {} transactions'.format(
                     len(blocks), sum([x.number_of_transactions for x in blocks])

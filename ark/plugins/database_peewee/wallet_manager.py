@@ -15,6 +15,8 @@ from .models.block import Block
 from .models.transaction import Transaction
 
 
+# Wallets are stored in memory, as they're rebuilt every time you startup the relay
+# so for now there's no valid need to store them in DB.
 class Wallet(object):
     # TODO: improve this
     def __init__(self, data):
