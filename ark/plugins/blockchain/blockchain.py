@@ -54,18 +54,15 @@ class Blockchain(IBlockchain):
         blocktime = self.app.config.get_milestone(block.height)['blocktime']
         return (current_time - block.timestamp) < (3 * blocktime)
 
-
-
-
     def _handle_exception_block(self, block):
         forged_block = self.database.get_block_by_id(block.id)
         if forged_block:
             return BLOCK_REJECTED
 
-        print('Block {} ({}) forcibly accecpted'.format(forged_block.height, forged_block.id))
+        print('Block {} ({}) forcibly accecpted'.format(
+            forged_block.height, forged_block.id
+        ))
         return self._handle_accepted_block(block)
-
-
 
     def _hande_verification_failed(self, block):
         # TODO:
@@ -164,6 +161,17 @@ class Blockchain(IBlockchain):
             )
             return BLOCK_REJECTED
 
+    def _block_contains_forged_transactions(self, block):
+        if len(block.transactions) > 0:
+            transaction_ids = [transaction.id for transaction in block.transactions]
+            forged_ids = self.database.get_forged_transaction_ids(transaction_ids)
+            if len(forged_ids) > 0:
+                print(
+                    'Block {} disregarded, because it contains already forged transactions'
+                )
+                return True
+        return False
+
     def process_block(self, block):
         if is_block_exception(self.app, block):
             return self._handle_exception_block(block)
@@ -179,7 +187,14 @@ class Blockchain(IBlockchain):
         if not is_chained:
             return self._handle_unchained_block(block, last_block, is_valid_generator)
 
+        if not is_valid_generator:
+            return BLOCK_REJECTED
 
+        contains_forged_transactions = self._block_contains_forged_transactions(block)
+        if contains_forged_transactions:
+            return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
+
+        return self._handle_accepted_block(block)
 
 
 

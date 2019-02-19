@@ -187,7 +187,13 @@ class Database(object):
     def get_recent_block_ids(self):
         """Get 10 most recent block ids
         """
-        blocks = Block.select(Block.id).order_by(Block.timestamp.desc()).limit(10).tuples()
+        blocks = (
+            Block
+            .select(Block.id)
+            .order_by(Block.timestamp.desc())
+            .limit(10)
+            .tuples()
+        )
         return [x[0] for x in blocks]
 
     def get_block_by_id(self, block_id):
@@ -197,3 +203,11 @@ class Database(object):
             return None
         else:
             return CryptoBlock(block)
+
+    def get_forged_transaction_ids(self, transaction_ids):
+        transactions = (
+            Transaction
+            .select(Transaction.id)
+            .where(Transaction.id.in_(transaction_ids))
+        )
+        return [transaction.id for transaction in transactions]
