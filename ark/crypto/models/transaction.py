@@ -24,7 +24,7 @@ from base58 import b58decode_check, b58encode_check
 from ark.crypto.address import address_from_public_key
 from ark.config import Config
 from hashlib import sha256
-from ark.crypto.utils import verify_hash
+from ark.crypto.utils import verify_hash, is_transaction_exception
 
 
 class Transaction(object):
@@ -390,14 +390,12 @@ class Transaction(object):
         # Apply a fix for broken type 1 (second signature) and 4 (multi signature)
         # transactions, which were erroneously calculated with a recipient id,
         # also apply a fix for all other broken transactions
-        config = Config()
-        is_broken_transaction = self.id in config['exceptions']['transactions']
         is_broken_type = (
             self.type == TRANSACTION_TYPE_SECOND_SIGNATURE
             or self.type == TRANSACTION_TYPE_MULTI_SIGNATURE
         )
 
-        if not self.recipient_id or (is_broken_transaction or is_broken_type):
+        if not self.recipient_id or (is_transaction_exception(self) or is_broken_type):
             bytes_data += pack('21x')
         else:
             # bytes_data += write_high(hexlify(b58decode_check(self.recipient_id)))
@@ -452,3 +450,28 @@ class Transaction(object):
             self.sender_public_key,
         )
         return is_verified
+
+
+
+    def verify_second_signature(self, public_key):
+        if self.version and self.version != 1:
+            transaction_bytes = self.get_bytes()
+            second_signature = self.second_signature
+        else:
+            transaction_bytes = self.get_bytes(skip_second_signature=True)
+            second_signature = self.sign_signature
+
+        if not second_signature:
+            return False
+
+        is_verified = verify_hash(
+            transaction_bytes,
+            second_signature,
+            public_key,
+        )
+        return is_verified
+
+
+
+
+

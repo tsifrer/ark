@@ -2,8 +2,9 @@ from ark.interfaces.blockchain import IBlockchain
 from ark.settings import PLUGINS
 
 from .state_machine import BlockchainMachine
-from .utils import is_block_exception, is_block_chained
+from .utils import is_block_chained
 from ark.crypto import time, slots
+from ark.crypto.utils import is_block_exception
 
 BLOCK_ACCEPTED = 'accepted'
 BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED = 'discarded_but_can_be_broadcasted'
@@ -70,9 +71,14 @@ class Blockchain(IBlockchain):
         return BLOCK_REJECTED
 
 
+
+
+
     def _handle_accepted_block(self, block):
-        # TODO: implement thiiiiis
-        pass
+        self.database.apply_block(block)
+
+
+
 
 
 

@@ -10,33 +10,15 @@ from ark.crypto.constants import (
     TRANSACTION_TYPE_VOTE,
 )
 from ark.crypto.models.transaction import Transaction as CryptoTransaction
+from ark.crypto.models.wallet import Wallet
+from ark.crypto.utils import is_transaction_exception
 
 from .models.block import Block
 from .models.transaction import Transaction
 
 
-# Wallets are stored in memory, as they're rebuilt every time you startup the relay
-# so for now there's no valid need to store them in DB.
-class Wallet(object):
-    # TODO: improve this
-    def __init__(self, data):
-        fields = [
-            ('address', None),
-            ('public_key', None),
-            ('second_public_key', None),
-            ('multisignature', None),
-            ('vote', None),
-            ('username', None),
-            ('balance', 0),
-            ('vote_balance', 0),
-            ('produced_blocks', 0),
-            ('missed_blocks', 0),
-            ('forged_fees', 0),
-            ('forged_rewards', 0),
-        ]
-        for field, default in fields:
-            setattr(self, field, data.get(field, default))
-
+# Wallets are stored in memory, as they're rebuilt every time you startup the relay.
+# For now there's no valid need to store them in DB yet.
 
 # TODO: Extensive tests
 class WalletManager(object):
@@ -48,8 +30,7 @@ class WalletManager(object):
         # TODO: Terrible names
         self._wallets = {}
         self._public_key_map = {}
-        # self._by_public_key = {}
-        # self._by_username = {}
+        self._username_map = {}
 
         config = Config()
         self._genesis_addresses = set()
@@ -187,6 +168,7 @@ class WalletManager(object):
             wallet = self.find_by_public_key(transaction.sender_public_key)
             crypto_transaction = CryptoTransaction(transaction.serialized)
             wallet.username = crypto_transaction.asset['delegate']['username']
+            self._username_map[wallet.username.lower()] = wallet.address
 
         # Calculate forged blocks
         forged_blocks = (
@@ -276,3 +258,129 @@ class WalletManager(object):
 
     def is_genesis_address(self, address):
         return address in self._genesis_addresses
+
+    def is_delegate(self, public_key):
+        """Checks if a given publick_key is a registered delegate
+        """
+        wallet = self.find_by_public_key(public_key)
+        is_delegate = self._username_map.get(wallet.username)
+        return True if is_delegate else False
+
+    def _update_vote_balances(self, sender, recipient, transaction, revert=False):
+        if transaction.type == TRANSACTION_TYPE_VOTE:
+            vote = transaction.asset['votes'][0]
+            delegate = self.find_by_public_key(vote[1:])
+            if vote.startswith('+'):
+                if revert:
+                    delegate.vote_balance -= sender.balance
+                else:
+                    delegate.vote_balance += sender.balance
+            else:
+                if revert:
+                    delegate.vote_balance += transaction.balance
+                else:
+                    delegate.vote_balance -= transaction.balance
+
+        else:
+            # Update vote balance of the sender's delegate
+            if sender.vote:
+                delegate = self.find_by_public_key(sender.vote)
+                total = transaction.amount + transaction.fee
+                if revert:
+                    delegate.vote_balance += total
+                else:
+                    delegate.vote_balance -= total
+
+            # Update vote balance of recipient's delegate
+            if recipient.vote:
+                delegate = self.find_by_public_key(recipient.vote)
+                if revert:
+                    delegate.vote_balance -= transaction.amount
+                else:
+                    delegate.vote_balance += transaction.amount
+
+    def apply_transaction(self, transaction, block):
+        if (
+            transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION
+            and transaction.asset['delegate']['username']
+        ):
+            # TODO: exception
+            raise Exception(
+                "Can't apply transaction {}: delegate name already taken".format(
+                    transaction.id
+                )
+            )
+
+        elif (
+            transaction.type == TRANSACTION_TYPE_VOTE
+            and self.is_delegate(transaction.asset['votes'][0][1:])
+        ):
+            # TODO: exception
+            raise Exception(
+                "Can't apply transaction {}: delegate {} does not exist".format(
+                    transaction.id,
+                    transaction.asset.votes[0][1:]
+                )
+            )
+        elif transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
+            # TODO: no idea why we need to do this. It seems like a flaw, as if
+            # there was something in here, the serialized transaction will not match
+            # with the newly serialized one.
+            transaction.recipient_id = None
+
+        sender = self.find_by_public_key(transaction.sender_public_key)
+        # Handle transaction exceptions and verify that we can apply the transaction
+        # to the sender
+        if is_transaction_exception(transaction):
+            print(
+                'Transaction {} forcibly applied because it has been added as an exception.'.format(
+                    self.id
+                )
+            )
+        else:
+            can_apply, errors = sender.can_apply(transaction, block)
+            if not can_apply:
+                print("Can't apply transaction {} from sender due to {}".format(
+                    transaction.id, sender.address, errors
+                ))
+
+        sender.apply_transaction_to_sender(transaction)
+
+        # If transaction is a delegate registration, add sender wallet to the
+        # _username_map
+        if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
+            self._username_map[sender.username] = sender.address
+
+        recipient = self.find_by_address(transaction.recipient_id)
+        if transaction.type == TRANSACTION_TYPE_TRANSFER:
+            recipient.apply_transaction_to_recipient(transaction)
+
+        self._update_vote_balances(sender, recipient, transaction)
+
+    # TODO: find a better name for this function
+    def apply_block(self, block):
+        # If it's not a genesis block and can't find a delegate, raise an exception
+        if (
+            block.height != 1
+            and block.generator_public_key not in self._public_key_map
+        ):
+            # TODO: exception
+            raise Exception('Could not find a delegate with public key: {}'.format(block.generator_public_key))
+
+        delegate = self.find_by_public_key(block.generator_public_key)
+
+        # TODO: Wrap the code below in try except and do a reverse action
+        # Be careful to do it correctly as the Ark Core code doesn't do it correctly
+        # at the moment (read the comments in the Ark Core catch block)
+        for transaction in block.transactions:
+            self.apply_transaction(transaction, block)
+
+        applied = delegate.appy_block(block)
+
+        # If the block has been applied to the delegate, the balance is increased
+        # by reward + totalFee, in which case the vote balance of the delegate's
+        # delegate has to be updated.
+        if applied and delegate.vote:
+            voted_delegate = self.find_by_public_key(delegate.vote)
+            voted_delegate.balance += block.reward
+            voted_delegate.balance += block.total_fee

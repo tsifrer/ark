@@ -2,7 +2,8 @@ import json
 # from transitions import Machine
 from transitions.extensions import HierarchicalMachine as Machine
 from ark.crypto.models.block import Block
-from .utils import is_block_chained, is_block_exception
+from .utils import is_block_chained
+from ark.crypto.utils import is_block_exception
 
 STATE_STOPPED = 'stopped'
 STATE_STARTING = 'starting'

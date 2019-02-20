@@ -78,6 +78,20 @@ class Database(object):
                 return
 
 
+
+
+    def apply_block(self, block):
+        # TODO: implement this properly
+        self.wallets.apply_block(block)
+
+        # TODO: wat?
+        # if (this.blocksInCurrentRound) {
+        #     this.blocksInCurrentRound.push(block);
+        # }
+
+
+
+
     def verify_blockchain(self):
         """ Verify that the blockchain stored in the db is not corrupted
 

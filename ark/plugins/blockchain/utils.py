@@ -10,8 +10,3 @@ def is_block_chained(previous_block, next_block):
     is_after_previous_slot = previous_slot < next_slot
 
     return follows_previous and is_plus_one and is_after_previous_slot
-
-
-def is_block_exception(app, block):
-    exception_blocks = app.config['exceptions'].get('blocks', [])
-    return block.id in exception_blocks
