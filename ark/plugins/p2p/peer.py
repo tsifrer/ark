@@ -65,7 +65,7 @@ class Peer(object):
         print(block_ids)
         params = {
             # 'ids': '11736050606814390998'#block_ids,
-            'ids': block_ids,
+            'ids': ','.join(block_ids),
         }
 
         # TODO: This might not work as if only one block_id is passed in, othe relays
@@ -84,4 +84,5 @@ class Peer(object):
         }
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
+        print(blocks)
         return [Block(block) for block in blocks]

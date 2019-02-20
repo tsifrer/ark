@@ -1,9 +1,10 @@
-import math
 from hashlib import sha256
 
 from peewee import PostgresqlDatabase
 
+from ark.config import Config
 from ark.crypto.models.block import Block as CryptoBlock
+from ark.crypto.utils import calculate_round
 
 from .models.block import Block
 from .models.round import Round
@@ -37,7 +38,6 @@ class Database(object):
 
         self.wallets = WalletManager(self.db)
 
-
     def get_last_block(self):
         """Get the last block
         Returns None if block can't be found.
@@ -47,9 +47,13 @@ class Database(object):
         except Block.DoesNotExist:
             return None
         else:
-            return CryptoBlock(block)
+            crypto_block = CryptoBlock(block)
+            print('From db: {}'.format(block.__dict__))
+            print('Last from db {} == {}'.format(block.id, crypto_block.id))
+            return crypto_block
 
     def save_block(self, block):
+        print('Saving block {}'.format(block.id))
         if not isinstance(block, CryptoBlock):
             raise Exception(
                 'Block must be a type of crypto.models.Block'
@@ -58,6 +62,7 @@ class Database(object):
         with self.db.atomic() as db_txn:
             try:
                 db_block = Block.from_crypto(block)
+                print('Saving block from crypto {}'.format(db_block.id))
                 db_block.save(force_insert=True)
             except Exception as e:  # TODO: Make this not so broad!
                 print('Got an exception while saving a block')
@@ -79,6 +84,45 @@ class Database(object):
 
 
 
+    def apply_round(self, height):
+        next_height = 1 if height == 1 else height + 1
+        current_round, _, max_delegates = calculate_round(next_height)
+        if next_height % max_delegates == 1:
+            # TODO: Apparently forger can apply a round multiple times, so we need to
+            # make sure that it only applies it once! Look at the code in ark core
+            # to get the bigger picture of how it's done there
+            print('Starting round {}'.format(current_round))
+
+            # TODO: This is to update missed blocks on the wallet
+            # self.update_delegate_stats(self.forging_delegates)
+            # TODO: Save wallets to database
+            # self.save_wallets
+
+            # Get the active delegate list from in-memory wallet manager
+            delegates = self.db.wallets.load_active_delegate_list(next_height)
+
+            # TODO: ark core states that this is saving next round delegate list into
+            # the db. Is that true? Or are we saving the current round delegate list
+            # into the db?
+            with self.db.atomic() as db_txn:
+                try:
+                    for delegate in delegates:
+                        Round.create(
+                            public_key=delegate.public_key,
+                            balance=delegate.balance,
+                            round=current_round
+                        )
+                except Exception as e:  # TODO: make this not so broad!
+                    print('Got an exception while saving rounds')
+                    db_txn.rollback()
+                    print(e)  # TODO: replace with logger.error
+                    raise e
+
+            # TODO: Figure out what the fuck is this used for
+            # self.get_active_delegates(next_height, delegates)
+
+
+
 
     def apply_block(self, block):
         # TODO: implement this properly
@@ -89,6 +133,15 @@ class Database(object):
         #     this.blocksInCurrentRound.push(block);
         # }
 
+        self.apply_round(block.height)
+        self.save_block(block)
+
+        # TODO: em wat?
+        # // Check if we recovered from a fork
+        # if (state.forkedBlock && state.forkedBlock.data.height === this.block.data.height) {
+        #     this.logger.info("Successfully recovered from fork :star2:");
+        #     state.forkedBlock = null;
+        # }
 
 
 
@@ -161,8 +214,9 @@ class Database(object):
 
         TODO: this function is potentially very broken and returns all rounds?
         """
-        max_delegates = self.app.config.get_milestone(height)['activeDelegates']
-        delegate_round = math.floor((height - 1) / max_delegates) + 1
+        config = Config()
+        max_delegates = config.get_milestone(height)['activeDelegates']
+        delegate_round, _, max_delegates = calculate_round(height)
 
         if (
             len(self.forging_delegates) > 0
@@ -182,6 +236,9 @@ class Database(object):
         # TODO: Look into why we don't reorder every 5th element (the second index += 1
         # skips it). Also why do we create another seed, that is always the same after
         # the first run?
+        # Apparently this order is used in forger. Might be better to put it there
+        # instead of in a random function that doesn't tell you what it's for,
+        # whatdoyouthink?
         index = 0
         while index < len(delegates):
             for x in range(min(4, len(delegates) - index)):

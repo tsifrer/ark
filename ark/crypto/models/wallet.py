@@ -13,6 +13,8 @@ from ark.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_RESIGNATION,
 )
 
+
+
 # TODO: there might be a better place for this. Maybe not though. Who knows.
 class Wallet(object):
     # TODO: make this mapping better
@@ -217,35 +219,6 @@ class Wallet(object):
 
             self.produced_blocks += 1
             self.forged_fees += block.total_fee
-            self.forged_rewards += block.forged_rewards
+            self.forged_rewards += block.reward
             return True
         return False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

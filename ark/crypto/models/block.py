@@ -15,13 +15,13 @@ class Block(object):
     # TODO: make this mapping better
     # field name, json field name, required, default, to_type
     fields = [
-        ('id', 'id', False, None, None),
+        ('id', 'id', False, None, int),
         ('id_hex', 'idHex', False, None, None),
         ('timestamp', 'timestamp', True, None, None),
         ('version', 'version', True, None, None),
         ('height', 'height', True, None, None),
         ('previous_block_hex', 'previousBlockHex', False, None, None),
-        ('previous_block', 'previousBlock', False, None, None),
+        ('previous_block', 'previousBlock', False, None, int),
         ('number_of_transactions', 'numberOfTransactions', True, None, None),
         ('total_amount', 'totalAmount', True, 0, int),
         ('total_fee', 'totalFee', True, 0, int),
@@ -44,14 +44,14 @@ class Block(object):
                     value = data.get(json_field, default)
                 else:
                     value = getattr(data, field, default)
-                if to_type:
+                if value is not None and to_type:
                     value = to_type(value)
                 if required and value is None:
                     raise Exception(
                         'Missing field {}'.format(field)
                     )  # TODO: change exception
                 setattr(self, field, value)
-
+            self._set_id()
             if self.transactions:
                 transactions = []
                 for transaction_data in self.transactions:
@@ -70,18 +70,7 @@ class Block(object):
                 # transaction.timestamp = self.timestamp
                 # add sequence to keep the data in sequence when storing it to db
                 transaction.sequence = index
-        self.number_of_transactions = len(self.transactions)
 
-        if self.height == 1:
-            # For genesis blocks, we should not recalculate the id as it is, or all
-            # the current ID's are calculated wrong.
-            # The comment from the core above this "fix" describes the problem
-            # perfectly:
-            # "// TODO genesis block calculated id is wrong for some reason"
-            self.id_hex = Block.to_bytes_hex(self.id)
-        else:
-            self.id_hex = self.get_id_hex()
-            self.id = self.get_id()
         # // order of transactions messed up in mainnet V1
         # // TODO: move this to network constants exception using block ids
         # if (
@@ -100,6 +89,18 @@ class Block(object):
         # TODO: implement other stuffz
         # TODO: figure out these things how they should work and implement them
 
+    def _set_id(self):
+        if self.height == 1:
+            # For genesis blocks, we should not recalculate the id as it is, or all
+            # the current ID's are calculated wrong.
+            # The comment from the core above this "fix" describes the problem
+            # perfectly:
+            # "// TODO genesis block calculated id is wrong for some reason"
+            self.id_hex = Block.to_bytes_hex(self.id)
+        else:
+            self.id_hex = self.get_id_hex()
+            self.id = self.get_id()
+
     @staticmethod
     def to_bytes_hex(value):
         """Converts integer value to hex representation
@@ -111,8 +112,8 @@ class Block(object):
         return ('{}{}'.format('0' * (16 - len(hex_num)), hex_num)).encode('utf-8')
 
     def get_id_hex(self):
-        payload_hash = self.serialize()
-        full_hash = sha256(unhexlify(payload_hash)).digest()
+        payload_hash = unhexlify(self.serialize())
+        full_hash = sha256(payload_hash).digest()
         small_hash = full_hash[:8][::-1]
         return hexlify(small_hash)
 
@@ -200,7 +201,7 @@ class Block(object):
         if not header_only:
             self._deserialize_transactions(remaining_bytes)
 
-        # TODO: setting id_hex and id is done in constructor
+        self._set_id()
         # self.id_hex = self.get_id_hex()
         # self.id = self.get_id()
         # TODO: implement edge cases (outlookTable thingy) where some block ids are broken

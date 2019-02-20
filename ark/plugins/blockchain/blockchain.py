@@ -75,8 +75,12 @@ class Blockchain(IBlockchain):
 
 
     def _handle_accepted_block(self, block):
+        print('====== Handle apply block ======')
         self.database.apply_block(block)
 
+        # TODO: a bunch of stuff regarding forked blocks, doing stuff to
+        # transaction pool, reseting a wakeup, setting last block etc etc.
+        return BLOCK_ACCEPTED
 
 
 
@@ -147,7 +151,7 @@ class Blockchain(IBlockchain):
         else:
             if is_valid_generator:
                 print('Detect double forging by {}'.format(block.generator_public_key))
-                delegates = self.db.get_active_delegates(block.height)
+                delegates = self.database.get_active_delegates(block.height)
 
                 is_active_delegate = False
                 for delegate in delegates:
@@ -179,7 +183,8 @@ class Blockchain(IBlockchain):
         return False
 
     def process_block(self, block):
-        if is_block_exception(self.app, block):
+        print('Started processing block {}'.format(block.id))
+        if is_block_exception(block):
             return self._handle_exception_block(block)
 
         is_verified, _ = block.verify()

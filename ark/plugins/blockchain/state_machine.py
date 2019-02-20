@@ -64,7 +64,9 @@ class BlockchainMachine(Machine):
         blocks = self.blockchain.p2p.download_blocks(last_block.height)
 
         if blocks:
-            is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(self.app, blocks[0])
+            print('chained', is_block_chained(last_block, blocks[0]))
+            print('exception', is_block_exception(blocks[0]))
+            is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(blocks[0])
             if is_chained:
                 print('Downloaded {} new blocks accounting for a total of {} transactions'.format(
                     len(blocks), sum([x.number_of_transactions for x in blocks])
@@ -77,8 +79,9 @@ class BlockchainMachine(Machine):
                 # blockchain.dispatch("DOWNLOADED");
 
             else:
-                print('Downloaded block not accepted: {}'.format(blocks[0])) # TODO: output block data
-                print('Last downloaded block: {}'.format(last_block)) # TODO: output block data
+                print('Downloaded block not accepted: {}'.format(blocks[0].id)) # TODO: output block data
+                print('Last downloaded block: {}'.format(last_block.id)) # TODO: output block data
+                print('WTF: {}'.format(last_block.height))
         else:
             print('No new block found on this peer')
 

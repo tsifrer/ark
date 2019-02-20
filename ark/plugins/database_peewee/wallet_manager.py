@@ -1,5 +1,6 @@
 from peewee import fn
 
+from ark.crypto.utils import calculate_round
 from ark.config import Config
 from ark.crypto.address import address_from_public_key
 from ark.crypto.constants import (
@@ -313,13 +314,13 @@ class WalletManager(object):
 
         elif (
             transaction.type == TRANSACTION_TYPE_VOTE
-            and self.is_delegate(transaction.asset['votes'][0][1:])
+            and not self.is_delegate(transaction.asset['votes'][0][1:])
         ):
             # TODO: exception
             raise Exception(
                 "Can't apply transaction {}: delegate {} does not exist".format(
                     transaction.id,
-                    transaction.asset.votes[0][1:]
+                    transaction.asset['votes'][0][1:]
                 )
             )
         elif transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
@@ -375,7 +376,7 @@ class WalletManager(object):
         for transaction in block.transactions:
             self.apply_transaction(transaction, block)
 
-        applied = delegate.appy_block(block)
+        applied = delegate.apply_block(block)
 
         # If the block has been applied to the delegate, the balance is increased
         # by reward + totalFee, in which case the vote balance of the delegate's
@@ -384,3 +385,43 @@ class WalletManager(object):
             voted_delegate = self.find_by_public_key(delegate.vote)
             voted_delegate.balance += block.reward
             voted_delegate.balance += block.total_fee
+
+
+
+
+
+    def load_active_delegate_list(self, height):
+        current_round, _, max_delegates = calculate_round(height)
+        if height > 1 and height % max_delegates != 1:
+            # TODO: exception
+            raise Exception('Trying to build delegates outside of round change')
+
+        delegate_wallets = []
+        for address in self._username_map.values():
+            wallet = self.find_by_address(address)
+            delegate_wallets.append(wallet)
+
+        if len(delegate_wallets) < max_delegates:
+            raise Exception(
+                'Expected to find {} delegates but only found {}.'.format(
+                    max_delegates,
+                    len(delegate_wallets)
+                )
+            )
+        # Sort delegate wallets by balance and use public key as a tiebreaker
+        delegate_wallets.sort(key=lambda x: (-x.balance, x.public_key))
+        delegate_wallets = delegate_wallets[:max_delegates]
+        print('Loaded {} active delegates'.format(len(delegate_wallets)))
+        return delegate_wallets
+
+
+
+
+
+
+
+
+
+
+
+
