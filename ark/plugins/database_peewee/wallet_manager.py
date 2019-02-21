@@ -268,6 +268,7 @@ class WalletManager(object):
         return True if is_delegate else False
 
     def _update_vote_balances(self, sender, recipient, transaction, revert=False):
+        # TODO: refactor this to make more sense
         if transaction.type == TRANSACTION_TYPE_VOTE:
             vote = transaction.asset['votes'][0]
             delegate = self.find_by_public_key(vote[1:])
@@ -277,10 +278,11 @@ class WalletManager(object):
                 else:
                     delegate.vote_balance += sender.balance
             else:
+                total = sender.balance + transaction.fee
                 if revert:
-                    delegate.vote_balance += transaction.balance
+                    delegate.vote_balance += total
                 else:
-                    delegate.vote_balance -= transaction.balance
+                    delegate.vote_balance -= total
 
         else:
             # Update vote balance of the sender's delegate
@@ -414,7 +416,7 @@ class WalletManager(object):
                 )
             )
         # Sort delegate wallets by balance and use public key as a tiebreaker
-        delegate_wallets.sort(key=lambda x: (-x.vote_balance, x.public_key))
+        delegate_wallets.sort(key=lambda x: (x.vote_balance, x.public_key), reverse=True)
         delegate_wallets = delegate_wallets[:max_delegates]
         print('Loaded {} active delegates'.format(len(delegate_wallets)))
         return delegate_wallets

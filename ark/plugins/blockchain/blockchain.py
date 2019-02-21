@@ -85,15 +85,6 @@ class Blockchain(IBlockchain):
         ).username
         forging_delegate = None
 
-        print('"""""""""""""""')
-        print(slot_number)
-        print(slot_number % len(delegates))
-        for index, delegate in enumerate(delegates):
-            wallet = self.database.wallets.find_by_public_key(delegate.public_key)
-            print(index,delegate.public_key, wallet.username, wallet.vote_balance)
-
-        print('"""""""""""""""')
-
         forging_delegate = delegates[slot_number % len(delegates)]
 
         if forging_delegate and forging_delegate.public_key != block.generator_public_key:

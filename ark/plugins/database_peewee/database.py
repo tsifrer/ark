@@ -98,10 +98,6 @@ class Database(object):
 
             # Get the active delegate list from in-memory wallet manager
             delegate_wallets = self.wallets.load_active_delegate_wallets(next_height)
-            print('WATAFAK???')
-            for index, delegate in enumerate(delegate_wallets):
-                print(index, delegate.username, delegate.vote_balance)
-
             # TODO: ark core states that this is saving next round delegate list into
             # the db. Is that true? Or are we saving the current round delegate list
             # into the db?
@@ -241,9 +237,6 @@ class Database(object):
 
         if not delegates:
             raise Exception("Couldn't find any rounds in the database")
-
-        for index, delegate in enumerate(delegates):
-            print(delegate.balance)
 
         seed = sha256(str(delegate_round).encode('utf-8')).digest()
         # TODO: Look into why we don't reorder every 5th element (the second index += 1
