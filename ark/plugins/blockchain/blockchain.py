@@ -187,8 +187,9 @@ class Blockchain(IBlockchain):
         if is_block_exception(block):
             return self._handle_exception_block(block)
 
-        is_verified, _ = block.verify()
+        is_verified, errors = block.verify()
         if not is_verified:
+            print(errors)
             return self._hande_verification_failed(block)
 
         is_valid_generator = self._validate_generator(block)

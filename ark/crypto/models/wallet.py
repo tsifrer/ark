@@ -178,7 +178,7 @@ class Wallet(object):
         )
         if is_correct_wallet:
             self.balance -= transaction.amount
-            self.balance -= transaction.amount
+            self.balance -= transaction.fee
 
         # apply specific stuff based on transaction type
         if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:

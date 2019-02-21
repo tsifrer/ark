@@ -55,10 +55,6 @@ class Config(dict, metaclass=Singleton):
         self['milestone_hash'] = self._calculate_milestone_hash(milestones)
 
     def get_milestone(self, height):
-        milestone = self['milestones'][0]
-        for ms in reversed(self['milestones']):
-            if height <= milestone['height']:
-                milestone = ms
-                break
-
-        return milestone
+        for milestone in reversed(self['milestones']):
+            if height >= milestone['height']:
+                return milestone

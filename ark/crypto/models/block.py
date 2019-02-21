@@ -224,7 +224,6 @@ class Block(object):
         # TODO: find a better way to get milestone data
         config = Config()
         milestone = config.get_milestone(self.height)
-
         # Check that the previous block is set if it's not a genesis block
         if self.height > 1 and not self.previous_block:
             errors.append('Invalid previous block')
@@ -256,7 +255,6 @@ class Block(object):
             trans for trans in self.transactions if not trans.verify()
         ]
         if len(invalid_transactions) > 0:
-            print(invalid_transactions[0].__dict__)
             errors.append('One or more transactions are not verified')
 
         # Check that number of transactions and block.number_of_transactions match

@@ -229,6 +229,7 @@ class Database(object):
 
         # if not delegates or len(delegates) == 0:
         # TODO: Does this return only the first 51 delegates???
+        print('Load delegates for round {}'.format(delegate_round))
         delegates = list(
             Round.select()
             .where(Round.round == delegate_round)
