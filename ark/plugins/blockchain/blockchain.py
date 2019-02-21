@@ -71,9 +71,6 @@ class Blockchain(IBlockchain):
         return BLOCK_REJECTED
 
 
-
-
-
     def _handle_accepted_block(self, block):
         print('====== Handle apply block ======')
         self.database.apply_block(block)
@@ -81,9 +78,6 @@ class Blockchain(IBlockchain):
         # TODO: a bunch of stuff regarding forked blocks, doing stuff to
         # transaction pool, reseting a wakeup, setting last block etc etc.
         return BLOCK_ACCEPTED
-
-
-
 
 
     def _validate_generator(self, block):
@@ -114,6 +108,8 @@ class Blockchain(IBlockchain):
             print('Could not decide if delegate {} ({}) is allowed to forge block {}'.format(
                 generator_username, block.generator_public_key, block.height
             ))
+            # TODO: This return is not in the official ark core implementation!
+            return False
 
         print('Delegate {} ({}) allowed to forge block {}'.format(
             generator_username, block.generator_public_key, block.height
@@ -183,7 +179,15 @@ class Blockchain(IBlockchain):
         return False
 
     def process_block(self, block):
+        print()
+        print()
         print('Started processing block {}'.format(block.id))
+        print(block.__dict__)
+
+        last_block = self.database.get_last_block()
+        print('Last block height: {}'.format(last_block.height))
+
+
         if is_block_exception(block):
             return self._handle_exception_block(block)
 
@@ -193,7 +197,6 @@ class Blockchain(IBlockchain):
 
         is_valid_generator = self._validate_generator(block)
 
-        last_block = self.database.get_last_block()
         is_chained = is_block_chained(last_block, block)
         if not is_chained:
             return self._handle_unchained_block(block, last_block, is_valid_generator)

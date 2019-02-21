@@ -13,5 +13,4 @@ def is_block_chained(previous_block, next_block):
     print('follows_previous', follows_previous)
     print('is_plus_one', is_plus_one)
     print('is_after_previous_slot', is_after_previous_slot)
-    print()
     return follows_previous and is_plus_one and is_after_previous_slot

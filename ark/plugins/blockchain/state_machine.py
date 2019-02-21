@@ -170,11 +170,12 @@ class BlockchainMachine(Machine):
             # }
 
             print('Last block in database: {}'.format(block.height))
-
-            active_delegates = self.db.get_active_delegates(block.height)
-            if not active_delegates:
-                # TODO: rollback_current_round doesn't do anything ATM
-                self.blockchain.rollback_current_round()
+            # TODO: whatever the comment below means
+            # removing blocks up to the last round to compute active delegate list later if needed
+            # active_delegates = self.db.get_active_delegates(block.height)
+            # if not active_delegates:
+            #     # TODO: rollback_current_round doesn't do anything ATM
+            #     self.blockchain.rollback_current_round()
 
 
             # TODO: Rebuild SPV stuff

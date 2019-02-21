@@ -13,8 +13,6 @@ from ark.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_RESIGNATION,
 )
 
-
-
 # TODO: there might be a better place for this. Maybe not though. Who knows.
 class Wallet(object):
     # TODO: make this mapping better
@@ -172,13 +170,11 @@ class Wallet(object):
         can_apply = True if len(errors) == 0 else False
         return can_apply, errors
 
-
-
     def apply_transaction_to_sender(self, transaction):
         address = address_from_public_key(transaction.sender_public_key)
         is_correct_wallet = (
             transaction.sender_public_key == self.public_key
-            and address == self.address
+            or address == self.address
         )
         if is_correct_wallet:
             self.balance -= transaction.amount
@@ -201,17 +197,15 @@ class Wallet(object):
             elif vote.startswith('-'):
                 self.vote = None
 
-
     def apply_transaction_to_recipient(self, transaction):
         if transaction.recipient_id == self.address:
             self.balance += transaction.amount
-
 
     def apply_block(self, block):
         address = address_from_public_key(block.generator_public_key)
         is_correct_wallet = (
             block.generator_public_key == self.public_key
-            and address == self.address
+            or address == self.address
         )
         if is_correct_wallet:
             self.balance += block.reward
@@ -222,3 +216,34 @@ class Wallet(object):
             self.forged_rewards += block.reward
             return True
         return False
+
+    def revert_transaction_for_sender(self, transaction):
+        address = address_from_public_key(transaction.sender_public_key)
+        is_correct_wallet = (
+            transaction.sender_public_key == self.public_key
+            or address == self.address
+        )
+        if is_correct_wallet:
+            self.balance -= transaction.amount
+            self.balance -= transaction.fee
+
+        # revert specific stuff based on transaction type
+        if transaction.type == TRANSACTION_TYPE_DELEGATE_RESIGNATION:
+            self.username = None
+
+        elif transaction.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
+            self.multisignature = None
+
+        elif transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
+            self.second_public_key = None
+
+        elif transaction.type == TRANSACTION_TYPE_VOTE:
+            vote = transaction.asset['votes'][0]
+            if vote.startswith('+'):
+                self.vote = None
+            elif vote.startswith('-'):
+                self.vote = vote[1:]
+
+    def revert_transaction_for_recipient(self, transaction):
+        if transaction.recipient_id == self.address:
+            self.balance -= transaction.amount

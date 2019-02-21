@@ -48,8 +48,6 @@ class Database(object):
             return None
         else:
             crypto_block = CryptoBlock(block)
-            print('From db: {}'.format(block.__dict__))
-            print('Last from db {} == {}'.format(block.id, crypto_block.id))
             return crypto_block
 
     def save_block(self, block):
@@ -62,7 +60,6 @@ class Database(object):
         with self.db.atomic() as db_txn:
             try:
                 db_block = Block.from_crypto(block)
-                print('Saving block from crypto {}'.format(db_block.id))
                 db_block.save(force_insert=True)
             except Exception as e:  # TODO: Make this not so broad!
                 print('Got an exception while saving a block')
@@ -86,6 +83,7 @@ class Database(object):
 
     def apply_round(self, height):
         next_height = 1 if height == 1 else height + 1
+        print('Apply round next height: {}'.format(next_height))
         current_round, _, max_delegates = calculate_round(next_height)
         if next_height % max_delegates == 1:
             # TODO: Apparently forger can apply a round multiple times, so we need to
@@ -99,17 +97,21 @@ class Database(object):
             # self.save_wallets
 
             # Get the active delegate list from in-memory wallet manager
-            delegates = self.db.wallets.load_active_delegate_list(next_height)
+            delegate_wallets = self.wallets.load_active_delegate_wallets(next_height)
+            print('WATAFAK???')
+            for index, delegate in enumerate(delegate_wallets):
+                print(index, delegate.username, delegate.vote_balance)
 
             # TODO: ark core states that this is saving next round delegate list into
             # the db. Is that true? Or are we saving the current round delegate list
             # into the db?
+            print('STORING CURRENT ROUND', current_round)
             with self.db.atomic() as db_txn:
                 try:
-                    for delegate in delegates:
+                    for wallet in delegate_wallets:
                         Round.create(
-                            public_key=delegate.public_key,
-                            balance=delegate.balance,
+                            public_key=wallet.public_key,
+                            balance=wallet.vote_balance,
                             round=current_round
                         )
                 except Exception as e:  # TODO: make this not so broad!
@@ -119,7 +121,12 @@ class Database(object):
                     raise e
 
             # TODO: Figure out what the fuck is this used for
-            # self.get_active_delegates(next_height, delegates)
+            # To fix the height 121 and 122 block issue
+            # TODO: This sets the forging_delegates for the next round!!!
+            # self.forging_delegates = self.get_active_delegates(next_height, delegates)
+
+
+
 
 
 
@@ -209,6 +216,7 @@ class Database(object):
         is_valid = len(errors) == 0
         return is_valid, errors
 
+
     def get_active_delegates(self, height, delegates=None):
         """Get the top 51 delegates
 
@@ -216,21 +224,23 @@ class Database(object):
         """
         config = Config()
         max_delegates = config.get_milestone(height)['activeDelegates']
-        delegate_round, _, max_delegates = calculate_round(height)
+        delegate_round, next_round, max_delegates = calculate_round(height)
+        # if (
+        #     len(self.forging_delegates) > 0
+        #     and self.forging_delegates[0].round == delegate_round
+        # ):z
+        #     return self.forging_delegates
 
-        if (
-            len(self.forging_delegates) > 0
-            and self.forging_delegates[0].round == delegate_round
-        ):
-            return self.forging_delegates
+        # if not delegates or len(delegates) == 0:
+        # TODO: Does this return only the first 51 delegates???
+        delegates = list(
+            Round.select()
+            .where(Round.round == delegate_round)
+            .order_by(Round.balance.desc(), Round.public_key.asc())
+        )
 
-        if not delegates or len(delegates) == 0:
-            # TODO: Does this return only the first 51 delegates???
-            delegates = (
-                Round.select()
-                .where(Round.round == delegate_round)
-                .order_by(Round.balance.desc(), Round.public_key.asc())
-            )
+        for index, delegate in enumerate(delegates):
+            print(delegate.balance)
 
         seed = sha256(str(delegate_round).encode('utf-8')).digest()
         # TODO: Look into why we don't reorder every 5th element (the second index += 1
@@ -249,11 +259,13 @@ class Database(object):
                     delegates[new_index],
                 )
                 index += 1
-            index += 1
             seed = sha256(seed).digest()
+            index += 1
 
-        self.forging_delegates = delegates
-        return self.forging_delegates
+        # self.forging_delegates = delegates
+        # return self.forging_delegates
+        return delegates
+
 
     def get_recent_block_ids(self):
         """Get 10 most recent block ids

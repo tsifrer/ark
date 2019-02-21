@@ -123,7 +123,7 @@ class WalletManager(object):
         )
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
-            crypto_transaction = CryptoTransaction(wallet.serialized)
+            crypto_transaction = CryptoTransaction(transaction.serialized)
             wallet.sender_public_key = crypto_transaction.asset['signature']['publicKey']
 
     def _build_votes(self):
@@ -143,7 +143,7 @@ class WalletManager(object):
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if wallet.address not in already_processed_wallets:
-                crypto_transaction = CryptoTransaction(wallet.serialized)
+                crypto_transaction = CryptoTransaction(transaction.serialized)
                 vote = crypto_transaction.asset['votes'][0]
                 # wallet.vote is only set if the wallet voted for someone. If wallet
                 # did unvoted or haven't woted at all, wallet.vote needs to be set to
@@ -212,7 +212,7 @@ class WalletManager(object):
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if not wallet.multisignature:
-                crypto_transaction = CryptoTransaction(wallet.serialized)
+                crypto_transaction = CryptoTransaction(transaction.serialized)
                 wallet.multisignature = crypto_transaction.asset['multisignature']
 
     def build(self):
@@ -303,12 +303,13 @@ class WalletManager(object):
     def apply_transaction(self, transaction, block):
         if (
             transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION
-            and transaction.asset['delegate']['username']
+            and transaction.asset['delegate']['username'] in self._username_map
         ):
             # TODO: exception
             raise Exception(
-                "Can't apply transaction {}: delegate name already taken".format(
-                    transaction.id
+                "Can't apply transaction {}: delegate name {} already taken".format(
+                    transaction.id,
+                    transaction.asset['delegate']['username'],
                 )
             )
 
@@ -373,8 +374,16 @@ class WalletManager(object):
         # TODO: Wrap the code below in try except and do a reverse action
         # Be careful to do it correctly as the Ark Core code doesn't do it correctly
         # at the moment (read the comments in the Ark Core catch block)
-        for transaction in block.transactions:
-            self.apply_transaction(transaction, block)
+        applied_transactions = []
+        try:
+            for transaction in block.transactions:
+                self.apply_transaction(transaction, block)
+                applied_transactions.append(transaction)
+        except Exception as e:  # TODO: better exception handling, not so broad
+            print('Failed to apply all transactions in block - reverting previous transactions')
+            for transaction in reversed(applied_transactions):
+                self.revert_transaction(transaction)
+            raise e
 
         applied = delegate.apply_block(block)
 
@@ -386,11 +395,7 @@ class WalletManager(object):
             voted_delegate.balance += block.reward
             voted_delegate.balance += block.total_fee
 
-
-
-
-
-    def load_active_delegate_list(self, height):
+    def load_active_delegate_wallets(self, height):
         current_round, _, max_delegates = calculate_round(height)
         if height > 1 and height % max_delegates != 1:
             # TODO: exception
@@ -409,19 +414,22 @@ class WalletManager(object):
                 )
             )
         # Sort delegate wallets by balance and use public key as a tiebreaker
-        delegate_wallets.sort(key=lambda x: (-x.balance, x.public_key))
+        delegate_wallets.sort(key=lambda x: (-x.vote_balance, x.public_key))
         delegate_wallets = delegate_wallets[:max_delegates]
         print('Loaded {} active delegates'.format(len(delegate_wallets)))
         return delegate_wallets
 
+    def revert_transaction(self, transaction):
+        sender = self.find_by_public_key(transaction.sender_public_key)
 
+        sender.revert_transaction_for_sender(transaction)
 
+        # Removing the wallet from the delegates index
+        if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
+            del self._username_map[transaction.asset['delegate']['username']]
 
+        recipient = self.find_by_address(transaction.recipient_id)
+        if transaction.type == TRANSACTION_TYPE_TRANSFER:
+            recipient.revert_transaction_for_recipient(transaction)
 
-
-
-
-
-
-
-
+        self._update_vote_balances(sender, recipient, transaction, revert=True)
