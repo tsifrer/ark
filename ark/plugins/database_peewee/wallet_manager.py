@@ -392,8 +392,8 @@ class WalletManager(object):
         # delegate has to be updated.
         if applied and delegate.vote:
             voted_delegate = self.find_by_public_key(delegate.vote)
-            voted_delegate.balance += block.reward
-            voted_delegate.balance += block.total_fee
+            voted_delegate.vote_balance += block.reward
+            voted_delegate.vote_balance += block.total_fee
 
     def load_active_delegate_wallets(self, height):
         current_round, _, max_delegates = calculate_round(height)

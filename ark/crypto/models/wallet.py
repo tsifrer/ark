@@ -181,7 +181,7 @@ class Wallet(object):
             self.balance -= transaction.amount
 
         # apply specific stuff based on transaction type
-        if transaction.type == TRANSACTION_TYPE_DELEGATE_RESIGNATION:
+        if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             self.username = transaction.asset['delegate']['username']
 
         elif transaction.type == TRANSACTION_TYPE_MULTI_SIGNATURE:

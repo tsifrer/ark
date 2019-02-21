@@ -4,6 +4,11 @@ from transitions.extensions import HierarchicalMachine as Machine
 from ark.crypto.models.block import Block
 from .utils import is_block_chained
 from ark.crypto.utils import is_block_exception
+from .constants import (
+    BLOCK_ACCEPTED,
+    BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED,
+    BLOCK_REJECTED,
+)
 
 STATE_STOPPED = 'stopped'
 STATE_STARTING = 'starting'
@@ -59,7 +64,10 @@ class BlockchainMachine(Machine):
         )
 
     def on_sync_downloading(self):
+        print()
+        print()
         print('downloading harambe')
+        print()
         last_block = self.db.get_last_block()
         blocks = self.blockchain.p2p.download_blocks(last_block.height)
 
@@ -73,7 +81,16 @@ class BlockchainMachine(Machine):
                 ))
 
                 for block in blocks:
-                    self.blockchain.process_block(block)
+                    status = self.blockchain.process_block(block)
+                    print('Block {} was {}'.format(block.id, status))
+                    # TODO: this might be completely wrong to handle
+                    if status == BLOCK_REJECTED:
+                        print(
+                            'Block {} was rejected. Skipping all other blocks in this batch'.format(
+                                block.id
+                            )
+                        )
+                        break
                 # TODO:
                 # blockchain.enqueueBlocks(blocks);
                 # blockchain.dispatch("DOWNLOADED");
@@ -184,6 +201,8 @@ class BlockchainMachine(Machine):
 
             # Rebuild wallets
             self.db.wallets.build()
+
+            self.db.apply_round(block.height)
 
 
 

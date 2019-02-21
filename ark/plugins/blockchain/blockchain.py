@@ -3,16 +3,13 @@ from ark.settings import PLUGINS
 
 from .state_machine import BlockchainMachine
 from .utils import is_block_chained
+from .constants import (
+    BLOCK_ACCEPTED,
+    BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED,
+    BLOCK_REJECTED,
+)
 from ark.crypto import time, slots
 from ark.crypto.utils import is_block_exception
-
-BLOCK_ACCEPTED = 'accepted'
-BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED = 'discarded_but_can_be_broadcasted'
-BLOCK_REJECTED = 'rejected'
-
-
-# def verify_block(block):
-
 
 
 class Blockchain(IBlockchain):
@@ -87,8 +84,17 @@ class Blockchain(IBlockchain):
             block.generator_public_key
         ).username
         forging_delegate = None
-        if delegates:
-            forging_delegate = delegates[slot_number % len(delegates)]
+
+        print('"""""""""""""""')
+        print(slot_number)
+        print(slot_number % len(delegates))
+        for index, delegate in enumerate(delegates):
+            wallet = self.database.wallets.find_by_public_key(delegate.public_key)
+            print(index,delegate.public_key, wallet.username, wallet.vote_balance)
+
+        print('"""""""""""""""')
+
+        forging_delegate = delegates[slot_number % len(delegates)]
 
         if forging_delegate and forging_delegate.public_key != block.generator_public_key:
             forging_username = self.database.wallets.find_by_public_key(
@@ -101,7 +107,6 @@ class Blockchain(IBlockchain):
                 forging_delegate.public_key,
             ))
             return False
-
         # TODO: this seems weird as we can't decide if delegate is allowed to forge, but
         # we still accept it as a valid generator
         if not forging_delegate:

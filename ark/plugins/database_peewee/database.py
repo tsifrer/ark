@@ -239,6 +239,9 @@ class Database(object):
             .order_by(Round.balance.desc(), Round.public_key.asc())
         )
 
+        if not delegates:
+            raise Exception("Couldn't find any rounds in the database")
+
         for index, delegate in enumerate(delegates):
             print(delegate.balance)
 
