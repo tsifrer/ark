@@ -224,7 +224,7 @@ class Transaction(object):
 
             start = 1
             for _ in range(vote_length):
-                vote = hexlify(bytes_data[start : 34 + start])
+                vote = hexlify(bytes_data[start : 34 + start]).decode('utf-8')
                 operator = '+' if vote[1] == '1' else '-'
                 self.asset['votes'].append('{}{}'.format(operator, vote[2:]))
                 start += 34
@@ -361,20 +361,6 @@ class Transaction(object):
         self._deserialize_signature(signature_bytes)
 
         # self._apply_v1_compatibility()
-
-        # print(self.version)
-        # print(self.network)
-        # print(self.type)
-        # print(self.timestamp)
-        # print(self.sender_public_key)
-        # print(self.fee)
-        # print(self.amount)
-        # print(self.expiration)
-        # print(self.recipient_id)
-        # print(self.asset)
-        # print(self.signature)
-        # print(self.second_signature)
-        # print('---------------')
 
 
     def get_bytes(self, skip_signature=False, skip_second_signature=False):

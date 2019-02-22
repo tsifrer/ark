@@ -98,6 +98,11 @@ class Database(object):
 
             # Get the active delegate list from in-memory wallet manager
             delegate_wallets = self.wallets.load_active_delegate_wallets(next_height)
+
+
+            # for wallet in delegate_wallets:
+            #     print(wallet.username, wallet.vote_balance)
+
             # TODO: ark core states that this is saving next round delegate list into
             # the db. Is that true? Or are we saving the current round delegate list
             # into the db?

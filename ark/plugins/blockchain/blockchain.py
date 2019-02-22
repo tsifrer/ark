@@ -1,7 +1,7 @@
+from time import sleep
 from ark.interfaces.blockchain import IBlockchain
 from ark.settings import PLUGINS
 
-from .state_machine import BlockchainMachine
 from .utils import is_block_chained
 from .constants import (
     BLOCK_ACCEPTED,
@@ -10,17 +10,13 @@ from .constants import (
 )
 from ark.crypto import time, slots
 from ark.crypto.utils import is_block_exception
+from ark.crypto.models.block import Block
 
 
-class Blockchain(IBlockchain):
+class Blockchain(object):
     def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = app
-        self.machine = BlockchainMachine(self, app, self.database)
-
-    @property
-    def state(self):
-        return self.machine.state
 
     @property
     def database(self):
@@ -31,10 +27,157 @@ class Blockchain(IBlockchain):
         return PLUGINS['p2p']
 
     def start(self):
-        self.machine.start()
+        # TODO: change prints to loggers
+        print('Starting the blockchain')
+        try:
+            block = self.database.get_last_block()
+
+            # If block is not found in the db, insert a genesis block
+            if not block:
+                print('No block found in the database')
+                block = Block(self.app.config['genesis_block'])
+                if block.payload_hash != self.app.config['network']['nethash']:
+                    print(
+                        'FATAL: The genesis block payload hash is different from '
+                        'the configured nethash'
+                    )
+                    self.stop()
+                    return
+
+                else:
+                    self.database.save_block(block)
+
+            # If database did not just restore database integrity, verify the blockchain
+            if not self.database.restored_database_integrity:
+                print('Verifying database integrity')
+                is_valid, errors = self.database.verify_blockchain()
+                if not is_valid:
+                    print('FATAL: Database is corrupted')
+                    print(errors)
+                    # return self.rollback() # TODO: uncomment
+                print('Verified database integrity')
+            else:
+                print(
+                    'Skipping database integrity check after successful database '
+                    'recovery'
+                )
+
+            # TODO: figure this  out
+            # // only genesis block? special case of first round needs to be dealt with
+            # if (block.data.height === 1) {
+            #     await blockchain.database.deleteRound(1);
+            # }
+
+            milestone = self.app.config.get_milestone(block.height)
+
+            # TODO: Watafak
+            # stateStorage.setLastBlock(block);
+            # stateStorage.lastDownloadedBlock = block;
+
+            # if (stateStorage.networkStart) {
+            #     await blockchain.database.buildWallets(block.data.height);
+            #     await blockchain.database.saveWallets(true);
+            #     await blockchain.database.applyRound(block.data.height);
+            #     await blockchain.transactionPool.buildWallets();
+
+            #     return blockchain.dispatch("STARTED");
+            # }
+
+            # if (process.env.NODE_ENV === "test") {
+            #     logger.verbose("TEST SUITE DETECTED! SYNCING WALLETS AND STARTING IMMEDIATELY. :bangbang:");
+
+            #     stateStorage.setLastBlock(new Block(config.get("genesisBlock")));
+            #     await blockchain.database.buildWallets(block.data.height);
+
+            #     return blockchain.dispatch("STARTED");
+            # }
+
+            print('Last block in database: {}'.format(block.height))
+            # TODO: whatever the comment below means
+            # removing blocks up to the last round to compute active delegate list later if needed
+            # active_delegates = self.database.get_active_delegates(block.height)
+            # if not active_delegates:
+            #     # TODO: rollback_current_round doesn't do anything ATM
+            #     self.rollback_current_round()
+
+
+            # TODO: Rebuild SPV stuff
+
+            # TODO: the rest of the stuff
+
+            # Rebuild wallets
+            self.database.wallets.build()
+
+
+            delegate_wallets = self.database.wallets.load_active_delegate_wallets(562)
+
+            # for wallet in delegate_wallets:
+            #     print(wallet.public_key, wallet.username, wallet.vote_balance)
+
+            if block.height == 1:
+                self.database.apply_round(block.height)
+
+
+
+            self.start_syncing()
+        except Exception as e:
+            raise e  # TODO:
+            # TODO: log exception
+            self.stop()
+
+
+
+    def start_syncing(self):
+        while True:
+            last_block = self.database.get_last_block()
+            if self.is_synced(last_block):
+                print('Blockhain is syced!')
+                break
+            else:
+                self.sync_blocks(last_block)
+
+        print('Done syncing')
+
+
+
+    def sync_blocks(self, last_block):
+        print()
+        print()
+        print('downloading harambe')
+        print()
+        blocks = self.p2p.download_blocks(last_block.height)
+
+        if blocks:
+            print('chained', is_block_chained(last_block, blocks[0]))
+            print('exception', is_block_exception(blocks[0]))
+            is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(blocks[0])
+            if is_chained:
+                print('Downloaded {} new blocks accounting for a total of {} transactions'.format(
+                    len(blocks), sum([x.number_of_transactions for x in blocks])
+                ))
+
+                for block in blocks:
+                    status = self.process_block(block)
+                    print('Block {} was {}'.format(block.id, status))
+                    # TODO: this might be completely wrong to handle
+                    if status == BLOCK_REJECTED:
+                        msg = 'Block {} was rejected. Skipping all other blocks in this batch'.format(block.id)
+                        print(msg)
+                        raise Exception(msg)
+                # TODO:
+                # blockchain.enqueueBlocks(blocks);
+                # blockchain.dispatch("DOWNLOADED");
+
+            else:
+                print('Downloaded block not accepted: {}'.format(blocks[0].id)) # TODO: output block data
+                print('Last downloaded block: {}'.format(last_block.id)) # TODO: output block data
+                print('WTF: {}'.format(last_block.height))
+        else:
+            print('No new block found on this peer')
+
 
     def stop(self):
-        self.machine.stop()
+        print('Stopping blockchain')
 
     def rollback_current_round(self):
         # TODO: implement this
@@ -46,11 +189,10 @@ class Blockchain(IBlockchain):
         print('FORKING')
         raise NotImplementedError()
 
-    def is_synced(self):
-        block = self.database.get_last_block()
+    def is_synced(self, last_block):
         current_time = time.get_time()
-        blocktime = self.app.config.get_milestone(block.height)['blocktime']
-        return (current_time - block.timestamp) < (3 * blocktime)
+        blocktime = self.app.config.get_milestone(last_block.height)['blocktime']
+        return (current_time - last_block.timestamp) < (3 * blocktime)
 
     def _handle_exception_block(self, block):
         forged_block = self.database.get_block_by_id(block.id)

@@ -155,7 +155,7 @@ class WalletManager(object):
         # Calculate vote balances
         for voter in self._wallets.values():
             if voter.vote:
-                delegate = self.find_by_public_key(wallet.vote)
+                delegate = self.find_by_public_key(voter.vote)
                 delegate.vote_balance += voter.balance
 
     def _build_delegates(self):
