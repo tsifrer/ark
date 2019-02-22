@@ -38,6 +38,9 @@ class Database(object):
 
         self.wallets = WalletManager(self.db)
 
+
+        self._active_delegates = []
+
     def get_last_block(self):
         """Get the last block
         Returns None if block can't be found.
@@ -120,15 +123,6 @@ class Database(object):
                     db_txn.rollback()
                     print(e)  # TODO: replace with logger.error
                     raise e
-
-            # TODO: Figure out what the fuck is this used for
-            # To fix the height 121 and 122 block issue
-            # TODO: This sets the forging_delegates for the next round!!!
-            # self.forging_delegates = self.get_active_delegates(next_height, delegates)
-
-
-
-
 
 
 
@@ -223,54 +217,51 @@ class Database(object):
 
         TODO: this function is potentially very broken and returns all rounds?
         """
-        config = Config()
-        max_delegates = config.get_milestone(height)['activeDelegates']
         delegate_round, next_round, max_delegates = calculate_round(height)
-        # if (
-        #     len(self.forging_delegates) > 0
-        #     and self.forging_delegates[0].round == delegate_round
-        # ):z
-        #     return self.forging_delegates
 
-        # if not delegates or len(delegates) == 0:
-        # TODO: Does this return only the first 51 delegates???
-        print('Load delegates for round {}'.format(delegate_round))
-        delegates = list(
-            Round.select()
-            .where(Round.round == delegate_round)
-            .order_by(Round.balance.desc(), Round.public_key.asc())
-        )
+        if (
+            not self._active_delegates
+            or (self._active_delegates and self._active_delegates[0].round != delegate_round)
+        ):
+            # if not delegates or len(delegates) == 0:
+            # TODO: Does this return only the first 51 delegates???
+            print('Load delegates for round {}'.format(delegate_round))
+            delegates = list(
+                Round.select()
+                .where(Round.round == delegate_round)
+                .order_by(Round.balance.desc(), Round.public_key.asc())
+            )
 
-        # for delegate in delegates:
-        #     wallet = self.wallets.find_by_public_key(delegate.public_key)
-        #     print(wallet.username, delegate.public_key, delegate.balance)
+            # for delegate in delegates:
+            #     wallet = self.wallets.find_by_public_key(delegate.public_key)
+            #     print(wallet.username, delegate.public_key, delegate.balance)
 
-        if not delegates:
-            raise Exception("Couldn't find any rounds in the database")
+            if not delegates:
+                raise Exception("Couldn't find any rounds in the database")
 
-        seed = sha256(str(delegate_round).encode('utf-8')).digest()
-        # TODO: Look into why we don't reorder every 5th element (the second index += 1
-        # skips it). Also why do we create another seed, that is always the same after
-        # the first run?
-        # Apparently this order is used in forger. Might be better to put it there
-        # instead of in a random function that doesn't tell you what it's for,
-        # whatdoyouthink?
-        index = 0
-        while index < len(delegates):
-            for x in range(min(4, len(delegates) - index)):
-                new_index = seed[x] % len(delegates)
-                # Swap delegate on index with the delegate on new_index
-                delegates[new_index], delegates[index] = (
-                    delegates[index],
-                    delegates[new_index],
-                )
+            seed = sha256(str(delegate_round).encode('utf-8')).digest()
+            # TODO: Look into why we don't reorder every 5th element (the second index += 1
+            # skips it). Also why do we create another seed, that is always the same after
+            # the first run?
+            # Apparently this order is used in forger. Might be better to put it there
+            # instead of in a random function that doesn't tell you what it's for,
+            # whatdoyouthink?
+            index = 0
+            while index < len(delegates):
+                for x in range(min(4, len(delegates) - index)):
+                    new_index = seed[x] % len(delegates)
+                    # Swap delegate on index with the delegate on new_index
+                    delegates[new_index], delegates[index] = (
+                        delegates[index],
+                        delegates[new_index],
+                    )
+                    index += 1
+                seed = sha256(seed).digest()
                 index += 1
-            seed = sha256(seed).digest()
-            index += 1
 
-        # self.forging_delegates = delegates
-        # return self.forging_delegates
-        return delegates
+            self._active_delegates = delegates
+
+        return self._active_delegates
 
 
     def get_recent_block_ids(self):

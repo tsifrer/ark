@@ -157,13 +157,15 @@ class Blockchain(object):
                 ))
 
                 for block in blocks:
-                    status = self.process_block(block)
+                    status = self.process_block(block, last_block)
                     print('Block {} was {}'.format(block.id, status))
                     # TODO: this might be completely wrong to handle
                     if status == BLOCK_REJECTED:
                         msg = 'Block {} was rejected. Skipping all other blocks in this batch'.format(block.id)
                         print(msg)
                         raise Exception(msg)
+                    if status == BLOCK_ACCEPTED:
+                        last_block = block
                 # TODO:
                 # blockchain.enqueueBlocks(blocks);
                 # blockchain.dispatch("DOWNLOADED");
@@ -316,13 +318,12 @@ class Blockchain(object):
                 return True
         return False
 
-    def process_block(self, block):
+    def process_block(self, block, last_block):
         print()
         print()
         print('Started processing block {}'.format(block.id))
         print(block.__dict__)
 
-        last_block = self.database.get_last_block()
         print('Last block height: {}'.format(last_block.height))
 
         if is_block_exception(block):
