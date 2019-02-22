@@ -183,7 +183,6 @@ class Blockchain(IBlockchain):
         last_block = self.database.get_last_block()
         print('Last block height: {}'.format(last_block.height))
 
-
         if is_block_exception(block):
             return self._handle_exception_block(block)
 

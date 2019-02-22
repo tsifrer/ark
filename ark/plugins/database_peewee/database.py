@@ -236,6 +236,10 @@ class Database(object):
             .order_by(Round.balance.desc(), Round.public_key.asc())
         )
 
+        # for delegate in delegates:
+        #     wallet = self.wallets.find_by_public_key(delegate.public_key)
+        #     print(wallet.username, delegate.public_key, delegate.balance)
+
         if not delegates:
             raise Exception("Couldn't find any rounds in the database")
 

@@ -202,7 +202,8 @@ class BlockchainMachine(Machine):
             # Rebuild wallets
             self.db.wallets.build()
 
-            self.db.apply_round(block.height)
+            if block.height == 1:
+                self.db.apply_round(block.height)
 
 
 
