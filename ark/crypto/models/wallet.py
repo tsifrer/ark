@@ -36,7 +36,7 @@ class Wallet(object):
         for field, default in self.fields:
             setattr(self, field, data.get(field, default))
 
-    def _verify_transaction_signatures(transaction, public_key):
+    def _verify_transaction_signatures(self, transaction, public_key):
         for signature in transaction.signatures:
             transaction_bytes = transaction.get_bytes(
                 skip_signature=True,

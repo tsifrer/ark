@@ -1,3 +1,4 @@
+from datetime import datetime
 from time import sleep
 from ark.interfaces.blockchain import IBlockchain
 from ark.settings import PLUGINS
@@ -128,6 +129,8 @@ class Blockchain(object):
 
 
     def start_syncing(self):
+        start = datetime.now()
+        print('STARTED', start)
         while True:
             last_block = self.database.get_last_block()
             if self.is_synced(last_block):
@@ -135,8 +138,9 @@ class Blockchain(object):
                 break
             else:
                 self.sync_blocks(last_block)
+            print('Time taken', datetime.now() - start)
 
-        print('Done syncing')
+        print('Done syncing', datetime.now() - start)
 
 
 

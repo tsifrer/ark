@@ -416,7 +416,10 @@ class WalletManager(object):
                 )
             )
         # Sort delegate wallets by balance and use public key as a tiebreaker
-        delegate_wallets.sort(key=lambda x: (x.vote_balance, x.public_key), reverse=True)
+        # Sort wallets by balance descending and by public key ascending. Because
+        # vote_balance is a number, use a negative number to sort it descending
+        # and public_key to sort it ascending.
+        delegate_wallets.sort(key=lambda x: (-x.vote_balance, x.public_key))
         delegate_wallets = delegate_wallets[:max_delegates]
         print('Loaded {} active delegates'.format(len(delegate_wallets)))
         return delegate_wallets

@@ -218,7 +218,6 @@ class Database(object):
         TODO: this function is potentially very broken and returns all rounds?
         """
         delegate_round, next_round, max_delegates = calculate_round(height)
-
         if (
             not self._active_delegates
             or (self._active_delegates and self._active_delegates[0].round != delegate_round)
@@ -234,7 +233,7 @@ class Database(object):
 
             # for delegate in delegates:
             #     wallet = self.wallets.find_by_public_key(delegate.public_key)
-            #     print(wallet.username, delegate.public_key, delegate.balance)
+            #     print(delegate.public_key, delegate.balance)
 
             if not delegates:
                 raise Exception("Couldn't find any rounds in the database")

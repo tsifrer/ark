@@ -47,7 +47,7 @@ class Transaction(object):
         ('signature', 'signature', False, None, None),
         ('second_signature', 'secondSignature', False, None, None),
         ('sign_signature', 'signSignature', False, None, None),
-        ('signatures', 'signatures', False, None, None),
+        ('signatures', 'signatures', False, [], None),
         ('block_id', 'blockId', False, None, None),
         ('sequence', 'sequence', False, None, None),
         ('timelock', 'timelock', False, None, None),
@@ -231,7 +231,7 @@ class Transaction(object):
             return bytes_data[start:]
 
         elif self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
-            self.asset['multisignature']: {
+            self.asset['multisignature'] = {
                 'keysgroup': [],
                 'min': read_bit8(bytes_data),
                 'lifetime': read_bit8(bytes_data, offset=2),
