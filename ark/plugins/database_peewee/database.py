@@ -88,6 +88,7 @@ class Database(object):
         next_height = 1 if height == 1 else height + 1
         print('Apply round next height: {}'.format(next_height))
         current_round, _, max_delegates = calculate_round(next_height)
+        print('Current round {}'.format(current_round))
         if next_height % max_delegates == 1:
             # TODO: Apparently forger can apply a round multiple times, so we need to
             # make sure that it only applies it once! Look at the code in ark core

@@ -33,8 +33,6 @@ class P2P(object):
                 print('Invalid peer: {} ({})'.format(peer, peer.ip))  # TODO:
 
 
-
-
     def get_random_peer(self, download_size=None):
         # TODO: If random peer can't be found, raise an exception and then handle it
         # in functions that use this function
@@ -42,8 +40,6 @@ class P2P(object):
         peers = [peer for peer in self.peers if is_valid_peer(peer)]
         if peers:
             return random.choice(peers)
-
-
 
 
     def _get_random_peer_to_download_blocks(self):
@@ -68,3 +64,5 @@ class P2P(object):
             blocks = peer.download_blocks(from_height)
             return blocks
         return []
+
+    # def add_peer(self, ip, port):

@@ -420,6 +420,16 @@ class WalletManager(object):
         # vote_balance is a number, use a negative number to sort it descending
         # and public_key to sort it ascending.
         delegate_wallets.sort(key=lambda x: (-x.vote_balance, x.public_key))
+
+
+
+
+        # for wallet in delegate_wallets[:60]:
+        #     print(wallet.username, wallet.public_key, wallet.balance)
+
+
+
+
         delegate_wallets = delegate_wallets[:max_delegates]
         print('Loaded {} active delegates'.format(len(delegate_wallets)))
         return delegate_wallets

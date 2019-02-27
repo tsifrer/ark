@@ -181,7 +181,6 @@ class Blockchain(object):
         else:
             print('No new block found on this peer')
 
-
     def stop(self):
         print('Stopping blockchain')
 
@@ -205,16 +204,13 @@ class Blockchain(object):
         if forged_block:
             return BLOCK_REJECTED
 
-        print('Block {} ({}) forcibly accecpted'.format(
-            forged_block.height, forged_block.id
-        ))
+        print('Block {} ({}) forcibly accecpted'.format(block.height, block.id))
         return self._handle_accepted_block(block)
 
     def _hande_verification_failed(self, block):
         # TODO:
         # this.blockchain.transactionPool.purgeSendersWithInvalidTransactions(this.block);
         return BLOCK_REJECTED
-
 
     def _handle_accepted_block(self, block):
         print('====== Handle apply block ======')
@@ -223,7 +219,6 @@ class Blockchain(object):
         # TODO: a bunch of stuff regarding forked blocks, doing stuff to
         # transaction pool, reseting a wakeup, setting last block etc etc.
         return BLOCK_ACCEPTED
-
 
     def _validate_generator(self, block):
         delegates = self.database.get_active_delegates(block.height)

@@ -10,5 +10,4 @@ class Plugin(IPlugin):
     def register(self, app):
         blockchain = Blockchain(app)
         blockchain.start()
-        print(blockchain.state)
         return blockchain

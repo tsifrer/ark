@@ -19,7 +19,10 @@ def verify_hash(message, signature, public_key):
 
 def is_block_exception(block):
     config = Config()
+    # TODO: cache this calculation on config object as it's not gonna change during
+    # runtime
     exception_blocks = config['exceptions'].get('blocks', [])
+    exception_blocks = [int(block_id) for block_id in exception_blocks]
     return block.id in exception_blocks
 
 

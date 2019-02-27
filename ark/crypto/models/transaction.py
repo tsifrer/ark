@@ -389,10 +389,15 @@ class Transaction(object):
 
         if self.vendor_field_hex:
             bytes_data += unhexlify(self.vendor_field_hex)
-            bytes_data += pack('{}x'.format(64 - len(unhexlify(self.vendor_field_hex))))
+            num_of_zeroes = 64 - len(unhexlify(self.vendor_field_hex))
+            if num_of_zeroes > 0:
+                bytes_data += pack('{}x'.format(num_of_zeroes))
         elif self.vendor_field:
             bytes_data += self.vendor_field
-            bytes_data += pack('{}x'.format(64 - len(self.vendor_field)))
+            num_of_zeroes = 64 - len(unhexlify(self.vendor_field))
+            if num_of_zeroes > 0:
+                bytes_data += pack('{}x'.format(num_of_zeroes))
+            bytes_data += pack('{}x'.format(num_of_zeroes))
         else:
             bytes_data += pack('64x')
 
