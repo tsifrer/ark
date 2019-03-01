@@ -1,7 +1,6 @@
 from datetime import datetime
 from time import sleep
-from ark.interfaces.blockchain import IBlockchain
-from ark.settings import PLUGINS
+from .settings import PLUGINS
 
 from .utils import is_block_chained
 from .constants import (
@@ -9,26 +8,34 @@ from .constants import (
     BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED,
     BLOCK_REJECTED,
 )
-from ark.crypto import time, slots
-from ark.crypto.utils import is_block_exception
-from ark.crypto.models.block import Block
+from chain.crypto import time, slots
+from chain.crypto.utils import is_block_exception
+from chain.crypto.models.block import Block
+from .p2p.p2p import P2P
+from chain.blockchain.settings import load_plugins
+from chain.config import Config
 
 
 class Blockchain(object):
-    def __init__(self, app, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.app = app
+        self.version = '0.0.1'  # TODO: get this from somewhere else
+
+        load_plugins(self)
+
+        self.p2p = P2P(self.database, self.version)
 
     @property
     def database(self):
         return PLUGINS['database']
 
-    @property
-    def p2p(self):
-        return PLUGINS['p2p']
+    # @property
+    # def p2p(self):
+    #     return P2P()
 
     def start(self):
         # TODO: change prints to loggers
+        config = Config()
         print('Starting the blockchain')
         try:
             block = self.database.get_last_block()
@@ -36,8 +43,8 @@ class Blockchain(object):
             # If block is not found in the db, insert a genesis block
             if not block:
                 print('No block found in the database')
-                block = Block(self.app.config['genesis_block'])
-                if block.payload_hash != self.app.config['network']['nethash']:
+                block = Block(config['genesis_block'])
+                if block.payload_hash != config['network']['nethash']:
                     print(
                         'FATAL: The genesis block payload hash is different from '
                         'the configured nethash'
@@ -69,7 +76,7 @@ class Blockchain(object):
             #     await blockchain.database.deleteRound(1);
             # }
 
-            milestone = self.app.config.get_milestone(block.height)
+            milestone = config.get_milestone(block.height)
 
             # TODO: Watafak
             # stateStorage.setLastBlock(block);
@@ -196,7 +203,8 @@ class Blockchain(object):
 
     def is_synced(self, last_block):
         current_time = time.get_time()
-        blocktime = self.app.config.get_milestone(last_block.height)['blocktime']
+        config = Config()
+        blocktime = config.get_milestone(last_block.height)['blocktime']
         return (current_time - last_block.timestamp) < (3 * blocktime)
 
     def _handle_exception_block(self, block):

@@ -3,13 +3,13 @@ from hashlib import sha256
 
 from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_bit64
 
-from ark.crypto.models.transaction import Transaction
+from chain.crypto.models.transaction import Transaction
 
 
-from ark.config import Config
+from chain.config import Config
 
-from ark.crypto.utils import verify_hash
-from ark.crypto import slots, time
+from chain.crypto.utils import verify_hash
+from chain.crypto import slots, time
 
 class Block(object):
     # TODO: make this mapping better

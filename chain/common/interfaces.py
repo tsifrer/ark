@@ -2,7 +2,6 @@ import abc
 
 
 class IPlugin(abc.ABC):
-    pass
     # @property
     # @abc.abstractmethod
     # def name(self):

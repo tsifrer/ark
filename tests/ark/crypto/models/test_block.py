@@ -1,4 +1,4 @@
-from ark.crypto.models.block import Block
+from chain.crypto.models.block import Block
 
 # TODO: MOARD TESTS!!!
 

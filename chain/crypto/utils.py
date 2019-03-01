@@ -3,7 +3,7 @@ from binascii import unhexlify
 
 from coincurve import PublicKey
 
-from ark.config import Config
+from chain.config import Config
 
 
 def verify_hash(message, signature, public_key):

@@ -1,4 +1,4 @@
-from ark.crypto.models.wallet import Wallet
+from chain.crypto.models.wallet import Wallet
 
 # TODO: MOARD TESTS!!!
 

@@ -24,19 +24,19 @@ class Config(dict, metaclass=Singleton):
         super().__init__(*args, **kwargs)
         print('INITIALZING CONFIG')
 
-        with open('ark/genesis_block.json') as f:
+        with open('chain/config/genesis_block.json') as f:
             genesis_block = json.loads(f.read())
             for transaction in genesis_block['transactions']:
                 transaction['version'] = 1
             self['genesis_block'] = genesis_block
 
-        with open('ark/network.json') as f:
+        with open('chain/config//network.json') as f:
             self['network'] = json.loads(f.read())
 
-        with open('ark/exceptions.json') as f:
+        with open('chain/config//exceptions.json') as f:
             self['exceptions'] = json.loads(f.read())
 
-        with open('ark/peers.json') as f:
+        with open('chain/config//peers.json') as f:
             self['peers'] = json.loads(f.read())
             self['peers']['global_timeout'] = 30  # TODO: get this from somewhere
 
@@ -48,7 +48,7 @@ class Config(dict, metaclass=Singleton):
         return sha_hash[:16]
 
     def _load_milestones(self):
-        with open('ark/milestones.json') as f:
+        with open('chain/config//milestones.json') as f:
             milestones = json.loads(f.read())
         milestones.sort(key=itemgetter('height'))
         self['milestones'] = milestones

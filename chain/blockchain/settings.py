@@ -1,13 +1,11 @@
 import inspect
 from importlib import import_module
 
-from ark.interfaces.plugin import IPlugin
+from chain.common.interfaces import IPlugin
 
 
 INSTALLED_PLUGINS = [
-    'ark.plugins.database_peewee',
-    'ark.plugins.p2p',
-    'ark.plugins.blockchain',
+    'chain.plugins.database',
 ]
 
 

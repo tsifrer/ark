@@ -1,4 +1,4 @@
-from ark.crypto import slots
+from chain.crypto import slots
 
 
 def is_block_chained(previous_block, next_block):

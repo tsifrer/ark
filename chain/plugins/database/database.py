@@ -2,9 +2,9 @@ from hashlib import sha256
 
 from peewee import PostgresqlDatabase
 
-from ark.config import Config
-from ark.crypto.models.block import Block as CryptoBlock
-from ark.crypto.utils import calculate_round
+from chain.config import Config
+from chain.crypto.models.block import Block as CryptoBlock
+from chain.crypto.utils import calculate_round
 
 from .models.block import Block
 from .models.round import Round

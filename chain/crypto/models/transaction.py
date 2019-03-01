@@ -9,7 +9,7 @@ from binary.unsigned_integer import (
     read_bit64,
     read_bit8,
 )
-from ark.crypto.constants import (
+from chain.crypto.constants import (
     TRANSACTION_TYPE_TRANSFER,
     TRANSACTION_TYPE_TIMELOCK_TRANSFER,
     TRANSACTION_TYPE_SECOND_SIGNATURE,
@@ -21,10 +21,10 @@ from ark.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_RESIGNATION,
 )
 from base58 import b58decode_check, b58encode_check
-from ark.crypto.address import address_from_public_key
-from ark.config import Config
+from chain.crypto.address import address_from_public_key
+from chain.config import Config
 from hashlib import sha256
-from ark.crypto.utils import verify_hash, is_transaction_exception
+from chain.crypto.utils import verify_hash, is_transaction_exception
 
 
 class Transaction(object):

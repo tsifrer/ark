@@ -1,6 +1,6 @@
 import math
 
-from ark.config import Config
+from chain.config import Config
 
 # TODO: move this to utils or someting and out of crypto?
 

@@ -1,4 +1,4 @@
-from ark.crypto import time
+from chain.crypto import time
 
 
 def test_get_real_time():

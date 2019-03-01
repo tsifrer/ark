@@ -6,7 +6,7 @@ from base58 import b58encode_check
 
 from binary.unsigned_integer import write_bit8
 
-from ark.config import Config
+from chain.config import Config
 
 
 def address_from_public_key(public_key, network_version=None):

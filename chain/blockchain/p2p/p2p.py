@@ -1,17 +1,16 @@
 import random
 
-from ark.settings import PLUGINS
-
 from .peer import Peer
 from .utils import is_valid_peer
-from .server import start_server
+from chain.config import Config
 
 
 class P2P(object):
 
-    def __init__(self, app, *args, **kwargs):
+    def __init__(self, database, app_version, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.app = app
+        self.database = database
+        self.app_version = app_version
 
         # TODO: check DNS and NTP connectivitiy?
 
@@ -19,15 +18,12 @@ class P2P(object):
 
         self._populate_seed_peers()
 
-    @property
-    def database(self):
-        return PLUGINS['database']
-
     def _populate_seed_peers(self):
-        peer_list = self.app.config['peers']['list']
+        config = Config()
+        peer_list = config['peers']['list']
 
         for peer_obj in peer_list:
-            peer = Peer(self.app, peer_obj['ip'], peer_obj['port'])
+            peer = Peer(peer_obj['ip'], peer_obj['port'], self.app_version)
             if is_valid_peer(peer):
                 self.peers.append(peer)
             else:
@@ -67,8 +63,3 @@ class P2P(object):
         return []
 
     # def add_peer(self, ip, port):
-
-
-    def start(self):
-        print('WAKANDA4EVA')
-        start_server()

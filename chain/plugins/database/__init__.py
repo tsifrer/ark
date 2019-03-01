@@ -1,4 +1,4 @@
-from ark.interfaces.plugin import IPlugin
+from chain.common.interfaces import IPlugin
 
 from .database import Database
 

@@ -1,18 +1,18 @@
 from peewee import fn
 
-from ark.crypto.utils import calculate_round
-from ark.config import Config
-from ark.crypto.address import address_from_public_key
-from ark.crypto.constants import (
+from chain.crypto.utils import calculate_round
+from chain.config import Config
+from chain.crypto.address import address_from_public_key
+from chain.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
     TRANSACTION_TYPE_MULTI_SIGNATURE,
     TRANSACTION_TYPE_SECOND_SIGNATURE,
     TRANSACTION_TYPE_TRANSFER,
     TRANSACTION_TYPE_VOTE,
 )
-from ark.crypto.models.transaction import Transaction as CryptoTransaction
-from ark.crypto.models.wallet import Wallet
-from ark.crypto.utils import is_transaction_exception
+from chain.crypto.models.transaction import Transaction as CryptoTransaction
+from chain.crypto.models.wallet import Wallet
+from chain.crypto.utils import is_transaction_exception
 
 from .models.block import Block
 from .models.transaction import Transaction

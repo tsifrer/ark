@@ -1,7 +1,7 @@
-from ark.crypto.utils import verify_hash
-from ark.config import Config
-from ark.crypto.address import address_from_public_key
-from ark.crypto.constants import (
+from chain.crypto.utils import verify_hash
+from chain.config import Config
+from chain.crypto.address import address_from_public_key
+from chain.crypto.constants import (
     TRANSACTION_TYPE_TRANSFER,
     TRANSACTION_TYPE_TIMELOCK_TRANSFER,
     TRANSACTION_TYPE_SECOND_SIGNATURE,

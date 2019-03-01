@@ -1,6 +1,6 @@
 from binascii import hexlify
 
-from ark.crypto.models.transaction import Transaction
+from chain.crypto.models.transaction import Transaction
 
 # TODO: MOARD TESTS!!!
 

@@ -1,13 +1,13 @@
 import requests
 
-from ark.crypto.models.block import Block
-
+from chain.crypto.models.block import Block
+from chain.config import Config
 
 class Peer(object):
 
-    def __init__(self, app, ip, port, *args, **kwargs):
+    def __init__(self, ip, port, app_version, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.app = app
+        config = Config()
         self.ip = ip
         self.port = port
         self.healthy = True
@@ -15,10 +15,10 @@ class Peer(object):
         self.no_common_blocks = False
 
         self.headers = {
-            'version': self.app.version,
+            'version': app_version,
             'port': str(self.port),
-            'nethash': self.app.config['network']['nethash'],
-            'milestoneHash': self.app.config['milestone_hash'],
+            'nethash': config['network']['nethash'],
+            'milestoneHash': config['milestone_hash'],
             'height': None,
             'Content-Type': 'application/json',
         }
@@ -38,11 +38,12 @@ class Peer(object):
         full_url = '{}://{}:{}{}'.format(scheme, self.ip, self.port, url)
         print(full_url)
         print(params)
+        config = Config()
         response = requests.get(
             full_url,
             params=params,
             headers=self.headers,
-            timeout=timeout or self.app.config['peers']['global_timeout']
+            timeout=timeout or config['peers']['global_timeout']
         )
         # TODO: rewrite _parse_headers to make it more meaningful
         self._parse_headers(response)
