@@ -31,12 +31,13 @@ class Database(object):
         )
 
         # database.set_allow_sync(False)
-        # TODO: figure this out
+        # TODO: figure this out (try with creating a base class and only assigning
+        # _meta.database to that base class)
         Block._meta.database = self.db
         Transaction._meta.database = self.db
         Round._meta.database = self.db
 
-        self.wallets = WalletManager(self.db)
+        # self.wallets = WalletManager(self.db)
 
 
         self._active_delegates = []

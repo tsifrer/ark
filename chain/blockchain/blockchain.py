@@ -1,6 +1,6 @@
 from datetime import datetime
 from time import sleep
-from .settings import PLUGINS
+
 
 from .utils import is_block_chained
 from .constants import (
@@ -12,7 +12,7 @@ from chain.crypto import time, slots
 from chain.crypto.utils import is_block_exception
 from chain.crypto.models.block import Block
 from .p2p.p2p import P2P
-from chain.blockchain.settings import load_plugins
+from chain.common.plugins import load_plugin
 from chain.config import Config
 
 
@@ -21,17 +21,10 @@ class Blockchain(object):
         super().__init__(*args, **kwargs)
         self.version = '0.0.1'  # TODO: get this from somewhere else
 
-        load_plugins(self)
+        # load_plugins(self)
+        self.database = load_plugin(self, 'chain.plugins.database')
 
         self.p2p = P2P(self.database, self.version)
-
-    @property
-    def database(self):
-        return PLUGINS['database']
-
-    # @property
-    # def p2p(self):
-    #     return P2P()
 
     def start(self):
         # TODO: change prints to loggers
