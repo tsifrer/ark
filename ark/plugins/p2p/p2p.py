@@ -4,6 +4,7 @@ from ark.settings import PLUGINS
 
 from .peer import Peer
 from .utils import is_valid_peer
+from .server import start_server
 
 
 class P2P(object):
@@ -66,3 +67,8 @@ class P2P(object):
         return []
 
     # def add_peer(self, ip, port):
+
+
+    def start(self):
+        print('WAKANDA4EVA')
+        start_server()

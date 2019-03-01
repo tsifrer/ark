@@ -11,8 +11,11 @@ flake8-quotes
 peewee
 peewee-migrate
 pip-tools
+pyramid
 pytest
 python-dateutil
 requests
 semver
 transitions
+waitress
+webtest
