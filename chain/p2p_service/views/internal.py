@@ -1,29 +1,21 @@
 import json
 from pyramid.response import Response
 from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPMethodNotAllowed
+from chain.crypto import slots
+from chain.crypto.models.block import Block
 
 
-@view_config(route_name='hello', renderer='json')
-def hello_world(request):
-    print('Incoming request')
-    return {'foo': 'bar'}# Response('<body><h1>Hello World 1234!</h1></body>')
+@view_config(route_name='block_store', renderer='json')
+def block_store_view(request):
+    if request.method != 'POST':
+        raise HTTPMethodNotAllowed(request.method)
 
-# def network_state_view():
-    # TODO
-    # abort(404)
+    # TODO: Validate request data that it's correct block structure
 
-
-# def blockchain_sync_view():
-    # TODO
-    # abort(404)
-
-
-
-
-# @view_config(route_name='home')
-# def blocks_view():
-#     if not request.json:
-#         print('wakanda')
-#         abort(400)
-#     print(request.json)
-#     return json.dumps(request.json)
+    block = Block(request.json)
+    print('Received new block at height {} with {} transactions, from {}'.format(
+        block.height,
+        block.number_of_transactions,
+        request.remote_addr  # TODO: check if this works?
+    ))
