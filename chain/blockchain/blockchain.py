@@ -102,14 +102,12 @@ class Blockchain(object):
             #     # TODO: rollback_current_round doesn't do anything ATM
             #     self.rollback_current_round()
 
-
             # TODO: Rebuild SPV stuff
 
             # TODO: the rest of the stuff
 
             # Rebuild wallets
             self.database.wallets.build()
-
 
             delegate_wallets = self.database.wallets.load_active_delegate_wallets(562)
 
@@ -119,21 +117,16 @@ class Blockchain(object):
             if block.height == 1:
                 self.database.apply_round(block.height)
 
-
-
             self.start_syncing()
 
             print('Blockhain is syced!')
 
             self.consume_queue()
 
-
         except Exception as e:
             raise e  # TODO:
             # TODO: log exception
             self.stop()
-
-
 
     def start_syncing(self):
         start = datetime.now()
@@ -148,8 +141,6 @@ class Blockchain(object):
 
         print('Done syncing', datetime.now() - start)
 
-
-
     def sync_blocks(self, last_block):
         print()
         print()
@@ -160,18 +151,25 @@ class Blockchain(object):
         if blocks:
             print('chained', is_block_chained(last_block, blocks[0]))
             print('exception', is_block_exception(blocks[0]))
-            is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(blocks[0])
+            is_chained = (
+                is_block_chained(last_block, blocks[0])
+                or is_block_exception(blocks[0])
+            )
             if is_chained:
-                print('Downloaded {} new blocks accounting for a total of {} transactions'.format(
-                    len(blocks), sum([x.number_of_transactions for x in blocks])
-                ))
+                print(
+                    'Downloaded {} new blocks accounting for a total of {} transactions'.format(
+                        len(blocks), sum([x.number_of_transactions for x in blocks])
+                    )
+                )
 
                 for block in blocks:
                     status = self.process_block(block, last_block)
                     print('Block {} was {}'.format(block.id, status))
                     # TODO: this might be completely wrong to handle
                     if status == BLOCK_REJECTED:
-                        msg = 'Block {} was rejected. Skipping all other blocks in this batch'.format(block.id)
+                        msg = 'Block {} was rejected. Skipping all other blocks in this batch'.format(
+                            block.id
+                        )
                         print(msg)
                         raise Exception(msg)
                     if status == BLOCK_ACCEPTED:
@@ -181,8 +179,12 @@ class Blockchain(object):
                 # blockchain.dispatch("DOWNLOADED");
 
             else:
-                print('Downloaded block not accepted: {}'.format(blocks[0].id)) # TODO: output block data
-                print('Last downloaded block: {}'.format(last_block.id)) # TODO: output block data
+                print(
+                    'Downloaded block not accepted: {}'.format(blocks[0].id)
+                )  # TODO: output block data
+                print(
+                    'Last downloaded block: {}'.format(last_block.id)
+                )  # TODO: output block data
                 print('WTF: {}'.format(last_block.height))
         else:
             print('No new block found on this peer')
@@ -237,29 +239,38 @@ class Blockchain(object):
 
         forging_delegate = delegates[slot_number % len(delegates)]
 
-        if forging_delegate and forging_delegate.public_key != block.generator_public_key:
+        if (
+            forging_delegate
+            and forging_delegate.public_key != block.generator_public_key
+        ):
             forging_username = self.database.wallets.find_by_public_key(
                 forging_delegate.public_key
             ).username
-            print('Delegate {} ({}) not allowed to forge, should be {} ({})'.format(
-                generator_username,
-                block.generator_public_key,
-                forging_username,
-                forging_delegate.public_key,
-            ))
+            print(
+                'Delegate {} ({}) not allowed to forge, should be {} ({})'.format(
+                    generator_username,
+                    block.generator_public_key,
+                    forging_username,
+                    forging_delegate.public_key,
+                )
+            )
             return False
         # TODO: this seems weird as we can't decide if delegate is allowed to forge, but
         # we still accept it as a valid generator
         if not forging_delegate:
-            print('Could not decide if delegate {} ({}) is allowed to forge block {}'.format(
-                generator_username, block.generator_public_key, block.height
-            ))
+            print(
+                'Could not decide if delegate {} ({}) is allowed to forge block {}'.format(
+                    generator_username, block.generator_public_key, block.height
+                )
+            )
             # TODO: This return is not in the official ark core implementation!
             return False
 
-        print('Delegate {} ({}) allowed to forge block {}'.format(
-            generator_username, block.generator_public_key, block.height
-        ))
+        print(
+            'Delegate {} ({}) allowed to forge block {}'.format(
+                generator_username, block.generator_public_key, block.height
+            )
+        )
         return True
 
     def _handle_unchained_block(self, block, last_block, is_valid_generator):
@@ -273,9 +284,11 @@ class Blockchain(object):
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
         elif block.height < last_block.height:
-            print("Block {} disregarded because it's already in blockchain".format(
-                block.height
-            ))
+            print(
+                "Block {} disregarded because it's already in blockchain".format(
+                    block.height
+                )
+            )
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
         elif block.height == last_block.height and block.id == last_block.id:
@@ -377,19 +390,3 @@ class Blockchain(object):
                 # TODO: change this
                 print('Nothing to process. Sleeping for 1 sec')
                 sleep(1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

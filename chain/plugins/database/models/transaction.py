@@ -17,6 +17,7 @@ class BytesField(BlobField):
     Default BlobField returns memoryview when getting data from the db. We always want
     bytes.
     """
+
     def adapt(self, value):
         if value and isinstance(value, memoryview):
             return value.tobytes()

@@ -63,7 +63,7 @@ def test_verify_correctly_verifies_the_transaction():
             '022043f9005f7d254bb0ecff2a14b035fc8aa83bd0e55135ff8c3181993606f2efe5'
         ),
         'id': '35904cf41b4df8f2e45d1aac366eca8fce25118d19b94333502cc66973adc815',
-        'blockId': '10172429794310518146'
+        'blockId': '10172429794310518146',
     }
     transaction = Transaction(data)
     assert transaction.verify() is True
@@ -71,24 +71,19 @@ def test_verify_correctly_verifies_the_transaction():
 
 def test_omg():
     data = {
-          
-    'id': '656383382263774702',
-    'version': 0,
-    'timestamp': 60302426,
-    'height': 1554984,
-    'reward': '200000000',
-    'previousBlock': '6583834412064820799',
-    'numberOfTransactions': 0,
-    'totalAmount': '0',
-    'totalFee': '0',
-    'payloadLength': 0,
-    'payloadHash': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-    'generatorPublicKey': '03d7a20b3d39b7526a5057a9b486f0200bc57543e69e5fa61d9ce0bdd7784162c3',
-    'blockSignature': '30450221009e477e36062129cf2ffb21e24e460231af701cf352e57a0f83470dc24f1edcfb022054e55f8b246d3d775a9267ea6e3f9ba2add1618b20b087586f7df7812b2e0953'
-  
+        'id': '656383382263774702',
+        'version': 0,
+        'timestamp': 60302426,
+        'height': 1554984,
+        'reward': '200000000',
+        'previousBlock': '6583834412064820799',
+        'numberOfTransactions': 0,
+        'totalAmount': '0',
+        'totalFee': '0',
+        'payloadLength': 0,
+        'payloadHash': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        'generatorPublicKey': '03d7a20b3d39b7526a5057a9b486f0200bc57543e69e5fa61d9ce0bdd7784162c3',
+        'blockSignature': '30450221009e477e36062129cf2ffb21e24e460231af701cf352e57a0f83470dc24f1edcfb022054e55f8b246d3d775a9267ea6e3f9ba2add1618b20b087586f7df7812b2e0953',
     }
     transaction = Transaction(data)
     assert transaction.verify() is True
-
-
-

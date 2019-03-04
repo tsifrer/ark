@@ -2,6 +2,7 @@ from chain.crypto.models.wallet import Wallet
 
 # TODO: MOARD TESTS!!!
 
+
 def test_wallet_sets_default_attributes_with_default_values():
     wallet = Wallet({})
     assert wallet.address is None
@@ -31,7 +32,7 @@ def test_wallet_sets_attributes_with_correct_values():
         'produced_blocks': 1,
         'missed_blocks': 0,
         'forged_fees': 0,
-        'forged_rewards': 0
+        'forged_rewards': 0,
     }
     wallet = Wallet(data)
     assert wallet.address == data['address']

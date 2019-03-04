@@ -6,7 +6,6 @@ from chain.config import Config
 
 
 class P2P(object):
-
     def __init__(self, database, app_version, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.database = database
@@ -29,7 +28,6 @@ class P2P(object):
             else:
                 print('Invalid peer: {} ({})'.format(peer, peer.ip))  # TODO:
 
-
     def get_random_peer(self, download_size=None):
         # TODO: If random peer can't be found, raise an exception and then handle it
         # in functions that use this function
@@ -37,7 +35,6 @@ class P2P(object):
         peers = [peer for peer in self.peers if is_valid_peer(peer)]
         if peers:
             return random.choice(peers)
-
 
     def _get_random_peer_to_download_blocks(self):
         peer = self.get_random_peer(download_size=100)
@@ -50,8 +47,7 @@ class P2P(object):
             return self._get_random_peer_to_download_blocks()
         return peer
 
-
-    #getRandomDownloadBlocksPeer
+    # getRandomDownloadBlocksPeer
     def download_blocks(self, from_height):
         peer = self._get_random_peer_to_download_blocks()
         if peer:

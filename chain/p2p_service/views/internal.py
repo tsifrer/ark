@@ -16,11 +16,13 @@ def block_store_view(request):
     # TODO: Validate request data that it's correct block structure
 
     block = Block(request.json)
-    print('Received new block at height {} with {} transactions, from {}'.format(
-        block.height,
-        block.number_of_transactions,
-        request.remote_addr  # TODO: check if this works?
-    ))
+    print(
+        'Received new block at height {} with {} transactions, from {}'.format(
+            block.height,
+            block.number_of_transactions,
+            request.remote_addr,  # TODO: check if this works?
+        )
+    )
 
     # TODO: This is REALLY bad, to connect to db on every request
     db = Database(None)

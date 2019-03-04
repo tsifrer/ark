@@ -11,6 +11,7 @@ from chain.config import Config
 from chain.crypto.utils import verify_hash
 from chain.crypto import slots, time
 
+
 class Block(object):
     # TODO: make this mapping better
     # field name, json field name, required, default, to_type
@@ -83,8 +84,8 @@ class Block(object):
         #     this.transactions[1] = temp;
         # }
 
-            # print('IIIIDDD', self.id)
-            # print(self.id_hex)
+        # print('IIIIDDD', self.id)
+        # print(self.id_hex)
 
         # TODO: implement other stuffz
         # TODO: figure out these things how they should work and implement them
@@ -211,9 +212,7 @@ class Block(object):
         """
         bytes_data = unhexlify(self.serialize(include_signature=False))
         is_verified = verify_hash(
-            bytes_data,
-            self.block_signature,
-            self.generator_public_key,
+            bytes_data, self.block_signature, self.generator_public_key
         )
         return is_verified
 
@@ -230,9 +229,11 @@ class Block(object):
 
         # Chech that the block reward matches with the one specified in config
         if self.reward != milestone['reward']:
-            errors.append('Invalid block reward: {} expected: {}'.format(
-                self.reward, milestone['reward']
-            ))
+            errors.append(
+                'Invalid block reward: {} expected: {}'.format(
+                    self.reward, milestone['reward']
+                )
+            )
 
         # Verify block signature
         is_valid_signature = self.verify_signature()
@@ -244,9 +245,9 @@ class Block(object):
             errors.append('Invalid block version')
 
         # Check that the block timestamp is not in the future
-        is_invalid_timestamp = (
-            slots.get_slot_number(self.height, self.timestamp) > slots.get_slot_number(self.height, time.get_time())
-        )
+        is_invalid_timestamp = slots.get_slot_number(
+            self.height, self.timestamp
+        ) > slots.get_slot_number(self.height, time.get_time())
         if is_invalid_timestamp:
             errors.append('Invalid block timestamp')
 
@@ -262,7 +263,10 @@ class Block(object):
             errors.append('Invalid number of transactions')
 
         # Check that number of transactions is not too high (except for genesis block)
-        if self.height > 1 and len(self.transactions) > milestone['block']['maxTransactions']:
+        if (
+            self.height > 1
+            and len(self.transactions) > milestone['block']['maxTransactions']
+        ):
             errors.append('Too many transactions')
 
         # Check if transactions add u pto the block values

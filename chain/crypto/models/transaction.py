@@ -213,9 +213,7 @@ class Transaction(object):
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             username_length = read_bit8(bytes_data) // 2
             username_end = username_length + 1
-            self.asset['delegate'] = {
-                'username': bytes_data[1:username_end]
-            }
+            self.asset['delegate'] = {'username': bytes_data[1:username_end]}
             return bytes_data[username_end:]
 
         elif self.type == TRANSACTION_TYPE_VOTE:
@@ -362,7 +360,6 @@ class Transaction(object):
 
         # self._apply_v1_compatibility()
 
-
     def get_bytes(self, skip_signature=False, skip_second_signature=False):
         # TODO: rename to to_bytes which makes more sense than get_bytes
         if self.version and self.version != 1:
@@ -432,17 +429,12 @@ class Transaction(object):
             return False
 
         transaction_bytes = self.get_bytes(
-            skip_signature=True,
-            skip_second_signature=True
+            skip_signature=True, skip_second_signature=True
         )
         is_verified = verify_hash(
-            transaction_bytes,
-            self.signature,
-            self.sender_public_key,
+            transaction_bytes, self.signature, self.sender_public_key
         )
         return is_verified
-
-
 
     def verify_second_signature(self, public_key):
         if self.version and self.version != 1:
@@ -455,14 +447,5 @@ class Transaction(object):
         if not second_signature:
             return False
 
-        is_verified = verify_hash(
-            transaction_bytes,
-            second_signature,
-            public_key,
-        )
+        is_verified = verify_hash(transaction_bytes, second_signature, public_key)
         return is_verified
-
-
-
-
-

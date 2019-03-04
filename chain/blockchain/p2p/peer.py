@@ -3,8 +3,8 @@ import requests
 from chain.crypto.models.block import Block
 from chain.config import Config
 
-class Peer(object):
 
+class Peer(object):
     def __init__(self, ip, port, app_version, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = Config()
@@ -24,7 +24,7 @@ class Peer(object):
         }
 
         # if self.app.config['network']['name'] != 'mainnet':
-        #     self.headers['hashid'] = 
+        #     self.headers['hashid'] =
 
     def _parse_headers(self, response):
         for field in ['nethash', 'os', 'version', 'hashid']:
@@ -43,7 +43,7 @@ class Peer(object):
             full_url,
             params=params,
             headers=self.headers,
-            timeout=timeout or config['peers']['global_timeout']
+            timeout=timeout or config['peers']['global_timeout'],
         )
         # TODO: rewrite _parse_headers to make it more meaningful
         self._parse_headers(response)
@@ -66,7 +66,7 @@ class Peer(object):
         print(block_ids)
         params = {
             # 'ids': '11736050606814390998'#block_ids,
-            'ids': ','.join(block_ids),
+            'ids': ','.join(block_ids)
         }
 
         # TODO: This might not work as if only one block_id is passed in, othe relays
@@ -80,9 +80,7 @@ class Peer(object):
         return True if body.get('common') else False
 
     def download_blocks(self, from_height):
-        params = {
-            'lastBlockHeight': from_height,
-        }
+        params = {'lastBlockHeight': from_height}
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
         return [Block(block) for block in blocks]

@@ -18,9 +18,7 @@ class Database(object):
     restored_database_integrity = False
     forging_delegates = []
 
-
     _wallets = None
-
 
     def __init__(self, app):
         super().__init__()
@@ -91,8 +89,6 @@ class Database(object):
                 print(e)  # TODO: replace with logger.error
                 return
 
-
-
     def apply_round(self, height):
         next_height = 1 if height == 1 else height + 1
         print('Apply round next height: {}'.format(next_height))
@@ -112,7 +108,6 @@ class Database(object):
             # Get the active delegate list from in-memory wallet manager
             delegate_wallets = self.wallets.load_active_delegate_wallets(next_height)
 
-
             # for wallet in delegate_wallets:
             #     print(wallet.username, wallet.vote_balance)
 
@@ -126,15 +121,13 @@ class Database(object):
                         Round.create(
                             public_key=wallet.public_key,
                             balance=wallet.vote_balance,
-                            round=current_round
+                            round=current_round,
                         )
                 except Exception as e:  # TODO: make this not so broad!
                     print('Got an exception while saving rounds')
                     db_txn.rollback()
                     print(e)  # TODO: replace with logger.error
                     raise e
-
-
 
     def apply_block(self, block):
         # TODO: implement this properly
@@ -154,8 +147,6 @@ class Database(object):
         #     this.logger.info("Successfully recovered from fork :star2:");
         #     state.forkedBlock = null;
         # }
-
-
 
     def verify_blockchain(self):
         """ Verify that the blockchain stored in the db is not corrupted
@@ -221,16 +212,14 @@ class Database(object):
         is_valid = len(errors) == 0
         return is_valid, errors
 
-
     def get_active_delegates(self, height, delegates=None):
         """Get the top 51 delegates
 
         TODO: this function is potentially very broken and returns all rounds?
         """
         delegate_round, next_round, max_delegates = calculate_round(height)
-        if (
-            not self._active_delegates
-            or (self._active_delegates and self._active_delegates[0].round != delegate_round)
+        if not self._active_delegates or (
+            self._active_delegates and self._active_delegates[0].round != delegate_round
         ):
             # if not delegates or len(delegates) == 0:
             # TODO: Does this return only the first 51 delegates???
@@ -272,16 +261,11 @@ class Database(object):
 
         return self._active_delegates
 
-
     def get_recent_block_ids(self):
         """Get 10 most recent block ids
         """
         blocks = (
-            Block
-            .select(Block.id)
-            .order_by(Block.timestamp.desc())
-            .limit(10)
-            .tuples()
+            Block.select(Block.id).order_by(Block.timestamp.desc()).limit(10).tuples()
         )
         return [x[0] for x in blocks]
 
@@ -294,9 +278,7 @@ class Database(object):
             return CryptoBlock(block)
 
     def get_forged_transaction_ids(self, transaction_ids):
-        transactions = (
-            Transaction
-            .select(Transaction.id)
-            .where(Transaction.id.in_(transaction_ids))
+        transactions = Transaction.select(Transaction.id).where(
+            Transaction.id.in_(transaction_ids)
         )
         return [transaction.id for transaction in transactions]

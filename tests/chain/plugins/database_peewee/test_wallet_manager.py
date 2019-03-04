@@ -1,6 +1,3 @@
-
-
-
 def test_order():
     data = [
         {'public_key': 'g', 'balance': 5000},

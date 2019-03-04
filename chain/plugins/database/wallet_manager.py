@@ -23,7 +23,6 @@ from .models.transaction import Transaction
 
 # TODO: Extensive tests
 class WalletManager(object):
-
     def __init__(self, database):
         super().__init__()
         self.db = database
@@ -42,10 +41,8 @@ class WalletManager(object):
         """Load and apply received transactions to wallets.
         """
         transactions = (
-            Transaction
-            .select(
-                Transaction.recipient_id,
-                fn.SUM(Transaction.amount).alias('amount')
+            Transaction.select(
+                Transaction.recipient_id, fn.SUM(Transaction.amount).alias('amount')
             )
             .where(Transaction.type == TRANSACTION_TYPE_TRANSFER)
             .group_by(Transaction.recipient_id)
@@ -59,14 +56,10 @@ class WalletManager(object):
     def _build_block_rewards(self):
         """Load and apply block rewards to wallets.
         """
-        blocks = (
-            Block
-            .select(
-                Block.generator_public_key,
-                fn.SUM(Block.reward + Block.total_fee).alias('reward')
-            )
-            .group_by(Block.generator_public_key)
-        )
+        blocks = Block.select(
+            Block.generator_public_key,
+            fn.SUM(Block.reward + Block.total_fee).alias('reward'),
+        ).group_by(Block.generator_public_key)
 
         for block in blocks:
             wallet = self.find_by_public_key(block.generator_public_key)
@@ -97,15 +90,11 @@ class WalletManager(object):
     #         wallet.last_block = block
 
     def _build_sent_transactions(self):
-        transactions = (
-            Transaction
-            .select(
-                Transaction.sender_public_key,
-                fn.SUM(Transaction.amount).alias('amount'),
-                fn.SUM(Transaction.fee).alias('fee'),
-            )
-            .group_by(Transaction.sender_public_key)
-        )
+        transactions = Transaction.select(
+            Transaction.sender_public_key,
+            fn.SUM(Transaction.amount).alias('amount'),
+            fn.SUM(Transaction.fee).alias('fee'),
+        ).group_by(Transaction.sender_public_key)
 
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
@@ -116,22 +105,21 @@ class WalletManager(object):
                 print('Negative wallet balance: {}'.format(wallet.address))
 
     def _build_second_signatures(self):
-        transactions = (
-            Transaction
-            .select(Transaction.sender_public_key, Transaction.serialized)
-            .where(Transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE)
-        )
+        transactions = Transaction.select(
+            Transaction.sender_public_key, Transaction.serialized
+        ).where(Transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE)
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             crypto_transaction = CryptoTransaction(transaction.serialized)
-            wallet.sender_public_key = crypto_transaction.asset['signature']['publicKey']
+            wallet.sender_public_key = crypto_transaction.asset['signature'][
+                'publicKey'
+            ]
 
     def _build_votes(self):
         # TODO: try to optimize this query. We only need the last vote that happened
         # per sender_public_key
         transactions = (
-            Transaction
-            .select(Transaction.sender_public_key, Transaction.serialized)
+            Transaction.select(Transaction.sender_public_key, Transaction.serialized)
             .where(Transaction.type == TRANSACTION_TYPE_VOTE)
             .order_by(Transaction.timestamp.desc(), Transaction.sequence.asc())
         )
@@ -159,11 +147,9 @@ class WalletManager(object):
                 delegate.vote_balance += voter.balance
 
     def _build_delegates(self):
-        transactions = (
-            Transaction
-            .select(Transaction.sender_public_key, Transaction.serialized)
-            .where(Transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION)
-        )
+        transactions = Transaction.select(
+            Transaction.sender_public_key, Transaction.serialized
+        ).where(Transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION)
 
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
@@ -172,16 +158,12 @@ class WalletManager(object):
             self._username_map[wallet.username.lower()] = wallet.address
 
         # Calculate forged blocks
-        forged_blocks = (
-            Block
-            .select(
-                Block.generator_public_key,
-                fn.SUM(Block.total_fee).alias('total_fee'),
-                fn.SUM(Block.reward).alias('reward'),
-                fn.COUNT(Block.total_amount).alias('total_produced')
-            )
-            .group_by(Block.generator_public_key)
-        )
+        forged_blocks = Block.select(
+            Block.generator_public_key,
+            fn.SUM(Block.total_fee).alias('total_fee'),
+            fn.SUM(Block.reward).alias('reward'),
+            fn.COUNT(Block.total_amount).alias('total_produced'),
+        ).group_by(Block.generator_public_key)
         for block in forged_blocks:
             wallet = self.find_by_public_key(block.generator_public_key)
             wallet.forged_fees += int(block.total_fee)
@@ -204,8 +186,7 @@ class WalletManager(object):
 
     def _build_multi_signatures(self):
         transactions = (
-            Transaction
-            .select(Transaction.sender_public_key, Transaction.serialized)
+            Transaction.select(Transaction.sender_public_key, Transaction.serialized)
             .where(Transaction.type == TRANSACTION_TYPE_MULTI_SIGNATURE)
             .order_by((Transaction.timestamp + Transaction.sequence).desc())
         )
@@ -310,20 +291,17 @@ class WalletManager(object):
             # TODO: exception
             raise Exception(
                 "Can't apply transaction {}: delegate name {} already taken".format(
-                    transaction.id,
-                    transaction.asset['delegate']['username'],
+                    transaction.id, transaction.asset['delegate']['username']
                 )
             )
 
-        elif (
-            transaction.type == TRANSACTION_TYPE_VOTE
-            and not self.is_delegate(transaction.asset['votes'][0][1:])
+        elif transaction.type == TRANSACTION_TYPE_VOTE and not self.is_delegate(
+            transaction.asset['votes'][0][1:]
         ):
             # TODO: exception
             raise Exception(
                 "Can't apply transaction {}: delegate {} does not exist".format(
-                    transaction.id,
-                    transaction.asset['votes'][0][1:]
+                    transaction.id, transaction.asset['votes'][0][1:]
                 )
             )
         elif transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
@@ -344,9 +322,11 @@ class WalletManager(object):
         else:
             can_apply, errors = sender.can_apply(transaction, block)
             if not can_apply:
-                print("Can't apply transaction {} from sender due to {}".format(
-                    transaction.id, sender.address, errors
-                ))
+                print(
+                    "Can't apply transaction {} from sender due to {}".format(
+                        transaction.id, sender.address, errors
+                    )
+                )
 
         sender.apply_transaction_to_sender(transaction)
 
@@ -364,12 +344,13 @@ class WalletManager(object):
     # TODO: find a better name for this function
     def apply_block(self, block):
         # If it's not a genesis block and can't find a delegate, raise an exception
-        if (
-            block.height != 1
-            and block.generator_public_key not in self._public_key_map
-        ):
+        if block.height != 1 and block.generator_public_key not in self._public_key_map:
             # TODO: exception
-            raise Exception('Could not find a delegate with public key: {}'.format(block.generator_public_key))
+            raise Exception(
+                'Could not find a delegate with public key: {}'.format(
+                    block.generator_public_key
+                )
+            )
 
         delegate = self.find_by_public_key(block.generator_public_key)
 
@@ -382,7 +363,9 @@ class WalletManager(object):
                 self.apply_transaction(transaction, block)
                 applied_transactions.append(transaction)
         except Exception as e:  # TODO: better exception handling, not so broad
-            print('Failed to apply all transactions in block - reverting previous transactions')
+            print(
+                'Failed to apply all transactions in block - reverting previous transactions'
+            )
             for transaction in reversed(applied_transactions):
                 self.revert_transaction(transaction)
             raise e
@@ -411,8 +394,7 @@ class WalletManager(object):
         if len(delegate_wallets) < max_delegates:
             raise Exception(
                 'Expected to find {} delegates but only found {}.'.format(
-                    max_delegates,
-                    len(delegate_wallets)
+                    max_delegates, len(delegate_wallets)
                 )
             )
         # Sort delegate wallets by balance and use public key as a tiebreaker
@@ -421,14 +403,8 @@ class WalletManager(object):
         # and public_key to sort it ascending.
         delegate_wallets.sort(key=lambda x: (-x.vote_balance, x.public_key))
 
-
-
-
         # for wallet in delegate_wallets[:60]:
         #     print(wallet.username, wallet.public_key, wallet.balance)
-
-
-
 
         delegate_wallets = delegate_wallets[:max_delegates]
         print('Loaded {} active delegates'.format(len(delegate_wallets)))

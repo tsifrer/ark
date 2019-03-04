@@ -39,14 +39,9 @@ class Wallet(object):
     def _verify_transaction_signatures(self, transaction, public_key):
         for signature in transaction.signatures:
             transaction_bytes = transaction.get_bytes(
-                skip_signature=True,
-                skip_second_signature=True
+                skip_signature=True, skip_second_signature=True
             )
-            is_verified = verify_hash(
-                transaction_bytes,
-                signature,
-                public_key
-            )
+            is_verified = verify_hash(transaction_bytes, signature, public_key)
             if is_verified:
                 return signature
 
@@ -103,9 +98,8 @@ class Wallet(object):
             if not milestone['ignoreInvalidSecondSignatureField']:
                 errors.append('Invalid second-signature field')
 
-        if (
+        if self.second_public_key and not transaction.verify_second_signature(
             self.second_public_key
-            and not transaction.verify_second_signature(self.second_public_key)
         ):
             errors.append('Failed to verify second-signature')
 
@@ -115,9 +109,7 @@ class Wallet(object):
             # TODO: Checking whether the username is a lowercase version of itself
             # seems silly. Why can't we mutate it to lowercase
             is_valid_username = (
-                not self.username
-                and username
-                and username == username.lower()
+                not self.username and username and username == username.lower()
             )
             if not is_valid_username:
                 errors.append('Wallet already has a registered username')
@@ -173,8 +165,7 @@ class Wallet(object):
     def apply_transaction_to_sender(self, transaction):
         address = address_from_public_key(transaction.sender_public_key)
         is_correct_wallet = (
-            transaction.sender_public_key == self.public_key
-            or address == self.address
+            transaction.sender_public_key == self.public_key or address == self.address
         )
         if is_correct_wallet:
             self.balance -= transaction.amount
@@ -204,8 +195,7 @@ class Wallet(object):
     def apply_block(self, block):
         address = address_from_public_key(block.generator_public_key)
         is_correct_wallet = (
-            block.generator_public_key == self.public_key
-            or address == self.address
+            block.generator_public_key == self.public_key or address == self.address
         )
         if is_correct_wallet:
             self.balance += block.reward
@@ -220,8 +210,7 @@ class Wallet(object):
     def revert_transaction_for_sender(self, transaction):
         address = address_from_public_key(transaction.sender_public_key)
         is_correct_wallet = (
-            transaction.sender_public_key == self.public_key
-            or address == self.address
+            transaction.sender_public_key == self.public_key or address == self.address
         )
         if is_correct_wallet:
             self.balance -= transaction.amount
