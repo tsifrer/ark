@@ -14,6 +14,7 @@ pip-tools
 pyramid
 pytest
 python-dateutil
+redis
 requests
 semver
 transitions

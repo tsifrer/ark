@@ -14,6 +14,7 @@ from chain.crypto.models.block import Block
 from .p2p.p2p import P2P
 from chain.common.plugins import load_plugin
 from chain.config import Config
+from chain.plugins.process_queue.queue import Queue
 
 
 class Blockchain(object):
@@ -121,6 +122,12 @@ class Blockchain(object):
 
 
             self.start_syncing()
+
+            print('Blockhain is syced!')
+
+            self.consume_queue()
+
+
         except Exception as e:
             raise e  # TODO:
             # TODO: log exception
@@ -133,11 +140,10 @@ class Blockchain(object):
         print('STARTED', start)
         while True:
             last_block = self.database.get_last_block()
-            if self.is_synced(last_block):
-                print('Blockhain is syced!')
-                break
-            else:
+            if not self.is_synced(last_block):
                 self.sync_blocks(last_block)
+            else:
+                break
             print('Time taken', datetime.now() - start)
 
         print('Done syncing', datetime.now() - start)
@@ -348,6 +354,38 @@ class Blockchain(object):
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
         return self._handle_accepted_block(block)
+
+    def consume_queue(self):
+        queue = Queue(None)
+        while True:
+            serialized_block = queue.pop_block()
+            if serialized_block:
+                print(serialized_block)
+                last_block = self.database.get_last_block()
+                block = Block(serialized_block)
+                status = self.process_block(block, last_block)
+                print(status)
+                if status in [BLOCK_ACCEPTED, BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED]:
+                    # TODO: Broadcast only current block
+                    config = Config()
+                    milestone = config.get_milestone(block.height)
+                    current_slot = slots.get_slot_number(block.height, time.get_time())
+                    if current_slot * milestone['blocktime'] <= block.timestamp:
+                        # TODO: THIS IS MISSING
+                        print('MISSING: IMPLEMENT BROADCASTING')
+            else:
+                # TODO: change this
+                print('Nothing to process. Sleeping for 1 sec')
+                sleep(1)
+
+
+
+
+
+
+
+
+
 
 
 

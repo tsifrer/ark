@@ -18,6 +18,10 @@ class Database(object):
     restored_database_integrity = False
     forging_delegates = []
 
+
+    _wallets = None
+
+
     def __init__(self, app):
         super().__init__()
         self.app = app
@@ -37,10 +41,14 @@ class Database(object):
         Transaction._meta.database = self.db
         Round._meta.database = self.db
 
-        # self.wallets = WalletManager(self.db)
-
-
         self._active_delegates = []
+
+    @property
+    def wallets(self):
+        # TODO: fix this somehow to not be broken in p2p_service
+        if not self._wallets:
+            self._wallets = WalletManager(self.db)
+        return self._wallets
 
     def get_last_block(self):
         """Get the last block
