@@ -8,6 +8,25 @@ from chain.plugins.database.database import Database
 from chain.plugins.process_queue.queue import Queue
 
 
+@view_config(route_name='status', renderer='json')
+def status(request):
+    if request.method != 'GET':
+        raise HTTPMethodNotAllowed(request.method)
+
+    # TODO: This is REALLY bad, to connect to db on every request
+    db = Database(None)
+
+    last_block = db.get_last_block()
+
+    return {
+        'success': True,
+        'height': last_block.height if last_block else 0,
+        'forgingAllowed': slots.is_forging_allowed(last_block.height, time.get_time()),
+        'currentSlot': slots.get_slot_number(last_block.height, time.get_time()),
+        'header': last_block.get_header() if last_block else {},
+    }
+
+
 @view_config(route_name='block_store', renderer='json')
 def block_store_view(request):
     if request.method != 'POST':

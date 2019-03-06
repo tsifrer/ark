@@ -8,7 +8,8 @@ from waitress import serve
 def create_app():
     with Configurator() as config:
         config.scan('.views.internal')
-        config.add_route('block_store', '/blocks')
+        config.add_route('block_store', '/internal/blocks')
+        config.add_route('status', '/peer/status')
 
         app = config.make_wsgi_app()
     return app

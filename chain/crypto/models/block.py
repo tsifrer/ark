@@ -122,6 +122,34 @@ class Block(object):
         id_hex = self.get_id_hex()
         return int(id_hex, 16)
 
+    def get_header(self):
+        fields = [
+            'id',
+            'id_hex',
+            'timestamp',
+            'version',
+            'height',
+            'previous_block_hex',
+            'previous_block',
+            'number_of_transactions',
+            'total_amount',
+            'total_fee',
+            'reward',
+            'payload_length',
+            'payload_hash',
+            'generator_public_key',
+            'block_signature',
+        ]
+        data = {}
+        for field in fields:
+            value = getattr(self, field)
+            if isinstance(value, int):
+                value = str(value)
+            if isinstance(value, bytes):
+                value = value.decode()
+            data[field] = value
+        return data
+
     def serialize(self, include_signature=True):
         # TODO: make this a serializer that correctly converts input and checks that
         # it's correct on init
