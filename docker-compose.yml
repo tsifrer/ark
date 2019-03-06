@@ -1,20 +1,43 @@
 version: '3.7'
 services:
   blockchain:
+    image: chain
     build:
       context: .
     volumes:
       - .:/home/app
-    depends_on:
-      - db
     command: python chain/blockchain/start.py
+    depends_on:
+      - chain-db
+      - chain-redis
     environment:
       PYTHONUNBUFFERED: '1'
       POSTGRES_DB_HOST: 'db'
-  db:
+      REDIS_HOST: 'redis'
+
+  chain-p2p:
+    image: chain
+    volumes:
+      - .:/home/app
+    command: python chain/p2p_service/start.py
+    depends_on:
+      - chain-db
+      - chain-redis
+    environment:
+      PYTHONUNBUFFERED: '1'
+      POSTGRES_DB_HOST: 'db'
+      REDIS_HOST: 'redis'
+      SERVER_HOST: '0.0.0.0'
+    ports:
+      - '4003:8080'
+
+  chain-db:
     image: postgres:11.2
     volumes:
         - ark-db:/var/lib/postgresql/data
+
+  chain-redis:
+    image: redis:5.0.3
 
 volumes:
   ark-db:

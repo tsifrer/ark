@@ -1,3 +1,5 @@
+.PHONY: chain
+
 test:
 	py.test -vv -s -x $(ARGS)
 
@@ -11,7 +13,6 @@ create-migrations:
 migrate:
 	cd chain/plugins/database; python migrate.py
 
-
 black:
 	black .
 
@@ -24,3 +25,9 @@ profile:
 
 snakeviz:
 	snakeviz spongebob.prof
+
+chain:
+	docker-compose up blockchain
+
+p2p:
+	docker-compose up chain-p2p
