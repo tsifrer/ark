@@ -1,3 +1,4 @@
+import os
 from hashlib import sha256
 
 from peewee import PostgresqlDatabase
@@ -25,10 +26,10 @@ class Database(object):
         self.app = app
 
         self.db = PostgresqlDatabase(
-            database='postgres',
-            user='postgres',
-            host='127.0.0.1',
-            port='5432',
+            database=os.environ.get('POSTGRES_DB_NAME', 'postgres'),
+            user=os.environ.get('POSTGRES_DB_USER', 'postgres'),
+            host=os.environ.get('POSTGRES_DB_HOST', '127.0.0.1'),
+            port=os.environ.get('POSTGRES_DB_PORT', '5432'),
             # password='password'
         )
 

@@ -37,6 +37,7 @@ pip-tools==3.2.0
 plaster-pastedeploy==0.6  # via pyramid
 plaster==1.0              # via plaster-pastedeploy, pyramid
 pluggy==0.8.1             # via pytest
+psycopg2==2.7.7
 py==1.7.0                 # via pytest
 pycodestyle==2.5.0        # via flake8, flake8-import-order
 pycparser==2.19           # via cffi

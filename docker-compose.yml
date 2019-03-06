@@ -1,0 +1,20 @@
+version: '3.7'
+services:
+  blockchain:
+    build:
+      context: .
+    volumes:
+      - .:/home/app
+    depends_on:
+      - db
+    command: python chain/blockchain/start.py
+    environment:
+      PYTHONUNBUFFERED: '1'
+      POSTGRES_DB_HOST: 'db'
+  db:
+    image: postgres:11.2
+    volumes:
+        - ark-db:/var/lib/postgresql/data
+
+volumes:
+  ark-db:

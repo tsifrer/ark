@@ -11,6 +11,7 @@ flake8-quotes
 peewee
 peewee-migrate
 pip-tools
+psycopg2
 pyramid
 pytest
 python-dateutil

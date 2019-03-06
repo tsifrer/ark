@@ -6,10 +6,10 @@ remove-pyc:
 
 
 create-migrations:
-	cd ark/plugins/database_peewee; python create_migrations.py
+	cd chain/plugins/database; python create_migrations.py
 
 migrate:
-	cd ark/plugins/database_peewee; python migrate.py
+	cd chain/plugins/database; python migrate.py
 
 
 black:
