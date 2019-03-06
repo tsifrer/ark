@@ -109,7 +109,7 @@ class Blockchain(object):
             # Rebuild wallets
             self.database.wallets.build()
 
-            delegate_wallets = self.database.wallets.load_active_delegate_wallets(562)
+            # delegate_wallets = self.database.wallets.load_active_delegate_wallets(562)
 
             # for wallet in delegate_wallets:
             #     print(wallet.public_key, wallet.username, wallet.vote_balance)

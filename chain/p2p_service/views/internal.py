@@ -15,7 +15,11 @@ def block_store_view(request):
 
     # TODO: Validate request data that it's correct block structure
 
-    block = Block(request.json)
+    # TODO: after validation you should not need this
+    block_data = request.json.get('block')
+    if not block_data:
+        raise
+    block = Block(block_data)
     print(
         'Received new block at height {} with {} transactions, from {}'.format(
             block.height,

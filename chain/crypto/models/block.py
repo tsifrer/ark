@@ -116,7 +116,7 @@ class Block(object):
         payload_hash = unhexlify(self.serialize())
         full_hash = sha256(payload_hash).digest()
         small_hash = full_hash[:8][::-1]
-        return hexlify(small_hash)
+        return hexlify(small_hash).decode()
 
     def get_id(self):
         id_hex = self.get_id_hex()
@@ -181,7 +181,7 @@ class Block(object):
         self.version = read_bit32(bytes_data)
         self.timestamp = read_bit32(bytes_data, offset=4)
         self.height = read_bit32(bytes_data, offset=8)
-        self.previous_block_hex = hexlify(bytes_data[12 : 8 + 12])
+        self.previous_block_hex = hexlify(bytes_data[12 : 8 + 12]).decode()
 
         self.previous_block = int(self.previous_block_hex, 16)
         self.number_of_transactions = read_bit32(bytes_data, offset=20)
@@ -189,12 +189,12 @@ class Block(object):
         self.total_fee = read_bit64(bytes_data, offset=32)
         self.reward = read_bit64(bytes_data, offset=40)
         self.payload_length = read_bit32(bytes_data, offset=48)
-        self.payload_hash = hexlify(bytes_data[52 : 32 + 52])
-        self.generator_public_key = hexlify(bytes_data[84 : 33 + 84])
+        self.payload_hash = hexlify(bytes_data[52 : 32 + 52]).decode()
+        self.generator_public_key = hexlify(bytes_data[84 : 33 + 84]).decode()
         # TODO: test the case where block signature is not present
         signature_len = int(hexlify(bytes_data[118:119]), 16)
         signature_to = signature_len + 2 + 117
-        self.block_signature = hexlify(bytes_data[117:signature_to])
+        self.block_signature = hexlify(bytes_data[117:signature_to]).decode()
 
         remaining_bytes = bytes_data[signature_to:]
         header_only = header_only or len(remaining_bytes) == 0
