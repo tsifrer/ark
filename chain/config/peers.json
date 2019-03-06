@@ -3,7 +3,7 @@
         {
             "ip": "178.62.246.188",
             "port": 4002
-        },
+        }
     ],
     "sources": ["https://raw.githubusercontent.com/ArkEcosystem/peers/master/devnet.json"]
 }
