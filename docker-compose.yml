@@ -12,8 +12,8 @@ services:
       - chain-redis
     environment:
       PYTHONUNBUFFERED: '1'
-      POSTGRES_DB_HOST: 'db'
-      REDIS_HOST: 'redis'
+      POSTGRES_DB_HOST: 'chain-db'
+      REDIS_HOST: 'chain-redis'
 
   chain-p2p:
     image: chain
@@ -25,8 +25,8 @@ services:
       - chain-redis
     environment:
       PYTHONUNBUFFERED: '1'
-      POSTGRES_DB_HOST: 'db'
-      REDIS_HOST: 'redis'
+      POSTGRES_DB_HOST: 'chain-db'
+      REDIS_HOST: 'chain-redis'
       SERVER_HOST: '0.0.0.0'
     ports:
       - '4002:8080'
