@@ -1,4 +1,4 @@
-.PHONY: chain
+.PHONY: build chain
 
 test:
 	py.test -vv -s -x $(ARGS)
@@ -25,6 +25,9 @@ profile:
 
 snakeviz:
 	snakeviz spongebob.prof
+
+build:
+	docker-compose build
 
 chain:
 	docker-compose up blockchain

@@ -29,7 +29,7 @@ services:
       REDIS_HOST: 'redis'
       SERVER_HOST: '0.0.0.0'
     ports:
-      - '4003:8080'
+      - '4002:8080'
 
   chain-db:
     image: postgres:11.2
