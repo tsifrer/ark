@@ -124,29 +124,29 @@ class Block(object):
 
     def get_header(self):
         fields = [
-            'id',
-            'id_hex',
-            'timestamp',
-            'version',
-            'height',
-            'previous_block_hex',
-            'previous_block',
-            'number_of_transactions',
-            'total_amount',
-            'total_fee',
-            'reward',
-            'payload_length',
-            'payload_hash',
-            'generator_public_key',
-            'block_signature',
+            ('id', str,),
+            ('id_hex', None,),
+            ('timestamp', None,),
+            ('version', None,),
+            ('height', None,),
+            ('previous_block_hex', None,),
+            ('previous_block', None,),
+            ('number_of_transactions', None,),
+            ('total_amount', str,),
+            ('total_fee', str,),
+            ('reward', str,),
+            ('payload_length', None,),
+            ('payload_hash', None,),
+            ('generator_public_key', None,),
+            ('block_signature', None,),
         ]
         data = {}
-        for field in fields:
+        for field, to_type in fields:
             value = getattr(self, field)
-            if isinstance(value, int):
-                value = str(value)
             if isinstance(value, bytes):
                 value = value.decode()
+            if to_type:
+                value = to_type(value)
             data[field] = value
         return data
 
