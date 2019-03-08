@@ -130,7 +130,7 @@ class Block(object):
             ('version', None,),
             ('height', None,),
             ('previous_block_hex', None,),
-            ('previous_block', None,),
+            ('previous_block', str,),
             ('number_of_transactions', None,),
             ('total_amount', str,),
             ('total_fee', str,),

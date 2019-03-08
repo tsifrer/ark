@@ -27,6 +27,45 @@ def status(request):
     }
 
 
+@view_config(route_name='peer_block_view', renderer='json')
+def peer_block_view(request):
+    if request.method != 'POST':
+        raise HTTPMethodNotAllowed(request.method)
+
+    # TODO: Wrap everything in try except
+
+    # TODO: Validate request data that it's correct block structure
+    block_data = request.json.get('block')
+    if not block_data:
+        raise
+    block = Block(block_data)
+
+    # TODO: pingBlock
+    # if (blockchain.pingBlock(block)) {
+    #             return { success: true };
+    #         }
+
+    # TODO: check if we already got the block
+    # const lastDownloadedBlock = blockchain.getLastDownloadedBlock();
+
+    # // Are we ready to get it?
+    # if (lastDownloadedBlock && lastDownloadedBlock.data.height + 1 !== block.height) {
+    #     return { success: true };
+    # }
+
+    is_verified, errors = block.verify()
+    if not is_verified:
+        print(errors)  # TODO:
+        return {'success': False}
+
+    # blockchain.pushPingBlock(b.data);
+    # block.ip = request.info.remoteAddress;
+
+    queue = Queue(None)
+    queue.push_block(block)
+    return {'success': True}
+
+
 @view_config(route_name='block_store', renderer='json')
 def block_store_view(request):
     if request.method != 'POST':

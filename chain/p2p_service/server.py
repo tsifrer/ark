@@ -10,6 +10,7 @@ def create_app():
         config.scan('.views.internal')
         config.add_route('block_store', '/internal/blocks')
         config.add_route('status', '/peer/status')
+        config.add_route('peer_block_view', '/peer/blocks')
 
         app = config.make_wsgi_app()
     return app
