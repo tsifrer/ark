@@ -222,6 +222,8 @@ class WalletManager(object):
         print('Building wallets Step 8 of 8: Multi Signatures')
         self._build_multi_signatures()
 
+        # TODO: Verify that no wallet has negative balance!
+
     def find_by_address(self, address):
         if address not in self._wallets:
             self._wallets[address] = Wallet({'address': address})
@@ -255,15 +257,14 @@ class WalletManager(object):
             delegate = self.find_by_public_key(vote[1:])
             if vote.startswith('+'):
                 if revert:
-                    delegate.vote_balance -= sender.balance
+                    delegate.vote_balance -= sender.balance - transaction.fee
                 else:
                     delegate.vote_balance += sender.balance
             else:
-                total = sender.balance + transaction.fee
                 if revert:
-                    delegate.vote_balance += total
+                    delegate.vote_balance += sender.balance
                 else:
-                    delegate.vote_balance -= total
+                    delegate.vote_balance -= sender.balance + transaction.fee
 
         else:
             # Update vote balance of the sender's delegate
