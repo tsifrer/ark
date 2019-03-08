@@ -235,28 +235,26 @@ class Database(object):
             #     wallet = self.wallets.find_by_public_key(delegate.public_key)
             #     print(delegate.public_key, delegate.balance)
 
-            if not delegates:
-                raise Exception("Couldn't find any rounds in the database")
-
-            seed = sha256(str(delegate_round).encode('utf-8')).digest()
-            # TODO: Look into why we don't reorder every 5th element (the second index += 1
-            # skips it). Also why do we create another seed, that is always the same after
-            # the first run?
-            # Apparently this order is used in forger. Might be better to put it there
-            # instead of in a random function that doesn't tell you what it's for,
-            # whatdoyouthink?
-            index = 0
-            while index < len(delegates):
-                for x in range(min(4, len(delegates) - index)):
-                    new_index = seed[x] % len(delegates)
-                    # Swap delegate on index with the delegate on new_index
-                    delegates[new_index], delegates[index] = (
-                        delegates[index],
-                        delegates[new_index],
-                    )
+            if delegates:
+                seed = sha256(str(delegate_round).encode('utf-8')).digest()
+                # TODO: Look into why we don't reorder every 5th element (the second index += 1
+                # skips it). Also why do we create another seed, that is always the same after
+                # the first run?
+                # Apparently this order is used in forger. Might be better to put it there
+                # instead of in a random function that doesn't tell you what it's for,
+                # whatdoyouthink?
+                index = 0
+                while index < len(delegates):
+                    for x in range(min(4, len(delegates) - index)):
+                        new_index = seed[x] % len(delegates)
+                        # Swap delegate on index with the delegate on new_index
+                        delegates[new_index], delegates[index] = (
+                            delegates[index],
+                            delegates[new_index],
+                        )
+                        index += 1
+                    seed = sha256(seed).digest()
                     index += 1
-                seed = sha256(seed).digest()
-                index += 1
 
             self._active_delegates = delegates
 

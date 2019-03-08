@@ -231,6 +231,9 @@ class Blockchain(object):
 
     def _validate_generator(self, block):
         delegates = self.database.get_active_delegates(block.height)
+        if not delegates:
+            print('Could not find delegates for block height {}'.format(block.height))
+            return False
         slot_number = slots.get_slot_number(block.height, block.timestamp)
         generator_username = self.database.wallets.find_by_public_key(
             block.generator_public_key
