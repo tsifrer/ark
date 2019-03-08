@@ -281,6 +281,17 @@ class Blockchain(object):
                     'Last block: {}'
                 ).format(block.height, last_block.height)
             )
+
+
+
+
+            # TODO: this might not be OK
+            self.start_syncing()
+            print('Done syncing')
+
+
+
+
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
         elif block.height < last_block.height:
