@@ -53,6 +53,9 @@ class WalletManager(object):
             wallet = self.find_by_address(transaction.recipient_id)
             wallet.balance = int(transaction.amount)
 
+            if wallet.address == 'DUJ9w4qTuKXtFLiSARrifCeUhi2MvrP3Ch':
+                print(wallet.__dict__)
+
     def _build_block_rewards(self):
         """Load and apply block rewards to wallets.
         """
@@ -102,7 +105,10 @@ class WalletManager(object):
             wallet.balance -= int(transaction.fee)
 
             if wallet.balance < 0 and not self.is_genesis_address(wallet.address):
-                print('Negative wallet balance: {}'.format(wallet.address))
+                total = int(transaction.amount) + int(transaction.fee)
+                print('Negative wallet balance: {} {}'.format(wallet.address, wallet.balance))
+                print(total)
+                print(wallet.__dict__)
 
     def _build_second_signatures(self):
         transactions = Transaction.select(

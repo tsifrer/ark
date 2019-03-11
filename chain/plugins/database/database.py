@@ -88,6 +88,7 @@ class Database(object):
                 db_txn.rollback()
                 db_block.delete_instance()
                 print(e)  # TODO: replace with logger.error
+                raise e
                 return
 
     def apply_round(self, height):
@@ -109,8 +110,8 @@ class Database(object):
             # Get the active delegate list from in-memory wallet manager
             delegate_wallets = self.wallets.load_active_delegate_wallets(next_height)
 
-            # for wallet in delegate_wallets:
-            #     print(wallet.username, wallet.vote_balance)
+            for wallet in delegate_wallets:
+                print(wallet.username, wallet.public_key, wallet.vote_balance)
 
             # TODO: ark core states that this is saving next round delegate list into
             # the db. Is that true? Or are we saving the current round delegate list
@@ -231,9 +232,9 @@ class Database(object):
                 .order_by(Round.balance.desc(), Round.public_key.asc())
             )
 
-            # for delegate in delegates:
-            #     wallet = self.wallets.find_by_public_key(delegate.public_key)
-            #     print(delegate.public_key, delegate.balance)
+            for delegate in delegates:
+                wallet = self.wallets.find_by_public_key(delegate.public_key)
+                print(delegate.public_key, delegate.balance, wallet.vote_balance)
 
             if delegates:
                 seed = sha256(str(delegate_round).encode('utf-8')).digest()

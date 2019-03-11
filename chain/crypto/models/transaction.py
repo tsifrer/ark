@@ -70,6 +70,9 @@ class Transaction(object):
                     )  # TODO: change exception
                 setattr(self, field, value)
 
+            self._apply_v1_compatibility()
+            self.id = self.get_id()
+
     @staticmethod
     def can_have_vendor_field(transaction_type):
         return transaction_type in [
@@ -207,13 +210,13 @@ class Transaction(object):
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
-            self.asset['signature'] = {'publicKey': hexlify(bytes_data[:33])}
+            self.asset['signature'] = {'publicKey': hexlify(bytes_data[:33]).decode()}
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             username_length = read_bit8(bytes_data) // 2
             username_end = username_length + 1
-            self.asset['delegate'] = {'username': bytes_data[1:username_end]}
+            self.asset['delegate'] = {'username': bytes_data[1:username_end].decode()}
             return bytes_data[username_end:]
 
         elif self.type == TRANSACTION_TYPE_VOTE:
@@ -237,14 +240,14 @@ class Transaction(object):
             keys_num = read_bit8(bytes_data, offset=1)
             start = 3
             for _ in range(keys_num):
-                key = hexlify(bytes_data[start : 33 + start])
+                key = hexlify(bytes_data[start : 33 + start]).decode()
                 self.asset['multisignature']['keysgroup'].append(key)
                 start += 33
             return bytes_data[start:]
 
         elif self.type == TRANSACTION_TYPE_IPFS:
             dag_length = read_bit8(bytes_data)
-            self.asset['ipfs'] = {'dag': hexlify(bytes_data[1:dag_length])}
+            self.asset['ipfs'] = {'dag': hexlify(bytes_data[1:dag_length]).decode()}
             return bytes_data[dag_length:]
 
         elif self.type == TRANSACTION_TYPE_TIMELOCK_TRANSFER:
@@ -282,9 +285,11 @@ class Transaction(object):
 
     def _deserialize_signature(self, bytes_data):
         # Signature
+        self.signature = None
+        self.second_signature = None
         if len(bytes_data) > 0:
             signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-            self.signature = hexlify(bytes_data[:signature_length])
+            self.signature = hexlify(bytes_data[:signature_length]).decode()
             bytes_data = bytes_data[signature_length:]
 
         # Second signature
@@ -298,58 +303,51 @@ class Transaction(object):
             else:
                 # Second signature
                 second_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-                self.second_signature = hexlify(bytes_data[:second_signature_length])
+                self.second_signature = hexlify(bytes_data[:second_signature_length]).decode()
 
-    # def _apply_v1_compatibility(self):
-    #     if self.version != 1:
-    #         return
+    # TODO: Figure out what the fuck is V1???? and why is it called V1? If all
+    # transactions that we have NOW are v1??????
+    def _apply_v1_compatibility(self):
+        if self.version != 1:
+            return
 
-    #     if self.second_signature:
-    #         self.sign_signature = self.second_signature
+        if self.second_signature:
+            self.sign_signature = self.second_signature
 
-    #     fill_recipient_types = [
-    #         TRANSACTION_TYPE_VOTE,
-    #         TRANSACTION_TYPE_SECOND_SIGNATURE,
-    #         TRANSACTION_TYPE_MULTI_SIGNATURE
-    #     ]
-    #     if self.type in fill_recipient_types:
-    #         self.recipient_id = address_from_public_key(self.sender_public_key, self.network)
+        if self.type == TRANSACTION_TYPE_VOTE:
+            self.recipient_id = address_from_public_key(
+                self.sender_public_key, self.network
+            )
+        elif self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
+            self.asset['multisignature']['keysgroup'] = [
+                '+{}'.format(key) for key in self.asset['multisignature']['keysgroup']
+            ]
 
-    #     if self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
-    #         self.asset['multisignature']['keysgroup'] = [
-    #             '+{}'.format(key) for key in self.asset['multisignature']['keysgroup']
-    #         ]
-
-    #     if self.vendor_field_hex:
-    #         self.vendor_field = unhexlify(self.vendor_field_hex)
-
-    #     self.id = self.get_id()
-
-    #     # TODO
-    #     """
-    #     // Apply fix for broken type 1 and 4 transactions, which were
-    #     // erroneously calculated with a recipient id.
-    #     if (transactionIdFixTable[transaction.id]) {
-    #         transaction.id = transactionIdFixTable[transaction.id];
-    #     }
-    #     """
+        if self.vendor_field_hex:
+            self.vendor_field = unhexlify(self.vendor_field_hex)
 
     def deserialize(self, serialized_hex):
+        # Set fields that might not be set to default values first
+        self.id = None
+        self.recipient_id = None
+        self.vendor_field = None
+        self.vendor_field_hex = None
+        self.sign_signature = None
+
         bytes_data = unhexlify(serialized_hex)
 
         self.version = read_bit8(bytes_data, offset=1)
         self.network = read_bit8(bytes_data, offset=2)
         self.type = read_bit8(bytes_data, offset=3)
         self.timestamp = read_bit32(bytes_data, offset=4)
-        self.sender_public_key = hexlify(bytes_data[8 : 33 + 8])
+        self.sender_public_key = hexlify(bytes_data[8 : 33 + 8]).decode()
         self.fee = read_bit64(bytes_data, offset=41)
         self.amount = 0
         self.asset = {}
-
         if Transaction.can_have_vendor_field(self.type):
             vendor_length = read_bit8(bytes_data, offset=49)
             if vendor_length > 0:
-                self.vendor_field_hex = hexlify(bytes_data[49 : vendor_length + 49])
+                self.vendor_field_hex = hexlify(bytes_data[49 : vendor_length + 49]).decode()
 
             remaining_bytes = bytes_data[49 + 1 + vendor_length :]
         else:
@@ -358,7 +356,8 @@ class Transaction(object):
         signature_bytes = self._deserialize_type(remaining_bytes)
         self._deserialize_signature(signature_bytes)
 
-        # self._apply_v1_compatibility()
+        self._apply_v1_compatibility()
+        self.id = self.get_id()
 
     def get_bytes(self, skip_signature=False, skip_second_signature=False):
         # TODO: rename to to_bytes which makes more sense than get_bytes
@@ -417,7 +416,7 @@ class Transaction(object):
             bytes_data += write_high(self.signature)
 
         if not skip_second_signature and self.sign_signature:
-            bytes_data += write_high(self.signSignature)
+            bytes_data += write_high(self.sign_signature)
 
         return bytes_data
 
@@ -449,3 +448,21 @@ class Transaction(object):
 
         is_verified = verify_hash(transaction_bytes, second_signature, public_key)
         return is_verified
+
+    def get_hash(self):
+        transaction_bytes = self.get_bytes()
+        return sha256(transaction_bytes).hexdigest()
+
+    def get_id(self):
+        transaction_id = self.get_hash()
+
+        config = Config()
+        exceptions = config['exceptions'].get('transactionIdFixTable', {})
+
+        # Some transactions in the past might have erroneously calculated IDs
+        # so if they are defined as exceptions, override the ID with the one defined
+        # in exceptions
+        if transaction_id in exceptions:
+            transaction_id = exceptions[transaction_id]
+
+        return transaction_id

@@ -346,5 +346,7 @@
         "0b92d7e3e8601cd3e098d9aef3644d6f961a82a309fffe0f35fc55defc234554",
         "169ae1ec30b70da7312a5c26a20b224298426517ab531fedbac251f0ee0c66a7",
         "941a5b54b2e0086d972b9c9fbbb7b35b4f09ffff215350db7c7d936106e71592"
-    ]
+    ],
+    "outlookTable": {},
+    "transactionIdFixTable": {}
 }

@@ -166,14 +166,14 @@ class Blockchain(object):
                     status = self.process_block(block, last_block)
                     print('Block {} was {}'.format(block.id, status))
                     # TODO: this might be completely wrong to handle
-                    if status == BLOCK_REJECTED:
-                        msg = 'Block {} was rejected. Skipping all other blocks in this batch'.format(
-                            block.id
+                    if status == BLOCK_ACCEPTED:
+                        last_block = block
+                    else:
+                        msg = 'Block {} was {}. Skipping all other blocks in this batch'.format(
+                            block.id, status
                         )
                         print(msg)
                         raise Exception(msg)
-                    if status == BLOCK_ACCEPTED:
-                        last_block = block
                 # TODO:
                 # blockchain.enqueueBlocks(blocks);
                 # blockchain.dispatch("DOWNLOADED");

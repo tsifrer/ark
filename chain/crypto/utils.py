@@ -26,10 +26,10 @@ def is_block_exception(block):
     return block.id in exception_blocks
 
 
-def is_transaction_exception(block):
+def is_transaction_exception(transaction):
     config = Config()
-    exception_blocks = config['exceptions'].get('transaction', [])
-    return block.id in exception_blocks
+    exception_transactions = config['exceptions'].get('transaction', [])
+    return transaction.id in exception_transactions
 
 
 def calculate_round(height):
