@@ -4,7 +4,7 @@ from hashlib import sha256
 from peewee import PostgresqlDatabase
 
 from chain.config import Config
-from chain.crypto.models.block import Block as CryptoBlock
+from chain.crypto.objects.block import Block as CryptoBlock
 from chain.crypto.utils import calculate_round
 
 from .models.block import Block
@@ -58,7 +58,7 @@ class Database(object):
         except Block.DoesNotExist:
             return None
         else:
-            crypto_block = CryptoBlock(block)
+            crypto_block = CryptoBlock.from_object(block)
             return crypto_block
 
     def save_block(self, block):
@@ -275,7 +275,7 @@ class Database(object):
         except Block.DoesNotExist:
             return None
         else:
-            return CryptoBlock(block)
+            return CryptoBlock.from_object(block)
 
     def get_forged_transaction_ids(self, transaction_ids):
         transactions = Transaction.select(Transaction.id).where(

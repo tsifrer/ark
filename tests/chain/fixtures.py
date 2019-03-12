@@ -56,7 +56,7 @@ def dummy_block_full_hash():
         'cc6481c51600d158756c47fcb6f4a7f4893e31c4304402201fed4858d0806dd32220960900a871'
         'dd2f60e1f623af75feef9b1034a9a0a46402205a29b27c63fcc3e1ee1e77ecbbf4dd6e7db09901'
         'e7a09b9fd490cd68d62392cb'
-    )
+    ).encode('utf-8')
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def dummy_block_hash():
         'c20b2eb06282020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325'
         '3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e400220'
         '277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
-    )
+    ).encode('utf-8')
 
 
 @pytest.fixture
@@ -117,25 +117,25 @@ def dummy_transaction():
 @pytest.fixture
 def dummy_block(dummy_transaction):
     return {
-        'id': '7176646138626297930',
+        'id': 7176646138626297930,
         'version': 0,
         'height': 2243161,
         'timestamp': 24760440,
-        'previousBlock': '3112633353705641986',
+        'previousBlock': 3112633353705641986,
         'numberOfTransactions': 7,
-        'totalAmount': '3890300',
-        'totalFee': '70000000',
-        'reward': '200000000',
+        'totalAmount': 3890300,
+        'totalFee': 70000000,
+        'reward': 200000000,
         'payloadLength': 224,
         'payloadHash': (
-            '3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
+            b'3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
         ),
         'generatorPublicKey': (
             '020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325'
         ),
         'blockSignature': (
-            '3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40'
-            '0220277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
+            b'3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40'
+            b'0220277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
         ),
         'transactions': [
             dummy_transaction,

@@ -1,6 +1,6 @@
 import requests
 
-from chain.crypto.models.block import Block
+from chain.crypto.objects.block import Block
 from chain.config import Config
 
 
@@ -83,4 +83,4 @@ class Peer(object):
         params = {'lastBlockHeight': from_height}
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
-        return [Block(block) for block in blocks]
+        return [Block.from_dict(block) for block in blocks]

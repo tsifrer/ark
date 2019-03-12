@@ -10,7 +10,7 @@ from .constants import (
 )
 from chain.crypto import time, slots
 from chain.crypto.utils import is_block_exception
-from chain.crypto.models.block import Block
+from chain.crypto.objects.block import Block
 from .p2p.p2p import P2P
 from chain.common.plugins import load_plugin
 from chain.config import Config
@@ -37,7 +37,7 @@ class Blockchain(object):
             # If block is not found in the db, insert a genesis block
             if not block:
                 print('No block found in the database')
-                block = Block(config['genesis_block'])
+                block = Block.from_dict(config['genesis_block'])
                 if block.payload_hash != config['network']['nethash']:
                     print(
                         'FATAL: The genesis block payload hash is different from '
@@ -389,7 +389,7 @@ class Blockchain(object):
             if serialized_block:
                 print(serialized_block)
                 last_block = self.database.get_last_block()
-                block = Block(serialized_block)
+                block = Block.from_serialized(serialized_block)
                 status = self.process_block(block, last_block)
                 print(status)
                 if status in [BLOCK_ACCEPTED, BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED]:

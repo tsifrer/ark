@@ -3,104 +3,30 @@ from hashlib import sha256
 
 from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_bit64
 
-from chain.crypto.models.transaction import Transaction
-
-
 from chain.config import Config
-
-from chain.crypto.utils import verify_hash
 from chain.crypto import slots, time
+from chain.crypto.models.transaction import Transaction
+from chain.crypto.objects.base import CryptoField, CryptoObject
+from chain.crypto.utils import verify_hash
 
 
-class Block(object):
-    # TODO: make this mapping better
-    # field name, json field name, required, default, to_type
-    fields = [
-        ('id', 'id', False, None, int),
-        ('id_hex', 'idHex', False, None, None),
-        ('timestamp', 'timestamp', True, None, None),
-        ('version', 'version', True, None, None),
-        ('height', 'height', True, None, None),
-        ('previous_block_hex', 'previousBlockHex', False, None, None),
-        ('previous_block', 'previousBlock', False, None, int),
-        ('number_of_transactions', 'numberOfTransactions', True, None, None),
-        ('total_amount', 'totalAmount', True, 0, int),
-        ('total_fee', 'totalFee', True, 0, int),
-        ('reward', 'reward', True, 0, int),
-        ('payload_length', 'payloadLength', True, None, None),
-        ('payload_hash', 'payloadHash', True, None, None),
-        ('generator_public_key', 'generatorPublicKey', True, None, None),
-        ('block_signature', 'blockSignature', False, None, None),
-        ('transactions', 'transactions', False, [], None),
-    ]
-
-    def __init__(self, data):
-        if isinstance(data, (str, bytes)):
-            self.deserialize(data)
-        else:
-            for field, json_field, required, default, to_type in self.fields:
-                # If data is passed in as dict, expect camelcase fields,
-                # otherwise expect snakecase fields
-                if isinstance(data, dict):
-                    value = data.get(json_field, default)
-                else:
-                    value = getattr(data, field, default)
-                if value is not None and to_type:
-                    value = to_type(value)
-                if required and value is None:
-                    raise Exception(
-                        'Missing field {}'.format(field)
-                    )  # TODO: change exception
-                setattr(self, field, value)
-            self._set_id()
-            if self.transactions:
-                transactions = []
-                for transaction_data in self.transactions:
-                    transactions.append(Transaction(transaction_data))
-                self.transactions = transactions
-
-        if self.transactions:
-            transactions = []
-            for index, transaction in enumerate(self.transactions):
-                # override blockId and timestamp so all transactions match
-                # with the current block
-                transaction.block_id = self.id
-                # TODO: these next line breaks tests # THIS LOOKS LIKE IT'S A LIE
-                # AS NOTHING WORKS CORRECTLY IF WE OVERRIDE TRANSACTION TIMESTAMP
-                # WITH BLOCK TIMESTAMP
-                # transaction.timestamp = self.timestamp
-                # add sequence to keep the data in sequence when storing it to db
-                transaction.sequence = index
-
-        # // order of transactions messed up in mainnet V1
-        # // TODO: move this to network constants exception using block ids
-        # if (
-        #     this.transactions &&
-        #     this.data.numberOfTransactions === 2 &&
-        #     (this.data.height === 3084276 || this.data.height === 34420)
-        # ) {
-        #     const temp = this.transactions[0];
-        #     this.transactions[0] = this.transactions[1];
-        #     this.transactions[1] = temp;
-        # }
-
-        # print('IIIIDDD', self.id)
-        # print(self.id_hex)
-
-        # TODO: implement other stuffz
-        # TODO: figure out these things how they should work and implement them
-
-    def _set_id(self):
-        if self.height == 1:
-            # For genesis blocks, we should not recalculate the id as it is, or all
-            # the current ID's are calculated wrong.
-            # The comment from the core above this "fix" describes the problem
-            # perfectly:
-            # "// TODO genesis block calculated id is wrong for some reason"
-            self.id_hex = Block.to_bytes_hex(self.id)
-        else:
-            self.id_hex = self.get_id_hex()
-            self.id = self.get_id()
+class Block(CryptoObject):
+    id = CryptoField(attr='id', required=False, default=None, field_type=int)
+    id_hex = CryptoField(attr='idHex', required=False, default=None, field_type=bytes)
+    timestamp = CryptoField(attr='timestamp', required=True, default=None, field_type=int)
+    version = CryptoField(attr='version', required=True, default=None, field_type=int)
+    height = CryptoField(attr='height', required=True, default=None, field_type=int)
+    previous_block_hex = CryptoField(attr='previousBlockHex', required=False, default=None, field_type=bytes)
+    previous_block = CryptoField(attr='previousBlock', required=False, default=None, field_type=int)
+    number_of_transactions = CryptoField(attr='numberOfTransactions', required=True, default=None, field_type=int)
+    total_amount = CryptoField(attr='totalAmount', required=True, default=None, field_type=int)
+    total_fee = CryptoField(attr='totalFee', required=True, default=None, field_type=int)
+    reward = CryptoField(attr='reward', required=True, default=None, field_type=int)
+    payload_length = CryptoField(attr='payloadLength', required=True, default=None, field_type=int)
+    payload_hash = CryptoField(attr='payloadHash', required=True, default=None, field_type=bytes)
+    generator_public_key = CryptoField(attr='generatorPublicKey', required=True, default=None, field_type=str)
+    block_signature = CryptoField(attr='blockSignature', required=False, default=None, field_type=bytes)
+    transactions = CryptoField(attr='transaction', required=False, default=None, field_type=None)
 
     @staticmethod
     def to_bytes_hex(value):
@@ -112,11 +38,97 @@ class Block(object):
             hex_num = format(int(value), 'x')
         return ('{}{}'.format('0' * (16 - len(hex_num)), hex_num)).encode('utf-8')
 
+    def _set_id(self):
+        if self.height == 1:
+            # For genesis blocks, we don't recalculate the id as it is wrong.
+            # The comment from the core code for this "fix" describes the problem
+            # perfectly:
+            # "// TODO genesis block calculated id is wrong for some reason"
+            self.id_hex = Block.to_bytes_hex(self.id)
+        else:
+            self.id_hex = self.get_id_hex()
+            self.id = self.get_id()
+
+    def _construct_common(self):
+        self._set_id()
+
+        if self.transactions:
+            for index, transaction in enumerate(self.transactions):
+                # override blockId and timestamp so all transactions match
+                # with the current block
+                transaction.block_id = self.id
+                # TODO: these next line breaks tests # THIS LOOKS LIKE IT'S A LIE
+                # AS NOTHING WORKS CORRECTLY IF WE OVERRIDE TRANSACTION TIMESTAMP
+                # WITH BLOCK TIMESTAMP
+                # transaction.timestamp = self.timestamp
+                # add sequence to keep the data in sequence when storing it to db
+                transaction.sequence = index
+
+            # // order of transactions messed up in mainnet V1
+            # // TODO: move this to network constants exception using block ids
+            if (self.number_of_transactions == 2 and (self.height == 3084276 or self.height == 34420)):
+                self.transactions[0], self.transactions[1] = self.transactions[1], self.transactions[0]
+
+    @classmethod
+    def from_dict(cls, data):
+        if not isinstance(data, dict):
+            raise TypeError('data must be dict')
+        cls = cls()
+        for field in cls._fields:
+            value = data.get(field.attr, field.default)
+            if field.type and value != field.default and not isinstance(value, field.type):
+                raise TypeError('Attribute {} must be a {}'.format(field.attr, field.type))
+            if field.required and value is field.default:
+                raise Exception(
+                    'Missing field {}'.format(field.name)
+                )  # TODO: change exception
+            setattr(cls, field.name, value)
+
+        if cls.transactions and isinstance(cls.transaction, list):
+            transactions = []
+            for transaction_data in cls.transactions:
+                transactions.append(Transaction(transaction_data))
+            cls.transactions = transactions
+        cls._construct_common()
+        return cls
+
+    @classmethod
+    def from_object(cls, data):
+        # if not isinstance(data, dict):
+        #     raise TypeError('Data must be in dictionary format')
+        cls = cls()
+        for field in cls._fields:
+            value = getattr(data, field.name, field.default)
+            if field.type and value != field.default and not isinstance(value, field.type):
+                raise TypeError('Attribute {} must be a {}'.format(field.attr, field.type))
+            if field.required and value is field.default:
+                raise Exception(
+                    'Missing field {}'.format(field.name)
+                )  # TODO: change exception
+            setattr(cls, field.name, value)
+
+        if cls.transactions:
+            transactions = []
+            for transaction_data in cls.transactions:
+                transactions.append(Transaction(transaction_data))
+            cls.transactions = transactions
+        cls._construct_common()
+        return cls
+
+    @classmethod
+    def from_serialized(cls, bytes_string):
+        if not isinstance(bytes_string, bytes):
+            raise TypeError('bytes_string must be bytes')
+        cls = cls()
+        cls.deserialize(bytes_string)
+        cls._construct_common()
+        return cls
+
     def get_id_hex(self):
         payload_hash = unhexlify(self.serialize())
         full_hash = sha256(payload_hash).digest()
         small_hash = full_hash[:8][::-1]
-        return hexlify(small_hash).decode()
+        return hexlify(small_hash)
 
     def get_id(self):
         id_hex = self.get_id_hex()
@@ -144,15 +156,13 @@ class Block(object):
         for field, to_type in fields:
             value = getattr(self, field)
             if isinstance(value, bytes):
-                value = value.decode()
+                value = value.decode('utf-8')
             if to_type:
                 value = to_type(value)
             data[field] = value
         return data
 
     def serialize(self, include_signature=True):
-        # TODO: make this a serializer that correctly converts input and checks that
-        # it's correct on init
         self.previous_block_hex = Block.to_bytes_hex(self.previous_block)
 
         bytes_data = bytes()
@@ -171,7 +181,7 @@ class Block(object):
         if include_signature and self.block_signature:
             bytes_data += unhexlify(self.block_signature)
 
-        return hexlify(bytes_data).decode()
+        return hexlify(bytes_data)
 
     def serialize_full(self):
         # TODO: try to make these as default values instead of checking for it here
@@ -190,7 +200,7 @@ class Block(object):
             all_transaction_bytes += unhexlify(serialized_transaction)
 
         bytes_data += all_transaction_bytes
-        return hexlify(bytes_data).decode()
+        return hexlify(bytes_data)
 
     def _deserialize_transactions(self, bytes_data):
         transaction_lenghts = []
@@ -203,13 +213,13 @@ class Block(object):
             self.transactions.append(Transaction(serialized_hex))
             start += trans_len
 
-    def deserialize(self, serialized_hex, header_only=False):
+    def deserialize(self, serialized_hex):
         bytes_data = unhexlify(serialized_hex)
 
         self.version = read_bit32(bytes_data)
         self.timestamp = read_bit32(bytes_data, offset=4)
         self.height = read_bit32(bytes_data, offset=8)
-        self.previous_block_hex = hexlify(bytes_data[12 : 8 + 12]).decode()
+        self.previous_block_hex = hexlify(bytes_data[12 : 8 + 12]).decode('utf-8')
 
         self.previous_block = int(self.previous_block_hex, 16)
         self.number_of_transactions = read_bit32(bytes_data, offset=20)
@@ -217,23 +227,24 @@ class Block(object):
         self.total_fee = read_bit64(bytes_data, offset=32)
         self.reward = read_bit64(bytes_data, offset=40)
         self.payload_length = read_bit32(bytes_data, offset=48)
-        self.payload_hash = hexlify(bytes_data[52 : 32 + 52]).decode()
-        self.generator_public_key = hexlify(bytes_data[84 : 33 + 84]).decode()
+        self.payload_hash = hexlify(bytes_data[52 : 32 + 52])
+        self.generator_public_key = hexlify(bytes_data[84 : 33 + 84]).decode('utf-8')
         # TODO: test the case where block signature is not present
         signature_len = int(hexlify(bytes_data[118:119]), 16)
         signature_to = signature_len + 2 + 117
-        self.block_signature = hexlify(bytes_data[117:signature_to]).decode()
+        self.block_signature = hexlify(bytes_data[117:signature_to])
 
         remaining_bytes = bytes_data[signature_to:]
-        header_only = header_only or len(remaining_bytes) == 0
-        self.transactions = []
-        if not header_only:
+
+        if len(remaining_bytes) != 0:
             self._deserialize_transactions(remaining_bytes)
 
-        self._set_id()
-        # self.id_hex = self.get_id_hex()
-        # self.id = self.get_id()
         # TODO: implement edge cases (outlookTable thingy) where some block ids are broken
+        # const { outlookTable } = configManager.config.exceptions;
+        # if (outlookTable && outlookTable[block.id]) {
+        #     block.id = outlookTable[block.id];
+        #     block.idHex = Block.toBytesHex(block.id);
+        # }
 
     def verify_signature(self):
         """Verify signature associated with this block

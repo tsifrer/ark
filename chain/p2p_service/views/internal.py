@@ -3,7 +3,7 @@ from pyramid.response import Response
 from pyramid.view import view_config
 
 from chain.crypto import slots, time
-from chain.crypto.models.block import Block
+from chain.crypto.objects.block import Block
 from chain.plugins.database.database import Database
 from chain.plugins.process_queue.queue import Queue
 
@@ -38,7 +38,7 @@ def peer_block_view(request):
     block_data = request.json.get('block')
     if not block_data:
         raise
-    block = Block(block_data)
+    block = Block.from_dict(block_data)
 
     # TODO: pingBlock
     # if (blockchain.pingBlock(block)) {
@@ -77,7 +77,7 @@ def block_store_view(request):
     block_data = request.json.get('block')
     if not block_data:
         raise
-    block = Block(block_data)
+    block = Block.from_dict(block_data)
     print(
         'Received new block at height {} with {} transactions, from {}'.format(
             block.height,
