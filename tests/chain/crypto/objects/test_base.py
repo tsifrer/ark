@@ -1,16 +1,16 @@
-from chain.crypto.objects.base import CryptoObject, Field
+# from chain.crypto.objects.base import CryptoObject, Field
 
-# TODO: MOARD TESTS!!!
-
-
-def test_base():
-    class ObjectA(CryptoObject):
-        foo = Field()
+# # TODO: MOARD TESTS!!!
 
 
-    obj = ObjectA()
+# def test_base():
+#     class ObjectA(CryptoObject):
+#         foo = Field()
 
-    print(obj._fields)
-    print(obj.foo)
+
+#     obj = ObjectA()
+
+#     print(obj._fields)
+#     print(obj.foo)
 
 

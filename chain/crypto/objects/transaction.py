@@ -25,53 +25,63 @@ from chain.crypto.address import address_from_public_key
 from chain.config import Config
 from hashlib import sha256
 from chain.crypto.utils import verify_hash, is_transaction_exception
+from chain.crypto.objects.base import CryptoField, CryptoObject
 
 
-class Transaction(object):
-    # TODO: make this mapping better
-    # field name, json field name, required, default, to_type
-    fields = [
-        ('version', 'version', False, None, None),
-        ('network', 'network', False, None, None),
-        ('type', 'type', True, None, None),
-        ('timestamp', 'timestamp', True, None, None),
-        ('sender_public_key', 'senderPublicKey', True, None, None),
-        ('fee', 'fee', True, 0, int),
-        ('amount', 'amount', True, 0, int),
-        ('expiration', 'expiration', False, None, None),
-        ('recipient_id', 'recipientId', False, None, None),
-        ('asset', 'asset', False, None, None),
-        ('vendor_field', 'vendorField', False, None, None),
-        ('vendor_field_hex', 'vendorFieldHex', False, None, None),
-        ('id', 'id', False, None, None),
-        ('signature', 'signature', False, None, None),
-        ('second_signature', 'secondSignature', False, None, None),
-        ('sign_signature', 'signSignature', False, None, None),
-        ('signatures', 'signatures', False, [], None),
-        ('block_id', 'blockId', False, None, None),
-        ('sequence', 'sequence', False, None, None),
-        ('timelock', 'timelock', False, None, None),
-        ('timelock_type', 'timelockType', False, None, None),
-        ('ipfs_hash', 'ipfsHash', False, None, None),
-        ('payments', 'payments', False, None, None),
-    ]
+class Transaction(CryptoObject):
+    version = CryptoField(attr='version', required=False, default=None, field_type=int)
+    network = CryptoField(attr='network', required=False, default=None, field_type=int)
+    type = CryptoField(attr='type', required=True, default=None, field_type=int)
+    timestamp = CryptoField(attr='timestamp', required=True, default=None, field_type=int)
+    sender_public_key = CryptoField(attr='senderPublicKey', required=True, default=None, field_type=str)
+    fee = CryptoField(attr='fee', required=True, default=0, field_type=int)
+    amount = CryptoField(attr='amount', required=True, default=0, field_type=int)
+    expiration = CryptoField(attr='expiration', required=False, default=None, field_type=int)
+    recipient_id = CryptoField(attr='recipientId', required=False, default=None, field_type=str)
+    asset = CryptoField(attr='asset', required=False, default=None, field_type=None)
+    vendor_field = CryptoField(attr='vendorField', required=False, default=None, field_type=str)
+    vendor_field_hex = CryptoField(attr='vendorFieldHex', required=False, default=None, field_type=bytes)
+    id = CryptoField(attr='id', required=False, default=None, field_type=str)
+    signature = CryptoField(attr='signature', required=False, default=None, field_type=str)
+    second_signature = CryptoField(attr='secondSignature', required=False, default=None, field_type=str)
+    sign_signature = CryptoField(attr='signSignature', required=False, default=None, field_type=str)
+    signatures = CryptoField(attr='signatures', required=False, default=None, field_type=None)
+    block_id = CryptoField(attr='blockId', required=False, default=None, field_type=int)
+    sequence = CryptoField(attr='sequence', required=False, default=0, field_type=int)
+    timelock = CryptoField(attr='timelock', required=False, default=None, field_type=None)
+    timelock_type = CryptoField(attr='timelockType', required=False, default=None, field_type=int)
+    ipfs_hash = CryptoField(attr='ipfsHash', required=False, default=None, field_type=bytes)
+    payments = CryptoField(attr='payments', required=False, default=None, field_type=None)
 
-    def __init__(self, data):
-        if isinstance(data, (str, bytes)):
-            self.deserialize(data)
-        else:
-            for field, json_field, required, default, to_type in self.fields:
-                value = data.get(json_field, default)
-                if to_type:
-                    value = to_type(value)
-                if required and value is None:
-                    raise Exception(
-                        'Missing field {}'.format(field)
-                    )  # TODO: change exception
-                setattr(self, field, value)
+    def _construct_common(self):
+        self._apply_v1_compatibility()
+        self.id = self.get_id()
 
-            self._apply_v1_compatibility()
-            self.id = self.get_id()
+    @classmethod
+    def from_dict(cls, data):
+        if not isinstance(data, dict):
+            raise TypeError('data must be dict')
+        cls = cls()
+        for field in cls._fields:
+            value = data.get(field.attr, field.default)
+            if field.type and value != field.default and not isinstance(value, field.type):
+                raise TypeError('Attribute {} must be a {}'.format(field.attr, field.type))
+            if field.required and value is field.default:
+                raise Exception(
+                    'Missing field {}'.format(field.name)
+                )  # TODO: change exception
+            setattr(cls, field.name, value)
+        cls._construct_common()
+        return cls
+
+    @classmethod
+    def from_serialized(cls, bytes_string):
+        if not isinstance(bytes_string, bytes):
+            raise TypeError('bytes_string must be bytes')
+        cls = cls()
+        cls.deserialize(bytes_string)
+        cls._construct_common()
+        return cls
 
     @staticmethod
     def can_have_vendor_field(transaction_type):
@@ -199,24 +209,24 @@ class Transaction(object):
         bytes_data += self._serialize_type()
         bytes_data += self._serialize_signatures()
 
-        return hexlify(bytes_data).decode()
+        return hexlify(bytes_data)
 
     def _deserialize_type(self, bytes_data):
         # TODO: test this extensively
         if self.type == TRANSACTION_TYPE_TRANSFER:
             self.amount = read_bit64(bytes_data)
             self.expiration = read_bit32(bytes_data, offset=8)
-            self.recipient_id = b58encode_check(bytes_data[12 : 21 + 12])
+            self.recipient_id = b58encode_check(bytes_data[12 : 21 + 12]).decode('utf-8')
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
-            self.asset['signature'] = {'publicKey': hexlify(bytes_data[:33]).decode()}
+            self.asset['signature'] = {'publicKey': hexlify(bytes_data[:33]).decode('utf-8')}
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             username_length = read_bit8(bytes_data) // 2
             username_end = username_length + 1
-            self.asset['delegate'] = {'username': bytes_data[1:username_end].decode()}
+            self.asset['delegate'] = {'username': bytes_data[1:username_end].decode('utf-8')}
             return bytes_data[username_end:]
 
         elif self.type == TRANSACTION_TYPE_VOTE:
@@ -240,14 +250,14 @@ class Transaction(object):
             keys_num = read_bit8(bytes_data, offset=1)
             start = 3
             for _ in range(keys_num):
-                key = hexlify(bytes_data[start : 33 + start]).decode()
+                key = hexlify(bytes_data[start : 33 + start]).decode('utf-8')
                 self.asset['multisignature']['keysgroup'].append(key)
                 start += 33
             return bytes_data[start:]
 
         elif self.type == TRANSACTION_TYPE_IPFS:
             dag_length = read_bit8(bytes_data)
-            self.asset['ipfs'] = {'dag': hexlify(bytes_data[1:dag_length]).decode()}
+            self.asset['ipfs'] = {'dag': hexlify(bytes_data[1:dag_length]).decode('utf-8')}
             return bytes_data[dag_length:]
 
         elif self.type == TRANSACTION_TYPE_TIMELOCK_TRANSFER:
@@ -289,7 +299,7 @@ class Transaction(object):
         self.second_signature = None
         if len(bytes_data) > 0:
             signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-            self.signature = hexlify(bytes_data[:signature_length]).decode()
+            self.signature = hexlify(bytes_data[:signature_length]).decode('utf-8')
             bytes_data = bytes_data[signature_length:]
 
         # Second signature
@@ -303,10 +313,8 @@ class Transaction(object):
             else:
                 # Second signature
                 second_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-                self.second_signature = hexlify(bytes_data[:second_signature_length]).decode()
+                self.second_signature = hexlify(bytes_data[:second_signature_length]).decode('utf-8')
 
-    # TODO: Figure out what the fuck is V1???? and why is it called V1? If all
-    # transactions that we have NOW are v1??????
     def _apply_v1_compatibility(self):
         if self.version != 1:
             return
@@ -324,30 +332,21 @@ class Transaction(object):
             ]
 
         if self.vendor_field_hex:
-            self.vendor_field = unhexlify(self.vendor_field_hex)
+            self.vendor_field = unhexlify(self.vendor_field_hex).decode('utf-8')
 
     def deserialize(self, serialized_hex):
-        # Set fields that might not be set to default values first
-        self.id = None
-        self.recipient_id = None
-        self.vendor_field = None
-        self.vendor_field_hex = None
-        self.sign_signature = None
-
         bytes_data = unhexlify(serialized_hex)
 
         self.version = read_bit8(bytes_data, offset=1)
         self.network = read_bit8(bytes_data, offset=2)
         self.type = read_bit8(bytes_data, offset=3)
         self.timestamp = read_bit32(bytes_data, offset=4)
-        self.sender_public_key = hexlify(bytes_data[8 : 33 + 8]).decode()
+        self.sender_public_key = hexlify(bytes_data[8 : 33 + 8]).decode('utf-8')
         self.fee = read_bit64(bytes_data, offset=41)
-        self.amount = 0
-        self.asset = {}
         if Transaction.can_have_vendor_field(self.type):
             vendor_length = read_bit8(bytes_data, offset=49)
             if vendor_length > 0:
-                self.vendor_field_hex = hexlify(bytes_data[49 : vendor_length + 49]).decode()
+                self.vendor_field_hex = hexlify(bytes_data[50 : vendor_length + 50])
 
             remaining_bytes = bytes_data[49 + 1 + vendor_length :]
         else:
@@ -356,10 +355,10 @@ class Transaction(object):
         signature_bytes = self._deserialize_type(remaining_bytes)
         self._deserialize_signature(signature_bytes)
 
-        self._apply_v1_compatibility()
-        self.id = self.get_id()
-
     def get_bytes(self, skip_signature=False, skip_second_signature=False):
+        """
+        Serializes the given transaction prior to AIP11 (legacy).
+        """
         # TODO: rename to to_bytes which makes more sense than get_bytes
         if self.version and self.version != 1:
             raise Exception('Invalid transaction version')  # TODO: better exception
@@ -389,8 +388,10 @@ class Transaction(object):
             if num_of_zeroes > 0:
                 bytes_data += pack('{}x'.format(num_of_zeroes))
         elif self.vendor_field:
-            bytes_data += self.vendor_field
-            num_of_zeroes = 64 - len(unhexlify(self.vendor_field))
+            bytes_data += self.vendor_field.encode('utf-8')
+            num_of_zeroes = 64 - len(self.vendor_field.encode('utf-8'))
+            # self.vendor_field = unhexlify(self.vendor_field_hex).decode('utf-8')
+
             if num_of_zeroes > 0:
                 bytes_data += pack('{}x'.format(num_of_zeroes))
             bytes_data += pack('{}x'.format(num_of_zeroes))

@@ -10,7 +10,7 @@ from chain.crypto.constants import (
     TRANSACTION_TYPE_TRANSFER,
     TRANSACTION_TYPE_VOTE,
 )
-from chain.crypto.models.transaction import Transaction as CryptoTransaction
+from chain.crypto.objects.transaction import Transaction as CryptoTransaction
 from chain.crypto.models.wallet import Wallet
 from chain.crypto.utils import is_transaction_exception
 
@@ -116,7 +116,7 @@ class WalletManager(object):
         ).where(Transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE)
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
-            crypto_transaction = CryptoTransaction(transaction.serialized)
+            crypto_transaction = CryptoTransaction.from_serialized(transaction.serialized)
             wallet.sender_public_key = crypto_transaction.asset['signature'][
                 'publicKey'
             ]
@@ -137,7 +137,7 @@ class WalletManager(object):
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if wallet.address not in already_processed_wallets:
-                crypto_transaction = CryptoTransaction(transaction.serialized)
+                crypto_transaction = CryptoTransaction.from_serialized(transaction.serialized)
                 vote = crypto_transaction.asset['votes'][0]
                 # wallet.vote is only set if the wallet voted for someone. If wallet
                 # did unvoted or haven't woted at all, wallet.vote needs to be set to
@@ -159,7 +159,7 @@ class WalletManager(object):
 
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
-            crypto_transaction = CryptoTransaction(transaction.serialized)
+            crypto_transaction = CryptoTransaction.from_serialized(transaction.serialized)
             wallet.username = crypto_transaction.asset['delegate']['username']
             self._username_map[wallet.username.lower()] = wallet.address
 
@@ -199,7 +199,7 @@ class WalletManager(object):
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if not wallet.multisignature:
-                crypto_transaction = CryptoTransaction(transaction.serialized)
+                crypto_transaction = CryptoTransaction.from_serialized(transaction.serialized)
                 wallet.multisignature = crypto_transaction.asset['multisignature']
 
     def build(self):

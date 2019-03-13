@@ -80,7 +80,7 @@ def dummy_transaction_hash():
         '82f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb97830450221008327862f0b91'
         '78d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2e'
         'fde3327917731344332724522c75c2799a14f78717'
-    )
+    ).encode('utf-8')
 
 
 @pytest.fixture
@@ -110,7 +110,7 @@ def dummy_transaction():
         'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
         'hop': 2,
         'broadcast': False,
-        'blockId': '7176646138626297930',
+        'blockId': 7176646138626297930,
     }
 
 

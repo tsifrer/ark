@@ -65,7 +65,7 @@ class Database(object):
         print('Saving block {}'.format(block.id))
         if not isinstance(block, CryptoBlock):
             raise Exception(
-                'Block must be a type of crypto.models.Block'
+                'Block must be a type of crypto.objects.Block'
             )  # TODO: better exception
 
         with self.db.atomic() as db_txn:

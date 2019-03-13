@@ -5,7 +5,7 @@ from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_b
 
 from chain.config import Config
 from chain.crypto import slots, time
-from chain.crypto.models.transaction import Transaction
+from chain.crypto.objects.transaction import Transaction
 from chain.crypto.objects.base import CryptoField, CryptoObject
 from chain.crypto.utils import verify_hash
 
@@ -18,11 +18,11 @@ class Block(CryptoObject):
     height = CryptoField(attr='height', required=True, default=None, field_type=int)
     previous_block_hex = CryptoField(attr='previousBlockHex', required=False, default=None, field_type=bytes)
     previous_block = CryptoField(attr='previousBlock', required=False, default=None, field_type=int)
-    number_of_transactions = CryptoField(attr='numberOfTransactions', required=True, default=None, field_type=int)
-    total_amount = CryptoField(attr='totalAmount', required=True, default=None, field_type=int)
-    total_fee = CryptoField(attr='totalFee', required=True, default=None, field_type=int)
-    reward = CryptoField(attr='reward', required=True, default=None, field_type=int)
-    payload_length = CryptoField(attr='payloadLength', required=True, default=None, field_type=int)
+    number_of_transactions = CryptoField(attr='numberOfTransactions', required=True, default=0, field_type=int)
+    total_amount = CryptoField(attr='totalAmount', required=True, default=0, field_type=int)
+    total_fee = CryptoField(attr='totalFee', required=True, default=0, field_type=int)
+    reward = CryptoField(attr='reward', required=True, default=0, field_type=int)
+    payload_length = CryptoField(attr='payloadLength', required=True, default=0, field_type=int)
     payload_hash = CryptoField(attr='payloadHash', required=True, default=None, field_type=bytes)
     generator_public_key = CryptoField(attr='generatorPublicKey', required=True, default=None, field_type=str)
     block_signature = CryptoField(attr='blockSignature', required=False, default=None, field_type=bytes)
@@ -87,7 +87,7 @@ class Block(CryptoObject):
         if cls.transactions and isinstance(cls.transaction, list):
             transactions = []
             for transaction_data in cls.transactions:
-                transactions.append(Transaction(transaction_data))
+                transactions.append(Transaction.from_dict(transaction_data))
             cls.transactions = transactions
         cls._construct_common()
         return cls
@@ -108,10 +108,9 @@ class Block(CryptoObject):
             setattr(cls, field.name, value)
 
         if cls.transactions:
-            transactions = []
             for transaction_data in cls.transactions:
-                transactions.append(Transaction(transaction_data))
-            cls.transactions = transactions
+                if not isinstance(cls.transaction, Transaction):
+                    raise TypeError('Transactions must be a {}'.format(Transaction))
         cls._construct_common()
         return cls
 
@@ -194,10 +193,9 @@ class Block(CryptoObject):
 
         all_transaction_bytes = bytes()
         for transaction in self.transactions:
-            # serialized_transaction = Transaction(transaction).serialize()
-            serialized_transaction = transaction.serialize()
-            bytes_data += write_bit32(len(unhexlify(serialized_transaction)))
-            all_transaction_bytes += unhexlify(serialized_transaction)
+            serialized_transaction = unhexlify(transaction.serialize())
+            bytes_data += write_bit32(len(serialized_transaction))
+            all_transaction_bytes += serialized_transaction
 
         bytes_data += all_transaction_bytes
         return hexlify(bytes_data)
@@ -210,7 +208,7 @@ class Block(CryptoObject):
         start = 4 * self.number_of_transactions
         for trans_len in transaction_lenghts:
             serialized_hex = hexlify(bytes_data[start : start + trans_len])
-            self.transactions.append(Transaction(serialized_hex))
+            self.transactions.append(Transaction.from_serialized(serialized_hex))
             start += trans_len
 
     def deserialize(self, serialized_hex):
