@@ -6,27 +6,27 @@ from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_b
 from chain.config import Config
 from chain.crypto import slots, time
 from chain.crypto.objects.transaction import Transaction
-from chain.crypto.objects.base import CryptoField, CryptoObject
+from chain.crypto.objects.base import Field, CryptoObject, IntField, StrField, BytesField
 from chain.crypto.utils import verify_hash
 
 
 class Block(CryptoObject):
-    id = CryptoField(attr='id', required=False, default=None, field_type=int)
-    id_hex = CryptoField(attr='idHex', required=False, default=None, field_type=bytes)
-    timestamp = CryptoField(attr='timestamp', required=True, default=None, field_type=int)
-    version = CryptoField(attr='version', required=True, default=None, field_type=int)
-    height = CryptoField(attr='height', required=True, default=None, field_type=int)
-    previous_block_hex = CryptoField(attr='previousBlockHex', required=False, default=None, field_type=bytes)
-    previous_block = CryptoField(attr='previousBlock', required=False, default=None, field_type=int)
-    number_of_transactions = CryptoField(attr='numberOfTransactions', required=True, default=0, field_type=int)
-    total_amount = CryptoField(attr='totalAmount', required=True, default=0, field_type=int)
-    total_fee = CryptoField(attr='totalFee', required=True, default=0, field_type=int)
-    reward = CryptoField(attr='reward', required=True, default=0, field_type=int)
-    payload_length = CryptoField(attr='payloadLength', required=True, default=0, field_type=int)
-    payload_hash = CryptoField(attr='payloadHash', required=True, default=None, field_type=bytes)
-    generator_public_key = CryptoField(attr='generatorPublicKey', required=True, default=None, field_type=str)
-    block_signature = CryptoField(attr='blockSignature', required=False, default=None, field_type=bytes)
-    transactions = CryptoField(attr='transactions', required=False, default=None, field_type=None)
+    id = StrField(attr='id', required=False, default=None)
+    id_hex = BytesField(attr='idHex', required=False, default=None)
+    timestamp = IntField(attr='timestamp', required=True, default=None)
+    version = IntField(attr='version', required=True, default=None)
+    height = IntField(attr='height', required=True, default=None)
+    previous_block_hex = BytesField(attr='previousBlockHex', required=False, default=None)
+    previous_block = StrField(attr='previousBlock', required=False, default=None)
+    number_of_transactions = IntField(attr='numberOfTransactions', required=True, default=0)
+    total_amount = IntField(attr='totalAmount', required=True, default=0)
+    total_fee = IntField(attr='totalFee', required=True, default=0)
+    reward = IntField(attr='reward', required=True, default=0)
+    payload_length = IntField(attr='payloadLength', required=True, default=0)
+    payload_hash = StrField(attr='payloadHash', required=True, default=None)
+    generator_public_key = StrField(attr='generatorPublicKey', required=True, default=None)
+    block_signature = StrField(attr='blockSignature', required=False, default=None)
+    transactions = Field(attr='transactions', required=False, default=[])
 
     @staticmethod
     def to_bytes_hex(value):
@@ -76,12 +76,14 @@ class Block(CryptoObject):
         cls = cls()
         for field in cls._fields:
             value = data.get(field.attr, field.default)
-            if field.type and value != field.default and not isinstance(value, field.type):
-                raise TypeError('Attribute {} must be a {}'.format(field.attr, field.type))
-            if field.required and value is field.default:
-                raise Exception(
-                    'Missing field {}'.format(field.name)
-                )  # TODO: change exception
+
+            if value is None and field.required:
+                raise ValueError('Attribute {} is required'.format(field.name))
+
+            if value is not None and field.accepted_types and not isinstance(value, field.accepted_types):
+                raise TypeError('Attribute {} ({}) must be of type {}'.format(field.name, type(value), field.accepted_types))
+
+            value = field.to_value(value)
             setattr(cls, field.name, value)
 
         if cls.transactions and isinstance(cls.transactions, list):
@@ -99,12 +101,13 @@ class Block(CryptoObject):
         cls = cls()
         for field in cls._fields:
             value = getattr(data, field.name, field.default)
-            if field.type and value != field.default and not isinstance(value, field.type):
-                raise TypeError('Attribute {} must be a {}'.format(field.attr, field.type))
-            if field.required and value is field.default:
-                raise Exception(
-                    'Missing field {}'.format(field.name)
-                )  # TODO: change exception
+            if value is None and field.required:
+                raise ValueError('Attribute {} is required'.format(field.name))
+
+            if value is not None and field.accepted_types and not isinstance(value, field.accepted_types):
+                raise TypeError('Attribute {} ({}) must be of type {}'.format(field.name, type(value), field.accepted_types))
+
+            value = field.to_value(value)
             setattr(cls, field.name, value)
 
         if cls.transactions:
@@ -131,7 +134,7 @@ class Block(CryptoObject):
 
     def get_id(self):
         id_hex = self.get_id_hex()
-        return int(id_hex, 16)
+        return str(int(id_hex, 16))
 
     def get_header(self):
         fields = [
@@ -174,11 +177,11 @@ class Block(CryptoObject):
         bytes_data += write_bit64(int(self.total_fee))
         bytes_data += write_bit64(int(self.reward))
         bytes_data += write_bit32(self.payload_length)
-        bytes_data += unhexlify(self.payload_hash)
+        bytes_data += unhexlify(self.payload_hash.encode('utf-8'))
         bytes_data += unhexlify(self.generator_public_key)
 
         if include_signature and self.block_signature:
-            bytes_data += unhexlify(self.block_signature)
+            bytes_data += unhexlify(self.block_signature.encode('utf-8'))
 
         return hexlify(bytes_data)
 
@@ -219,18 +222,18 @@ class Block(CryptoObject):
         self.height = read_bit32(bytes_data, offset=8)
         self.previous_block_hex = hexlify(bytes_data[12 : 8 + 12]).decode('utf-8')
 
-        self.previous_block = int(self.previous_block_hex, 16)
+        self.previous_block = str(int(self.previous_block_hex, 16))
         self.number_of_transactions = read_bit32(bytes_data, offset=20)
         self.total_amount = read_bit64(bytes_data, offset=24)
         self.total_fee = read_bit64(bytes_data, offset=32)
         self.reward = read_bit64(bytes_data, offset=40)
         self.payload_length = read_bit32(bytes_data, offset=48)
-        self.payload_hash = hexlify(bytes_data[52 : 32 + 52])
+        self.payload_hash = hexlify(bytes_data[52 : 32 + 52]).decode('utf-8')
         self.generator_public_key = hexlify(bytes_data[84 : 33 + 84]).decode('utf-8')
         # TODO: test the case where block signature is not present
         signature_len = int(hexlify(bytes_data[118:119]), 16)
         signature_to = signature_len + 2 + 117
-        self.block_signature = hexlify(bytes_data[117:signature_to])
+        self.block_signature = hexlify(bytes_data[117:signature_to]).decode('utf-8')
 
         remaining_bytes = bytes_data[signature_to:]
 
@@ -249,7 +252,8 @@ class Block(CryptoObject):
         """
         bytes_data = unhexlify(self.serialize(include_signature=False))
         is_verified = verify_hash(
-            bytes_data, self.block_signature, self.generator_public_key
+            bytes_data,
+            unhexlify(self.block_signature.encode('utf-8')), unhexlify(self.generator_public_key.encode('utf-8'))
         )
         return is_verified
 

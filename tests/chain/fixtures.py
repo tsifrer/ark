@@ -110,32 +110,32 @@ def dummy_transaction():
         'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
         'hop': 2,
         'broadcast': False,
-        'blockId': 7176646138626297930,
+        'blockId': '7176646138626297930',
     }
 
 
 @pytest.fixture
 def dummy_block(dummy_transaction):
     return {
-        'id': 7176646138626297930,
+        'id': '7176646138626297930',
         'version': 0,
         'height': 2243161,
         'timestamp': 24760440,
-        'previousBlock': 3112633353705641986,
+        'previousBlock': '3112633353705641986',
         'numberOfTransactions': 7,
-        'totalAmount': 3890300,
-        'totalFee': 70000000,
-        'reward': 200000000,
+        'totalAmount': '3890300',
+        'totalFee': '70000000',
+        'reward': '200000000',
         'payloadLength': 224,
         'payloadHash': (
-            b'3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
+            '3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
         ),
         'generatorPublicKey': (
             '020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325'
         ),
         'blockSignature': (
-            b'3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40'
-            b'0220277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
+            '3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40'
+            '0220277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
         ),
         'transactions': [
             dummy_transaction,
@@ -166,7 +166,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': 7176646138626297930,
+                'blockId': '7176646138626297930',
             },
             {
                 'type': 0,
@@ -195,7 +195,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': 7176646138626297930,
+                'blockId': '7176646138626297930',
             },
             {
                 'type': 0,
@@ -224,7 +224,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': 7176646138626297930,
+                'blockId': '7176646138626297930',
             },
             {
                 'type': 0,
@@ -253,7 +253,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': 7176646138626297930,
+                'blockId': '7176646138626297930',
             },
             {
                 'type': 0,
@@ -282,7 +282,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': 7176646138626297930,
+                'blockId': '7176646138626297930',
             },
             {
                 'type': 0,
@@ -311,7 +311,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': 7176646138626297930,
+                'blockId': '7176646138626297930',
             },
         ],
     }

@@ -8,9 +8,9 @@ from chain.config import Config
 
 def verify_hash(message, signature, public_key):
     if not isinstance(signature, bytes):
-        signature = unhexlify(signature)
+        raise TypeError('signature must be bytes')
     if not isinstance(public_key, bytes):
-        public_key = unhexlify(public_key)
+        raise TypeError('public_key must be bytes')
 
     pub_key = PublicKey(public_key)
     is_verified = pub_key.verify(signature, message)

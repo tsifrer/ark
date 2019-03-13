@@ -1,6 +1,7 @@
-class CryptoField(object):
+class Field(object):
+    accepted_types = None
 
-    def __init__(self, attr, required=True, default=None, field_type=None):
+    def __init__(self, attr, required=True, default=None):
         """
         `attr` is the json field name e.g. previousBlockHex
         """
@@ -8,7 +9,44 @@ class CryptoField(object):
         self.attr = attr
         self.required = required
         self.default = default
-        self.type = field_type
+
+    @staticmethod
+    def to_value(value):
+        return value
+
+
+class IntField(Field):
+    accepted_types = (str, int)
+
+    @staticmethod
+    def to_value(value):
+        if value is None:
+            return None
+        return int(value)
+
+
+class StrField(Field):
+    accepted_types = (str, bytes)
+
+    @staticmethod
+    def to_value(value):
+        if value is None:
+            return None
+        if isinstance(value, bytes):
+            return value.decode('utf-8')
+        return value
+
+
+class BytesField(Field):
+    accepted_types = (str, bytes)
+
+    @staticmethod
+    def to_value(value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value.encode('utf-8')
+        return value
 
 
 class CryptoObjectMeta(type):
@@ -26,7 +64,7 @@ class CryptoObjectMeta(type):
         fields = {}
         # Take all the Fields from the attributes.
         for attr_name, field in attrs.items():
-            if isinstance(field, CryptoField):
+            if isinstance(field, Field):
                 fields[attr_name] = field
 
         real_cls = super().__new__(cls, name, bases, attrs)

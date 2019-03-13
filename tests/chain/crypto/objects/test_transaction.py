@@ -62,7 +62,7 @@ def test_from_serialized_correctly_deserializes_full_data(dummy_transaction_hash
     assert transaction.amount == 555760
     assert transaction.expiration == 0
     assert transaction.recipient_id == 'DB4gFuDztmdGALMb8i1U4Z4R5SktxpNTAY'
-    assert transaction.asset is None
+    assert transaction.asset == {}
     assert transaction.vendor_field == 'Goose Voter - True Block Weight'
     assert transaction.vendor_field_hex == b'476f6f736520566f746572202d205472756520426c6f636b20576569676874'
     assert transaction.id == '170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11'
@@ -97,7 +97,7 @@ def test_from_dict_correctly_sets_data(dummy_transaction):
     assert transaction.second_signature is None
     assert transaction.sign_signature == '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717'
     assert transaction.signatures is None
-    assert transaction.block_id == 7176646138626297930
+    assert transaction.block_id == '7176646138626297930'
     assert transaction.sequence == 0
     assert transaction.timelock is None
     assert transaction.timelock_type is None
@@ -123,7 +123,7 @@ def test_verify_correctly_verifies_the_transaction():
             '022043f9005f7d254bb0ecff2a14b035fc8aa83bd0e55135ff8c3181993606f2efe5'
         ),
         'id': '35904cf41b4df8f2e45d1aac366eca8fce25118d19b94333502cc66973adc815',
-        'blockId': 10172429794310518146,
+        'blockId': '10172429794310518146',
     }
     transaction = Transaction.from_dict(data)
     assert transaction.verify() is True

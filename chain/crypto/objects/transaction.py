@@ -25,33 +25,33 @@ from chain.crypto.address import address_from_public_key
 from chain.config import Config
 from hashlib import sha256
 from chain.crypto.utils import verify_hash, is_transaction_exception
-from chain.crypto.objects.base import CryptoField, CryptoObject
+from chain.crypto.objects.base import Field, IntField, CryptoObject, StrField, BytesField
 
 
 class Transaction(CryptoObject):
-    version = CryptoField(attr='version', required=False, default=None, field_type=int)
-    network = CryptoField(attr='network', required=False, default=None, field_type=int)
-    type = CryptoField(attr='type', required=True, default=None, field_type=int)
-    timestamp = CryptoField(attr='timestamp', required=True, default=None, field_type=int)
-    sender_public_key = CryptoField(attr='senderPublicKey', required=True, default=None, field_type=str)
-    fee = CryptoField(attr='fee', required=True, default=0, field_type=int)
-    amount = CryptoField(attr='amount', required=True, default=0, field_type=int)
-    expiration = CryptoField(attr='expiration', required=False, default=None, field_type=int)
-    recipient_id = CryptoField(attr='recipientId', required=False, default=None, field_type=str)
-    asset = CryptoField(attr='asset', required=False, default=None, field_type=None)
-    vendor_field = CryptoField(attr='vendorField', required=False, default=None, field_type=str)
-    vendor_field_hex = CryptoField(attr='vendorFieldHex', required=False, default=None, field_type=bytes)
-    id = CryptoField(attr='id', required=False, default=None, field_type=str)
-    signature = CryptoField(attr='signature', required=False, default=None, field_type=str)
-    second_signature = CryptoField(attr='secondSignature', required=False, default=None, field_type=str)
-    sign_signature = CryptoField(attr='signSignature', required=False, default=None, field_type=str)
-    signatures = CryptoField(attr='signatures', required=False, default=None, field_type=None)
-    block_id = CryptoField(attr='blockId', required=False, default=None, field_type=int)
-    sequence = CryptoField(attr='sequence', required=False, default=0, field_type=int)
-    timelock = CryptoField(attr='timelock', required=False, default=None, field_type=None)
-    timelock_type = CryptoField(attr='timelockType', required=False, default=None, field_type=int)
-    ipfs_hash = CryptoField(attr='ipfsHash', required=False, default=None, field_type=bytes)
-    payments = CryptoField(attr='payments', required=False, default=None, field_type=None)
+    version = IntField(attr='version', required=False, default=None)
+    network = IntField(attr='network', required=False, default=None)
+    type = IntField(attr='type', required=True, default=None)
+    timestamp = IntField(attr='timestamp', required=True, default=None)
+    sender_public_key = StrField(attr='senderPublicKey', required=True, default=None)
+    fee = IntField(attr='fee', required=True, default=0)
+    amount = IntField(attr='amount', required=True, default=0)
+    expiration = IntField(attr='expiration', required=False, default=None)
+    recipient_id = StrField(attr='recipientId', required=False, default=None)
+    asset = Field(attr='asset', required=False, default={})
+    vendor_field = StrField(attr='vendorField', required=False, default=None)
+    vendor_field_hex = BytesField(attr='vendorFieldHex', required=False, default=None)
+    id = StrField(attr='id', required=False, default=None)
+    signature = StrField(attr='signature', required=False, default=None)
+    second_signature = StrField(attr='secondSignature', required=False, default=None)
+    sign_signature = StrField(attr='signSignature', required=False, default=None)
+    signatures = Field(attr='signatures', required=False, default=None)
+    block_id = StrField(attr='blockId', required=False, default=None)
+    sequence = IntField(attr='sequence', required=False, default=0)
+    timelock = Field(attr='timelock', required=False, default=None)
+    timelock_type = IntField(attr='timelockType', required=False, default=None)
+    ipfs_hash = BytesField(attr='ipfsHash', required=False, default=None)
+    payments = Field(attr='payments', required=False, default=None)
 
     def _construct_common(self):
         self._apply_v1_compatibility()
@@ -64,12 +64,13 @@ class Transaction(CryptoObject):
         cls = cls()
         for field in cls._fields:
             value = data.get(field.attr, field.default)
-            if field.type and value != field.default and not isinstance(value, field.type):
-                raise TypeError('Attribute {} must be a {}'.format(field.attr, field.type))
-            if field.required and value is field.default:
-                raise Exception(
-                    'Missing field {}'.format(field.name)
-                )  # TODO: change exception
+            if value is None and field.required:
+                raise ValueError('Attribute {} is required'.format(field.name))
+
+            if value is not None and field.accepted_types and not isinstance(value, field.accepted_types):
+                raise TypeError('Attribute {} ({}) must be of type {}'.format(field.name, type(value), field.accepted_types))
+
+            value = field.to_value(value)
             setattr(cls, field.name, value)
         cls._construct_common()
         return cls
@@ -432,7 +433,8 @@ class Transaction(CryptoObject):
             skip_signature=True, skip_second_signature=True
         )
         is_verified = verify_hash(
-            transaction_bytes, self.signature, self.sender_public_key
+            transaction_bytes,
+            unhexlify(self.signature.encode('utf-8')), unhexlify(self.sender_public_key.encode('utf-8'))
         )
         return is_verified
 
@@ -447,7 +449,11 @@ class Transaction(CryptoObject):
         if not second_signature:
             return False
 
-        is_verified = verify_hash(transaction_bytes, second_signature, public_key)
+        is_verified = verify_hash(
+            transaction_bytes,
+            unhexlify(second_signature.encode('utf-8')),
+            unhexlify(public_key.encode('utf-8'))
+        )
         return is_verified
 
     def get_hash(self):
