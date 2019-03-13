@@ -26,7 +26,7 @@ class Block(CryptoObject):
     payload_hash = CryptoField(attr='payloadHash', required=True, default=None, field_type=bytes)
     generator_public_key = CryptoField(attr='generatorPublicKey', required=True, default=None, field_type=str)
     block_signature = CryptoField(attr='blockSignature', required=False, default=None, field_type=bytes)
-    transactions = CryptoField(attr='transaction', required=False, default=None, field_type=None)
+    transactions = CryptoField(attr='transactions', required=False, default=None, field_type=None)
 
     @staticmethod
     def to_bytes_hex(value):
@@ -84,7 +84,7 @@ class Block(CryptoObject):
                 )  # TODO: change exception
             setattr(cls, field.name, value)
 
-        if cls.transactions and isinstance(cls.transaction, list):
+        if cls.transactions and isinstance(cls.transactions, list):
             transactions = []
             for transaction_data in cls.transactions:
                 transactions.append(Transaction.from_dict(transaction_data))

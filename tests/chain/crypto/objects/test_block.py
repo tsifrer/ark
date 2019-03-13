@@ -10,11 +10,7 @@ def test_serialize_full_correctly_serializes_block_and_its_transactions(
 ):
     block = Block.from_dict(dummy_block)
     serialized = block.serialize_full()
-
-
-
-    omg = Block.from_serialized(serialized)
-    # assert serialized == dummy_block_full_hash
+    assert serialized == dummy_block_full_hash
 
 
 def test_serialize_correctly_serializes_just_the_block(dummy_block, dummy_block_hash):
@@ -107,7 +103,17 @@ def test_from_dict_correctly_sets_data(dummy_block):
     )
     assert block.id == 7176646138626297930
     assert block.id_hex == b'639891a3bb7fd04a'
-    assert block.transactions is None
+    assert block.transactions is not None
+    assert len(block.transactions) == 7
+    for transaction, expected in zip(block.transactions, dummy_block['transactions']):
+        assert transaction.version is None
+        assert transaction.network is None
+        assert transaction.type == expected['type']
+        assert transaction.timestamp == expected['timestamp']
+        assert transaction.sender_public_key == expected['senderPublicKey']
+        assert transaction.fee == expected['fee']
+        assert transaction.amount == expected['amount']
+        assert transaction.asset == expected['asset']
 
 
 def test_from_dict_raises_exception_for_wrong_type(dummy_block):

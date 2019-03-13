@@ -166,7 +166,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': '7176646138626297930',
+                'blockId': 7176646138626297930,
             },
             {
                 'type': 0,
@@ -195,7 +195,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': '7176646138626297930',
+                'blockId': 7176646138626297930,
             },
             {
                 'type': 0,
@@ -224,7 +224,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': '7176646138626297930',
+                'blockId': 7176646138626297930,
             },
             {
                 'type': 0,
@@ -253,7 +253,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': '7176646138626297930',
+                'blockId': 7176646138626297930,
             },
             {
                 'type': 0,
@@ -282,7 +282,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': '7176646138626297930',
+                'blockId': 7176646138626297930,
             },
             {
                 'type': 0,
@@ -311,7 +311,7 @@ def dummy_block(dummy_transaction):
                 'senderId': 'DB8LnnQqYvHpG4WkGJ9AJWBYEct7G3yRZg',
                 'hop': 2,
                 'broadcast': False,
-                'blockId': '7176646138626297930',
+                'blockId': 7176646138626297930,
             },
         ],
     }
