@@ -25,7 +25,13 @@ from chain.crypto.address import address_from_public_key
 from chain.config import Config
 from hashlib import sha256
 from chain.crypto.utils import verify_hash, is_transaction_exception
-from chain.crypto.objects.base import Field, IntField, CryptoObject, StrField, BytesField
+from chain.crypto.objects.base import (
+    Field,
+    IntField,
+    CryptoObject,
+    StrField,
+    BytesField,
+)
 
 
 class Transaction(CryptoObject):
@@ -67,8 +73,16 @@ class Transaction(CryptoObject):
             if value is None and field.required:
                 raise ValueError('Attribute {} is required'.format(field.name))
 
-            if value is not None and field.accepted_types and not isinstance(value, field.accepted_types):
-                raise TypeError('Attribute {} ({}) must be of type {}'.format(field.name, type(value), field.accepted_types))
+            if (
+                value is not None
+                and field.accepted_types
+                and not isinstance(value, field.accepted_types)
+            ):
+                raise TypeError(
+                    'Attribute {} ({}) must be of type {}'.format(
+                        field.name, type(value), field.accepted_types
+                    )
+                )
 
             value = field.to_value(value)
             setattr(cls, field.name, value)
@@ -217,17 +231,23 @@ class Transaction(CryptoObject):
         if self.type == TRANSACTION_TYPE_TRANSFER:
             self.amount = read_bit64(bytes_data)
             self.expiration = read_bit32(bytes_data, offset=8)
-            self.recipient_id = b58encode_check(bytes_data[12 : 21 + 12]).decode('utf-8')
+            self.recipient_id = b58encode_check(bytes_data[12 : 21 + 12]).decode(
+                'utf-8'
+            )
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
-            self.asset['signature'] = {'publicKey': hexlify(bytes_data[:33]).decode('utf-8')}
+            self.asset['signature'] = {
+                'publicKey': hexlify(bytes_data[:33]).decode('utf-8')
+            }
             return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             username_length = read_bit8(bytes_data) // 2
             username_end = username_length + 1
-            self.asset['delegate'] = {'username': bytes_data[1:username_end].decode('utf-8')}
+            self.asset['delegate'] = {
+                'username': bytes_data[1:username_end].decode('utf-8')
+            }
             return bytes_data[username_end:]
 
         elif self.type == TRANSACTION_TYPE_VOTE:
@@ -258,7 +278,9 @@ class Transaction(CryptoObject):
 
         elif self.type == TRANSACTION_TYPE_IPFS:
             dag_length = read_bit8(bytes_data)
-            self.asset['ipfs'] = {'dag': hexlify(bytes_data[1:dag_length]).decode('utf-8')}
+            self.asset['ipfs'] = {
+                'dag': hexlify(bytes_data[1:dag_length]).decode('utf-8')
+            }
             return bytes_data[dag_length:]
 
         elif self.type == TRANSACTION_TYPE_TIMELOCK_TRANSFER:
@@ -314,7 +336,9 @@ class Transaction(CryptoObject):
             else:
                 # Second signature
                 second_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-                self.second_signature = hexlify(bytes_data[:second_signature_length]).decode('utf-8')
+                self.second_signature = hexlify(
+                    bytes_data[:second_signature_length]
+                ).decode('utf-8')
 
     def _apply_v1_compatibility(self):
         if self.version != 1:
@@ -434,7 +458,8 @@ class Transaction(CryptoObject):
         )
         is_verified = verify_hash(
             transaction_bytes,
-            unhexlify(self.signature.encode('utf-8')), unhexlify(self.sender_public_key.encode('utf-8'))
+            unhexlify(self.signature.encode('utf-8')),
+            unhexlify(self.sender_public_key.encode('utf-8')),
         )
         return is_verified
 
@@ -452,7 +477,7 @@ class Transaction(CryptoObject):
         is_verified = verify_hash(
             transaction_bytes,
             unhexlify(second_signature.encode('utf-8')),
-            unhexlify(public_key.encode('utf-8'))
+            unhexlify(public_key.encode('utf-8')),
         )
         return is_verified
 

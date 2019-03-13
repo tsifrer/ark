@@ -19,7 +19,9 @@ def test_serialize_correctly_serializes_just_the_block(dummy_block, dummy_block_
     assert serialized == dummy_block_hash
 
 
-def test_from_serialized_correctly_sets_deserialized_types(dummy_block_hash, dummy_block):
+def test_from_serialized_correctly_sets_deserialized_types(
+    dummy_block_hash, dummy_block
+):
     block = Block.from_serialized(dummy_block_hash)
 
     assert isinstance(block.version, int)
@@ -40,7 +42,9 @@ def test_from_serialized_correctly_sets_deserialized_types(dummy_block_hash, dum
     assert block.transactions == []
 
 
-def test_from_serialized_correctly_deserializes_full_data(dummy_block_full_hash, dummy_block):
+def test_from_serialized_correctly_deserializes_full_data(
+    dummy_block_full_hash, dummy_block
+):
     block = Block.from_serialized(dummy_block_full_hash)
 
     assert block.version == 0
@@ -122,7 +126,10 @@ def test_from_dict_raises_exception_for_wrong_type(dummy_block):
     with pytest.raises(TypeError) as excinfo:
         Block.from_dict(data)
 
-    assert "Attribute id (<class 'float'>) must be of type (<class 'str'>, <class 'bytes'>)" == str(excinfo.value)
+    assert (
+        "Attribute id (<class 'float'>) must be of type (<class 'str'>, <class 'bytes'>)"
+        == str(excinfo.value)
+    )
 
 
 def test_from_object_correctly_sets_data():

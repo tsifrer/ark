@@ -57,18 +57,36 @@ def test_from_serialized_correctly_deserializes_full_data(dummy_transaction_hash
     assert transaction.network == 30
     assert transaction.type == 0
     assert transaction.timestamp == 24760418
-    assert transaction.sender_public_key == '0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0'
+    assert (
+        transaction.sender_public_key
+        == '0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0'
+    )
     assert transaction.fee == 10000000
     assert transaction.amount == 555760
     assert transaction.expiration == 0
     assert transaction.recipient_id == 'DB4gFuDztmdGALMb8i1U4Z4R5SktxpNTAY'
     assert transaction.asset == {}
     assert transaction.vendor_field == 'Goose Voter - True Block Weight'
-    assert transaction.vendor_field_hex == b'476f6f736520566f746572202d205472756520426c6f636b20576569676874'
-    assert transaction.id == '170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11'
-    assert transaction.signature == '304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978'
-    assert transaction.second_signature == '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717'
-    assert transaction.sign_signature == '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717'
+    assert (
+        transaction.vendor_field_hex
+        == b'476f6f736520566f746572202d205472756520426c6f636b20576569676874'
+    )
+    assert (
+        transaction.id
+        == '170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11'
+    )
+    assert (
+        transaction.signature
+        == '304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978'
+    )
+    assert (
+        transaction.second_signature
+        == '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717'
+    )
+    assert (
+        transaction.sign_signature
+        == '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717'
+    )
     assert transaction.signatures is None
     assert transaction.block_id is None
     assert transaction.sequence == 0
@@ -84,7 +102,10 @@ def test_from_dict_correctly_sets_data(dummy_transaction):
     assert transaction.network is None
     assert transaction.type == 0
     assert transaction.timestamp == 24760418
-    assert transaction.sender_public_key == '0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0'
+    assert (
+        transaction.sender_public_key
+        == '0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0'
+    )
     assert transaction.fee == 10000000
     assert transaction.amount == 555760
     assert transaction.expiration is None
@@ -92,10 +113,19 @@ def test_from_dict_correctly_sets_data(dummy_transaction):
     assert transaction.asset == {}
     assert transaction.vendor_field == 'Goose Voter - True Block Weight'
     assert transaction.vendor_field_hex is None
-    assert transaction.id == '1e5f0d734413f665cb5a859068cff1bccedcda9cc6df7e586ef61ba8fd74ef5d'
-    assert transaction.signature == '304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978'
+    assert (
+        transaction.id
+        == '1e5f0d734413f665cb5a859068cff1bccedcda9cc6df7e586ef61ba8fd74ef5d'
+    )
+    assert (
+        transaction.signature
+        == '304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978'
+    )
     assert transaction.second_signature is None
-    assert transaction.sign_signature == '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717'
+    assert (
+        transaction.sign_signature
+        == '30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717'
+    )
     assert transaction.signatures is None
     assert transaction.block_id == '7176646138626297930'
     assert transaction.sequence == 0

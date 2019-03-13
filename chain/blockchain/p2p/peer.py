@@ -84,6 +84,3 @@ class Peer(object):
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
         return [Block.from_dict(block) for block in blocks]
-
-
-

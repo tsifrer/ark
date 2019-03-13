@@ -50,7 +50,6 @@ class BytesField(Field):
 
 
 class CryptoObjectMeta(type):
-
     @staticmethod
     def _compile_fields(field_map, serializer_cls):
         fields = []

@@ -6,7 +6,13 @@ from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_b
 from chain.config import Config
 from chain.crypto import slots, time
 from chain.crypto.objects.transaction import Transaction
-from chain.crypto.objects.base import Field, CryptoObject, IntField, StrField, BytesField
+from chain.crypto.objects.base import (
+    Field,
+    CryptoObject,
+    IntField,
+    StrField,
+    BytesField,
+)
 from chain.crypto.utils import verify_hash
 
 
@@ -16,15 +22,21 @@ class Block(CryptoObject):
     timestamp = IntField(attr='timestamp', required=True, default=None)
     version = IntField(attr='version', required=True, default=None)
     height = IntField(attr='height', required=True, default=None)
-    previous_block_hex = BytesField(attr='previousBlockHex', required=False, default=None)
+    previous_block_hex = BytesField(
+        attr='previousBlockHex', required=False, default=None
+    )
     previous_block = StrField(attr='previousBlock', required=False, default=None)
-    number_of_transactions = IntField(attr='numberOfTransactions', required=True, default=0)
+    number_of_transactions = IntField(
+        attr='numberOfTransactions', required=True, default=0
+    )
     total_amount = IntField(attr='totalAmount', required=True, default=0)
     total_fee = IntField(attr='totalFee', required=True, default=0)
     reward = IntField(attr='reward', required=True, default=0)
     payload_length = IntField(attr='payloadLength', required=True, default=0)
     payload_hash = StrField(attr='payloadHash', required=True, default=None)
-    generator_public_key = StrField(attr='generatorPublicKey', required=True, default=None)
+    generator_public_key = StrField(
+        attr='generatorPublicKey', required=True, default=None
+    )
     block_signature = StrField(attr='blockSignature', required=False, default=None)
     transactions = Field(attr='transactions', required=False, default=[])
 
@@ -66,8 +78,13 @@ class Block(CryptoObject):
 
             # // order of transactions messed up in mainnet V1
             # // TODO: move this to network constants exception using block ids
-            if (self.number_of_transactions == 2 and (self.height == 3084276 or self.height == 34420)):
-                self.transactions[0], self.transactions[1] = self.transactions[1], self.transactions[0]
+            if self.number_of_transactions == 2 and (
+                self.height == 3084276 or self.height == 34420
+            ):
+                self.transactions[0], self.transactions[1] = (
+                    self.transactions[1],
+                    self.transactions[0],
+                )
 
     @classmethod
     def from_dict(cls, data):
@@ -80,8 +97,16 @@ class Block(CryptoObject):
             if value is None and field.required:
                 raise ValueError('Attribute {} is required'.format(field.name))
 
-            if value is not None and field.accepted_types and not isinstance(value, field.accepted_types):
-                raise TypeError('Attribute {} ({}) must be of type {}'.format(field.name, type(value), field.accepted_types))
+            if (
+                value is not None
+                and field.accepted_types
+                and not isinstance(value, field.accepted_types)
+            ):
+                raise TypeError(
+                    'Attribute {} ({}) must be of type {}'.format(
+                        field.name, type(value), field.accepted_types
+                    )
+                )
 
             value = field.to_value(value)
             setattr(cls, field.name, value)
@@ -104,8 +129,16 @@ class Block(CryptoObject):
             if value is None and field.required:
                 raise ValueError('Attribute {} is required'.format(field.name))
 
-            if value is not None and field.accepted_types and not isinstance(value, field.accepted_types):
-                raise TypeError('Attribute {} ({}) must be of type {}'.format(field.name, type(value), field.accepted_types))
+            if (
+                value is not None
+                and field.accepted_types
+                and not isinstance(value, field.accepted_types)
+            ):
+                raise TypeError(
+                    'Attribute {} ({}) must be of type {}'.format(
+                        field.name, type(value), field.accepted_types
+                    )
+                )
 
             value = field.to_value(value)
             setattr(cls, field.name, value)
@@ -138,21 +171,21 @@ class Block(CryptoObject):
 
     def get_header(self):
         fields = [
-            ('id', str,),
-            ('id_hex', None,),
-            ('timestamp', None,),
-            ('version', None,),
-            ('height', None,),
-            ('previous_block_hex', None,),
-            ('previous_block', str,),
-            ('number_of_transactions', None,),
-            ('total_amount', str,),
-            ('total_fee', str,),
-            ('reward', str,),
-            ('payload_length', None,),
-            ('payload_hash', None,),
-            ('generator_public_key', None,),
-            ('block_signature', None,),
+            ('id', str),
+            ('id_hex', None),
+            ('timestamp', None),
+            ('version', None),
+            ('height', None),
+            ('previous_block_hex', None),
+            ('previous_block', str),
+            ('number_of_transactions', None),
+            ('total_amount', str),
+            ('total_fee', str),
+            ('reward', str),
+            ('payload_length', None),
+            ('payload_hash', None),
+            ('generator_public_key', None),
+            ('block_signature', None),
         ]
         data = {}
         for field, to_type in fields:
@@ -253,7 +286,8 @@ class Block(CryptoObject):
         bytes_data = unhexlify(self.serialize(include_signature=False))
         is_verified = verify_hash(
             bytes_data,
-            unhexlify(self.block_signature.encode('utf-8')), unhexlify(self.generator_public_key.encode('utf-8'))
+            unhexlify(self.block_signature.encode('utf-8')),
+            unhexlify(self.generator_public_key.encode('utf-8')),
         )
         return is_verified
 

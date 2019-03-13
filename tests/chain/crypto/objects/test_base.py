@@ -12,5 +12,3 @@
 
 #     print(obj._fields)
 #     print(obj.foo)
-
-

@@ -151,9 +151,8 @@ class Blockchain(object):
         if blocks:
             print('chained', is_block_chained(last_block, blocks[0]))
             print('exception', is_block_exception(blocks[0]))
-            is_chained = (
-                is_block_chained(last_block, blocks[0])
-                or is_block_exception(blocks[0])
+            is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(
+                blocks[0]
             )
             if is_chained:
                 print(
@@ -285,15 +284,9 @@ class Blockchain(object):
                 ).format(block.height, last_block.height)
             )
 
-
-
-
             # TODO: this might not be OK
             self.start_syncing()
             print('Done syncing')
-
-
-
 
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
