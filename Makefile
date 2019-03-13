@@ -19,7 +19,6 @@ black:
 black-check:
 	black --check .
 
-
 profile:
 	python -m cProfile -o spongebob.prof spongebob.py
 
