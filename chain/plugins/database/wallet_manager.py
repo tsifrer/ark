@@ -53,9 +53,6 @@ class WalletManager(object):
             wallet = self.find_by_address(transaction.recipient_id)
             wallet.balance = int(transaction.amount)
 
-            if wallet.address == 'DUJ9w4qTuKXtFLiSARrifCeUhi2MvrP3Ch':
-                print(wallet.__dict__)
-
     def _build_block_rewards(self):
         """Load and apply block rewards to wallets.
         """
