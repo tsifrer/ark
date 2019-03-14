@@ -1,3 +1,4 @@
+import json
 import requests
 
 from chain.crypto.objects.block import Block
@@ -5,16 +6,17 @@ from chain.config import Config
 
 
 class Peer(object):
-    def __init__(self, ip, port, app_version, *args, **kwargs):
+    # TODO: refactor this shiet
+
+    def __init__(self, ip, port, app_version=None, healthy=True, no_common_blocks=False, headers=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = Config()
         self.ip = ip
         self.port = port
-        self.healthy = True
-        self.download_size = None
+        self.healthy = healthy
         self.no_common_blocks = False
 
-        self.headers = {
+        self.headers = headers if headers else {
             'version': app_version,
             'port': str(self.port),
             'nethash': config['network']['nethash'],
@@ -85,3 +87,29 @@ class Peer(object):
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
         return [Block.from_dict(block) for block in blocks]
+
+    def to_json(self):
+        data = {
+            'ip': self.ip,
+            'port': self.port,
+            'healthy': self.healthy,
+            'headers': self.headers,
+            'no_common_blocks': self.no_common_blocks,
+        }
+        return json.dumps(data)
+
+    @classmethod
+    def from_json(cls, json_data):
+        data = json.loads(json_data)
+        return cls(
+            ip=data['ip'],
+            port=data['port'],
+            healthy=data['healthy'],
+            no_common_blocks=data['no_common_blocks'],
+            headers=data['headers'])
+
+
+
+
+
+

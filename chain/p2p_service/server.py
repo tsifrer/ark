@@ -4,6 +4,8 @@ from pyramid.config import Configurator
 
 from waitress import serve
 
+from paste.translogger import TransLogger
+
 
 def create_app():
     settings = {
@@ -24,8 +26,11 @@ def create_app():
         config.add_route('peer_blocks', '/peer/blocks')
         config.add_route('peer_transactions', '/peer/transactions')
         config.add_route('peer_common_blocks', '/peer/blocks/common')
+        # config.add_route('peer_list', '/peer/list')
 
         app = config.make_wsgi_app()
+        app = TransLogger(app, setup_console_handler=True)
+
     return app
 
 

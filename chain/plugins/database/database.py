@@ -23,10 +23,8 @@ class Database(object):
 
     _wallets = None
 
-    def __init__(self, app):
+    def __init__(self):
         super().__init__()
-        self.app = app
-
         self.db = PostgresqlDatabase(
             database=os.environ.get('POSTGRES_DB_NAME', 'postgres'),
             user=os.environ.get('POSTGRES_DB_USER', 'postgres'),

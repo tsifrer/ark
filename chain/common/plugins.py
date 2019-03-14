@@ -13,13 +13,13 @@ from chain.common.interfaces import IPlugin
 # PLUGINS = {}
 
 
-def load_plugin(app, plugin):
+def load_plugin(plugin):
     module = import_module(plugin)
     for attr in dir(module):
         obj = getattr(module, attr)
         if attr != 'IPlugin' and inspect.isclass(obj) and issubclass(obj, IPlugin):
             plugin = obj()
-            return plugin.register(app)
+            return plugin.register()
 
 
 # def load_plugins(app, plugins):

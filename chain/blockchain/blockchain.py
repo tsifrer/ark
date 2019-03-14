@@ -11,7 +11,6 @@ from .constants import (
 from chain.crypto import time, slots
 from chain.crypto.utils import is_block_exception
 from chain.crypto.objects.block import Block
-from .p2p.p2p import P2P
 from chain.common.plugins import load_plugin
 from chain.config import Config
 from chain.plugins.process_queue.queue import Queue
@@ -20,12 +19,11 @@ from chain.plugins.process_queue.queue import Queue
 class Blockchain(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.version = '0.0.1'  # TODO: get this from somewhere else
 
         # load_plugins(self)
-        self.database = load_plugin(self, 'chain.plugins.database')
-
-        self.p2p = P2P(self.database, self.version)
+        self.database = load_plugin('chain.plugins.database')
+        self.peers = load_plugin('chain.plugins.peers')
+        self.peers.setup()
 
     def start(self):
         # TODO: change prints to loggers
@@ -146,7 +144,7 @@ class Blockchain(object):
         print()
         print('downloading harambe')
         print()
-        blocks = self.p2p.download_blocks(last_block.height)
+        blocks = self.peers.download_blocks(last_block.height)
 
         if blocks:
             print('chained', is_block_chained(last_block, blocks[0]))
@@ -376,7 +374,7 @@ class Blockchain(object):
         return self._handle_accepted_block(block)
 
     def consume_queue(self):
-        queue = Queue(None)
+        queue = load_plugin('chain.plugins.process_queue')
         while True:
             serialized_block = queue.pop_block()
             if serialized_block:

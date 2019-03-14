@@ -9,9 +9,8 @@ class Queue(object):
     restored_database_integrity = False
     forging_delegates = []
 
-    def __init__(self, app):
+    def __init__(self):
         super().__init__()
-        self.app = app
 
         self.db = Redis(
             host=os.environ.get('REDIS_HOST', 'localhost'),

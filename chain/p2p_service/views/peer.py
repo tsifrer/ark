@@ -4,8 +4,7 @@ from pyramid.view import view_config
 
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
-from chain.plugins.database.database import Database
-from chain.plugins.process_queue.queue import Queue
+from chain.common.plugins import load_plugin
 
 
 @view_config(route_name='peer_status', request_method='GET', renderer='json')
@@ -14,7 +13,7 @@ def status_get_view(request):
     #     raise HTTPMethodNotAllowed(request.method)
 
     # TODO: This is REALLY bad, to connect to db on every request
-    db = Database(None)
+    db = load_plugin('chain.plugins.database')
 
     last_block = db.get_last_block()
 
@@ -33,7 +32,7 @@ def block_get_view(request):
     last_block_height = request.params.get('lastBlockHeight')
 
     # TODO: This is REALLY bad, to connect to db on every request
-    db = Database(None)
+    db = load_plugin('chain.plugins.database')
 
     if last_block_height:
         # TODO: handle exception when failed to convert to int
@@ -98,7 +97,7 @@ def block_post_view(request):
     # blockchain.pushPingBlock(b.data);
     # block.ip = request.info.remoteAddress;
 
-    queue = Queue(None)
+    queue = load_plugin('chain.plugins.process_queue')
     queue.push_block(block)
 
     return {'success': True}
@@ -138,7 +137,7 @@ def common_blocks_view(request):
         block_ids.append(block_id)
 
     # TODO: This is REALLY bad, to connect to db on every request
-    db = Database(None)
+    db = load_plugin('chain.plugins.database')
     last_block = db.get_last_block()
     if block_ids:
         common_blocks = db.get_blocks_by_id(block_ids)
@@ -162,3 +161,16 @@ def common_blocks_view(request):
             'common': None,
             'lastBlockHeight': last_block.height,
         }
+
+
+# @view_config(route_name='peer_list', request_method='GET', renderer='json')
+# def peers_get_view(request):
+#     peer_manager = load_plugin('chain.plugins.peers')
+#     # TODO: order peers by delay?
+#     peers = peer_manager.peers
+    
+
+
+
+
+

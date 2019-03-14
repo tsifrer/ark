@@ -1,10 +1,10 @@
 from chain.common.interfaces import IPlugin
 
-from .queue import Queue
+from .manager import PeerManager
 
 
 class Plugin(IPlugin):
-    name = 'process_queue'
+    name = 'peers'
 
     def register(self):
-        return Queue()
+        return PeerManager()

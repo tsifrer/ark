@@ -2,10 +2,9 @@ from pyramid.httpexceptions import HTTPMethodNotAllowed
 from pyramid.response import Response
 from pyramid.view import view_config
 
+from chain.common.plugins import load_plugin
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
-from chain.plugins.database.database import Database
-from chain.plugins.process_queue.queue import Queue
 
 
 @view_config(route_name='block_store', renderer='json')
@@ -29,7 +28,7 @@ def block_store_view(request):
     )
 
     # TODO: This is REALLY bad, to connect to db on every request
-    db = Database(None)
+    db = load_plugin('chain.plugins.database')
 
     last_block = db.get_last_block()
     current_slot = slots.get_slot_number(last_block.height, time.get_time())
@@ -43,7 +42,7 @@ def block_store_view(request):
         # TODO: if blockchain.state.started and blockchain.state == 'idle'
 
         # TODO: This is REALLY bad, to connect to redis on every request
-        queue = Queue(None)
+        queue = load_plugin('chain.plugins.process_queue')
         queue.push_block(block)
 
         # else:

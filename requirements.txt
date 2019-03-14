@@ -29,6 +29,7 @@ idna==2.8                 # via requests
 mccabe==0.6.1             # via flake8
 mock==2.0.0               # via peewee-migrate
 more-itertools==5.0.0     # via pytest
+paste==3.0.8
 pastedeploy==2.0.1        # via plaster-pastedeploy
 pbr==5.1.1                # via mock
 peewee-migrate==1.1.4
@@ -48,7 +49,7 @@ python-dateutil==2.7.5
 redis==3.2.0
 requests==2.21.0
 semver==2.8.1
-six==1.12.0               # via mock, more-itertools, pip-tools, pytest, python-dateutil, transitions, webtest
+six==1.12.0               # via mock, more-itertools, paste, pip-tools, pytest, python-dateutil, transitions, webtest
 soupsieve==1.8            # via beautifulsoup4
 toml==0.10.0              # via black
 transitions==0.6.9
