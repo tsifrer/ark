@@ -7,11 +7,12 @@ from chain.config import Config
 from chain.crypto import slots, time
 from chain.crypto.objects.transaction import Transaction
 from chain.crypto.objects.base import (
-    Field,
+    BigIntField,
+    BytesField,
     CryptoObject,
+    Field,
     IntField,
     StrField,
-    BytesField,
 )
 from chain.crypto.utils import verify_hash
 
@@ -29,9 +30,9 @@ class Block(CryptoObject):
     number_of_transactions = IntField(
         attr='numberOfTransactions', required=True, default=0
     )
-    total_amount = IntField(attr='totalAmount', required=True, default=0)
-    total_fee = IntField(attr='totalFee', required=True, default=0)
-    reward = IntField(attr='reward', required=True, default=0)
+    total_amount = BigIntField(attr='totalAmount', required=True, default=0)
+    total_fee = BigIntField(attr='totalFee', required=True, default=0)
+    reward = BigIntField(attr='reward', required=True, default=0)
     payload_length = IntField(attr='payloadLength', required=True, default=0)
     payload_hash = StrField(attr='payloadHash', required=True, default=None)
     generator_public_key = StrField(
@@ -168,34 +169,6 @@ class Block(CryptoObject):
     def get_id(self):
         id_hex = self.get_id_hex()
         return str(int(id_hex, 16))
-
-    def get_header(self):
-        fields = [
-            ('id', str),
-            ('id_hex', None),
-            ('timestamp', None),
-            ('version', None),
-            ('height', None),
-            ('previous_block_hex', None),
-            ('previous_block', str),
-            ('number_of_transactions', None),
-            ('total_amount', str),
-            ('total_fee', str),
-            ('reward', str),
-            ('payload_length', None),
-            ('payload_hash', None),
-            ('generator_public_key', None),
-            ('block_signature', None),
-        ]
-        data = {}
-        for field, to_type in fields:
-            value = getattr(self, field)
-            if isinstance(value, bytes):
-                value = value.decode('utf-8')
-            if to_type:
-                value = to_type(value)
-            data[field] = value
-        return data
 
     def serialize(self, include_signature=True):
         self.previous_block_hex = Block.to_bytes_hex(self.previous_block)
@@ -373,3 +346,21 @@ class Block(CryptoObject):
             errors.append('Invalid payload hash')
 
         return len(errors) == 0, errors
+
+    def get_header(self):
+        exclude_fields = ['transactions']
+        data = {}
+        for field in self._fields:
+            if field.name in exclude_fields:
+                continue
+
+            value = getattr(self, field.name)
+            data[field.attr] = field.to_json_value(value)
+        return data
+
+    def to_json(self):
+        # TODO: figure out another name for this as it's not really json, its a
+        # dictionary but with the camelcase names as keys
+        data = self.get_header()
+        data['transactions'] = [t.to_json() for t in self.transactions]
+        return data

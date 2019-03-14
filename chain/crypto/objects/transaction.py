@@ -26,11 +26,12 @@ from chain.config import Config
 from hashlib import sha256
 from chain.crypto.utils import verify_hash, is_transaction_exception
 from chain.crypto.objects.base import (
+    BigIntField,
+    BytesField,
+    CryptoObject,
     Field,
     IntField,
-    CryptoObject,
     StrField,
-    BytesField,
 )
 
 
@@ -40,8 +41,8 @@ class Transaction(CryptoObject):
     type = IntField(attr='type', required=True, default=None)
     timestamp = IntField(attr='timestamp', required=True, default=None)
     sender_public_key = StrField(attr='senderPublicKey', required=True, default=None)
-    fee = IntField(attr='fee', required=True, default=0)
-    amount = IntField(attr='amount', required=True, default=0)
+    fee = BigIntField(attr='fee', required=True, default=0)
+    amount = BigIntField(attr='amount', required=True, default=0)
     expiration = IntField(attr='expiration', required=False, default=None)
     recipient_id = StrField(attr='recipientId', required=False, default=None)
     asset = Field(attr='asset', required=False, default={})
@@ -498,3 +499,10 @@ class Transaction(CryptoObject):
             transaction_id = exceptions[transaction_id]
 
         return transaction_id
+
+    def to_json(self):
+        data = {}
+        for field in self._fields:
+            value = getattr(self, field.name)
+            data[field.attr] = field.to_json_value(value)
+        return data

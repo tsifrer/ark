@@ -6,11 +6,24 @@ from waitress import serve
 
 
 def create_app():
-    with Configurator() as config:
+    settings = {
+        # 'debug_notfound': False,
+        # 'debug_routematch': False,
+        'pyramid.debug_all': True,
+
+    }
+
+    with Configurator(settings=settings) as config:
+        config.scan('.views.common')
+
         config.scan('.views.internal')
         config.add_route('block_store', '/internal/blocks')
-        config.add_route('status', '/peer/status')
-        config.add_route('peer_block_view', '/peer/blocks')
+
+        config.scan('.views.peer')
+        config.add_route('peer_status', '/peer/status')
+        config.add_route('peer_blocks', '/peer/blocks')
+        config.add_route('peer_transactions', '/peer/transactions')
+        config.add_route('peer_common_blocks', '/peer/blocks/common')
 
         app = config.make_wsgi_app()
     return app

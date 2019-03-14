@@ -14,6 +14,28 @@ class Field(object):
     def to_value(value):
         return value
 
+    @staticmethod
+    def to_json_value(value):
+        return value
+
+
+class BigIntField(Field):
+    """
+    Python doesn't need this field. It's here because we need to convert int to str
+    when responding as json, so other nodes know what we're doing.
+    """
+    accepted_types = (str, int)
+
+    @staticmethod
+    def to_value(value):
+        if value is None:
+            return None
+        return int(value)
+
+    @staticmethod
+    def to_json_value(value):
+        return str(value)
+
 
 class IntField(Field):
     accepted_types = (str, int)
@@ -47,6 +69,11 @@ class BytesField(Field):
         if isinstance(value, str):
             return value.encode('utf-8')
         return value
+
+    @staticmethod
+    def to_json_value(value):
+        return value.decode('utf-8')
+
 
 
 class CryptoObjectMeta(type):

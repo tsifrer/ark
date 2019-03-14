@@ -77,6 +77,7 @@ class Peer(object):
         #     url += ",";
         # }
         body = self._get('/peer/blocks/common', params=params)
+        print(body)
         return True if body.get('common') else False
 
     def download_blocks(self, from_height):

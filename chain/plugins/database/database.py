@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os
 from hashlib import sha256
 
@@ -5,6 +6,7 @@ from peewee import PostgresqlDatabase
 
 from chain.config import Config
 from chain.crypto.objects.block import Block as CryptoBlock
+from chain.crypto.objects.transaction import Transaction as CryptoTransaction
 from chain.crypto.utils import calculate_round
 
 from .models.block import Block
@@ -282,3 +284,34 @@ class Database(object):
             Transaction.id.in_(transaction_ids)
         )
         return [transaction.id for transaction in transactions]
+
+    def _convert_blocks_to_crypto_and_load_transactions(self, blocks):
+        block_ids = [block.id for block in blocks]
+
+        transactions = Transaction.select().where(Transaction.block_id.in_(block_ids)).order_by(Transaction.block_id.asc(), Transaction.sequence.asc())
+
+        transactions_map = defaultdict(list)
+        for trans in transactions:
+            transactions_map[trans.block_id].append(
+                CryptoTransaction.from_serialized(trans.serialized)
+            )
+
+            print(transactions_map[trans.block_id][0].block_id)
+
+        crypto_blocks = []
+        for block in blocks:
+            crypto_block = CryptoBlock.from_object(block)
+            crypto_block.transactions = transactions_map[block.id]
+            crypto_blocks.append(crypto_block)
+
+        return crypto_blocks
+
+    def get_blocks(self, height, limit):
+        blocks = (
+            Block.select().where(Block.height.between(height, height + limit))
+        )
+        return self._convert_blocks_to_crypto_and_load_transactions(blocks)
+
+    def get_blocks_by_id(self, block_ids):
+        blocks = Block.select().where(Block.id.in_(block_ids)).order_by(Block.height.desc())
+        return [CryptoBlock.from_object(block) for block in blocks]
