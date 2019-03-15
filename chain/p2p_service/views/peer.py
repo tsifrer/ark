@@ -5,6 +5,8 @@ from chain.common.plugins import load_plugin
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
 
+from ..exceptions import P2PException
+
 from ..external import get_db
 
 
@@ -82,7 +84,7 @@ class BlockView(MethodView):
         is_verified, errors = block.verify()
         if not is_verified:
             print(errors)  # TODO:
-            return jsonify({'success': False}), 400
+            raise P2PException('Verification failed')
 
         # blockchain.pushPingBlock(b.data);
         # block.ip = request.info.remoteAddress;
@@ -102,10 +104,7 @@ class TransactionView(MethodView):
         return jsonify(data), 200
 
     def post(self):
-        return {
-            'success': False,
-            'message': 'Transaction pool not available'
-        }, 404
+        raise P2PException('Transaction pool not available', status_code=404)
         # TODO: implement the rest of this function with transaction pool an stuffz
 
 

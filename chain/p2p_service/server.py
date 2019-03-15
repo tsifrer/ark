@@ -1,11 +1,40 @@
+import json
 import os
 
-from flask import Flask
+from flask import Flask, current_app, jsonify
 
 from gunicorn.app.base import BaseApplication
 
+from werkzeug.exceptions import HTTPException
+
+from .exceptions import P2PException
 from .external import close_db
 from .views.peer import PeerView, BlockView, TransactionView, BlockCommonView
+
+
+def _handle_api_errors(ex):
+    if isinstance(ex, HTTPException):
+        data = {
+            'success': False,
+            'status_code': ex.code,
+            'message': ex.description
+        }
+    elif isinstance(ex, P2PException):
+        data = ex.to_dict()
+    else:
+        data = {
+            'success': False,
+            'status_code': 500,
+            'message': 'Internal Server Error',
+        }
+
+    log = current_app.logger.debug
+    if data['status_code'] >= 500:
+        log = current_app.logger.error
+    elif data['status_code'] >= 400:
+        log = current_app.logger.debug
+    log(json.dumps(data))
+    return jsonify(data), data['status_code']
 
 
 class P2PService(BaseApplication):
@@ -33,6 +62,8 @@ def create_app():
     app = Flask('p2p')
 
     app.teardown_appcontext(close_db)
+
+    app.register_error_handler(Exception, _handle_api_errors)
 
     app.add_url_rule('/peer/status', view_func=PeerView.as_view('peer'))
     app.add_url_rule('/peer/blocks', view_func=BlockView.as_view('block'))
