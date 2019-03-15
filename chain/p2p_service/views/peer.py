@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 from flask.views import MethodView
 
 from chain.common.plugins import load_plugin

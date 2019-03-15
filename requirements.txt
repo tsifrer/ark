@@ -10,7 +10,6 @@ asn1crypto==0.24.0        # via coincurve
 atomicwrites==1.2.1       # via pytest
 attrs==18.2.0             # via black, flake8-bugbear, pytest
 base58==1.0.3
-beautifulsoup4==4.7.1     # via webtest
 black==19.3b0
 cached-property==1.5.1    # via peewee-migrate
 certifi==2018.11.29       # via requests
@@ -25,6 +24,7 @@ flake8-import-order==0.18
 flake8-quotes==1.0.0
 flake8==3.7.3
 flask==1.0.2
+gunicorn==19.9.0
 idna==2.8                 # via requests
 itsdangerous==1.1.0       # via flask
 jinja2==2.10              # via flask
@@ -47,12 +47,8 @@ python-dateutil==2.7.5
 redis==3.2.0
 requests==2.21.0
 semver==2.8.1
-six==1.12.0               # via mock, more-itertools, pip-tools, pytest, python-dateutil, transitions, webtest
-soupsieve==1.8            # via beautifulsoup4
+six==1.12.0               # via mock, more-itertools, pip-tools, pytest, python-dateutil, transitions
 toml==0.10.0              # via black
 transitions==0.6.9
 urllib3==1.24.1           # via requests
-waitress==1.2.1
-webob==1.8.5              # via webtest
-webtest==2.0.33
 werkzeug==0.14.1          # via flask
