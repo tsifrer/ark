@@ -11,7 +11,7 @@ atomicwrites==1.2.1       # via pytest
 attrs==18.2.0             # via black, flake8-bugbear, pytest
 base58==1.0.3
 beautifulsoup4==4.7.1     # via webtest
-black==18.9b0
+black==19.3b0
 cached-property==1.5.1    # via peewee-migrate
 certifi==2018.11.29       # via requests
 cffi==1.12.0              # via coincurve
@@ -24,40 +24,35 @@ flake8-bugbear==18.8.0
 flake8-import-order==0.18
 flake8-quotes==1.0.0
 flake8==3.7.3
-hupper==1.5               # via pyramid
+flask==1.0.2
 idna==2.8                 # via requests
+itsdangerous==1.1.0       # via flask
+jinja2==2.10              # via flask
+markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0               # via peewee-migrate
 more-itertools==5.0.0     # via pytest
-paste==3.0.8
-pastedeploy==2.0.1        # via plaster-pastedeploy
 pbr==5.1.1                # via mock
 peewee-migrate==1.1.4
 peewee==3.8.1
 pip-tools==3.2.0
-plaster-pastedeploy==0.6  # via pyramid
-plaster==1.0              # via plaster-pastedeploy, pyramid
 pluggy==0.8.1             # via pytest
 psycopg2==2.7.7
 py==1.7.0                 # via pytest
 pycodestyle==2.5.0        # via flake8, flake8-import-order
 pycparser==2.19           # via cffi
 pyflakes==2.1.0           # via flake8
-pyramid==1.10.2
 pytest==4.1.1
 python-dateutil==2.7.5
 redis==3.2.0
 requests==2.21.0
 semver==2.8.1
-six==1.12.0               # via mock, more-itertools, paste, pip-tools, pytest, python-dateutil, transitions, webtest
+six==1.12.0               # via mock, more-itertools, pip-tools, pytest, python-dateutil, transitions, webtest
 soupsieve==1.8            # via beautifulsoup4
 toml==0.10.0              # via black
 transitions==0.6.9
-translationstring==1.3    # via pyramid
 urllib3==1.24.1           # via requests
-venusian==1.2.0           # via pyramid
 waitress==1.2.1
-webob==1.8.5              # via pyramid, webtest
+webob==1.8.5              # via webtest
 webtest==2.0.33
-zope.deprecation==4.4.0   # via pyramid
-zope.interface==4.6.0     # via pyramid
+werkzeug==0.14.1          # via flask

@@ -1,36 +1,22 @@
 import os
 
-from pyramid.config import Configurator
-
 from waitress import serve
 
-from paste.translogger import TransLogger
+from flask import Flask
+from .views.peer import PeerView, BlockView, TransactionView, BlockCommonView
+
+from .external import close_db
 
 
 def create_app():
-    settings = {
-        # 'debug_notfound': False,
-        # 'debug_routematch': False,
-        'pyramid.debug_all': True,
+    app = Flask('p2p')
 
-    }
+    app.teardown_appcontext(close_db)
 
-    with Configurator(settings=settings) as config:
-        config.scan('.views.common')
-
-        config.scan('.views.internal')
-        config.add_route('block_store', '/internal/blocks')
-
-        config.scan('.views.peer')
-        config.add_route('peer_status', '/peer/status')
-        config.add_route('peer_blocks', '/peer/blocks')
-        config.add_route('peer_transactions', '/peer/transactions')
-        config.add_route('peer_common_blocks', '/peer/blocks/common')
-        # config.add_route('peer_list', '/peer/list')
-
-        app = config.make_wsgi_app()
-        app = TransLogger(app, setup_console_handler=True)
-
+    app.add_url_rule('/peer/status', view_func=PeerView.as_view('peer'))
+    app.add_url_rule('/peer/blocks', view_func=BlockView.as_view('block'))
+    app.add_url_rule('/peer/blocks/common', view_func=BlockCommonView.as_view('block_common'))
+    app.add_url_rule('/peer/transactions', view_func=TransactionView.as_view('transaction'))
     return app
 
 

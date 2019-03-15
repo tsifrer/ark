@@ -42,6 +42,9 @@ class Database(object):
 
         self._active_delegates = []
 
+    def close(self):
+        self.db.close()
+
     @property
     def wallets(self):
         # TODO: fix this somehow to not be broken in p2p_service
