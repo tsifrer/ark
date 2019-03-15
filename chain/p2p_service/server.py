@@ -1,3 +1,4 @@
+import platform
 import json
 import os
 
@@ -7,6 +8,8 @@ from gunicorn.app.base import BaseApplication
 
 from werkzeug.exceptions import HTTPException
 
+from chain.config import Config
+from chain.common.utils import get_version
 from .exceptions import P2PException
 from .external import close_db
 from .views.peer import PeerView, BlockView, TransactionView, BlockCommonView
@@ -37,6 +40,17 @@ def _handle_api_errors(ex):
     return jsonify(data), data['status_code']
 
 
+def _set_default_response_headers(response):
+    # Core implementation also sets `height` in the headers, but I it doesn't seem
+    # to be used anywhere and it just adds an extra DB query on each request.
+    config = Config()
+    response.headers['nethash'] = config['network']['nethash']
+    response.headers['version'] = get_version()
+    response.headers['port'] = 4002  # TODO: get this from the config somewhere
+    response.headers['os'] = platform.system().lower()
+    return response
+
+
 class P2PService(BaseApplication):
 
     def __init__(self):
@@ -64,6 +78,8 @@ def create_app():
     app.teardown_appcontext(close_db)
 
     app.register_error_handler(Exception, _handle_api_errors)
+
+    app.after_request(_set_default_response_headers)
 
     app.add_url_rule('/peer/status', view_func=PeerView.as_view('peer'))
     app.add_url_rule('/peer/blocks', view_func=BlockView.as_view('block'))

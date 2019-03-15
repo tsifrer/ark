@@ -86,9 +86,6 @@ class BlockView(MethodView):
             print(errors)  # TODO:
             raise P2PException('Verification failed')
 
-        # blockchain.pushPingBlock(b.data);
-        # block.ip = request.info.remoteAddress;
-
         queue = load_plugin('chain.plugins.process_queue')
         queue.push_block(block)
 
