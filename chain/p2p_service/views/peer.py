@@ -11,6 +11,7 @@ from ..external import get_db
 
 from flask import Blueprint
 
+
 class PeerView(MethodView):
     def get(self):
         db = get_db()
@@ -155,18 +156,19 @@ class BlockCommonView(MethodView):
 # #     peers = peer_manager.peers
 
 
-def _accept_new_peer_on_request():
-    print(request.path)
-    # required_headers = ['version', 'nethash', 'port', 'os']
+# def _accept_new_peer_on_request():
+#     print(request.path)
+#     # required_headers = ['version', 'nethash', 'port', 'os']
 
-    ip = request.remote_addr
+#     ip = request.remote_addr
 
     # TODO:
+
 
 def blueprint():
     bp = Blueprint('peer', __name__)
 
-    bp.before_request(_accept_new_peer_on_request)
+    # bp.before_request(_accept_new_peer_on_request)
 
     bp.add_url_rule('/status', view_func=PeerView.as_view('peer'))
     bp.add_url_rule('/blocks', view_func=BlockView.as_view('block'))
