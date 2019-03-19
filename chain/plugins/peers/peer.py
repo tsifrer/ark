@@ -20,21 +20,21 @@ class Peer(object):
         super().__init__()
         self.ip = ip
         self.port = port
-        self.chain_version = chain_version,
+        self.chain_version = chain_version
         self.nethash = nethash
         self.os = os
 
-        self.height = self.height
-        self.status = self.status
-        self.healthy = self.healthy
-        self.no_common_blocks = self.no_common_blocks
+        self.height = height
+        self.status = status
+        self.healthy = healthy
+        self.no_common_blocks = no_common_blocks
 
     @property
     def headers(self):
         return {
             'version': self.chain_version,
             'port': str(self.port),
-            'nethash': self.nethash, #config['network']['nethash'],
+            'nethash': self.nethash,
             'height': self.height,
             'Content-Type': 'application/json',
             'status': self.status,

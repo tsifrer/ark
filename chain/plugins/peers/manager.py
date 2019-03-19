@@ -8,7 +8,7 @@ from .utils import is_valid_peer
 from chain.config import Config
 
 from chain.common.plugins import load_plugin
-from chain.common.utils import get_version
+from chain.common.utils import get_chain_version
 
 
 class PeerManager(object):
@@ -44,7 +44,13 @@ class PeerManager(object):
         peer_list = config['peers']['list']
 
         for peer_obj in peer_list:
-            peer = Peer(peer_obj['ip'], peer_obj['port'], get_version())
+            peer = Peer(
+                ip=peer_obj['ip'],
+                port=peer_obj['port'],
+                chain_version=get_chain_version(),
+                nethash=config['network']['nethash'],
+                os=None,
+            )
             if is_valid_peer(peer):
                 self.redis.rpush(self.key, peer.to_json())
             else:

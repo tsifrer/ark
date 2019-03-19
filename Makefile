@@ -6,7 +6,6 @@ test:
 remove-pyc:
 	find . -name "*.pyc" -delete
 
-
 create-migrations:
 	cd chain/plugins/database; python create_migrations.py
 
