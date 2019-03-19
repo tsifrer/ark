@@ -6,30 +6,42 @@ from chain.config import Config
 
 
 class Peer(object):
-    # TODO: refactor this shiet
-
-    def __init__(self, ip, port, app_version=None, healthy=True, no_common_blocks=False, headers=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        config = Config()
+    def __init__(self,
+                 ip,
+                 port,
+                 chain_version,
+                 nethash,
+                 os,
+                 height=None,
+                 status=None,
+                 healthy=True,
+                 no_common_blocks=False
+                 ):
+        super().__init__()
         self.ip = ip
         self.port = port
-        self.healthy = healthy
-        self.no_common_blocks = False
+        self.chain_version = chain_version,
+        self.nethash = nethash
+        self.os = os
 
-        self.headers = headers if headers else {
-            'version': app_version,
+        self.height = self.height
+        self.status = self.status
+        self.healthy = self.healthy
+        self.no_common_blocks = self.no_common_blocks
+
+    @property
+    def headers(self):
+        return {
+            'version': self.chain_version,
             'port': str(self.port),
-            'nethash': config['network']['nethash'],
-            'milestoneHash': config['milestone_hash'],
-            'height': None,
+            'nethash': self.nethash, #config['network']['nethash'],
+            'height': self.height,
             'Content-Type': 'application/json',
+            'status': self.status,
         }
 
-        # if self.app.config['network']['name'] != 'mainnet':
-        #     self.headers['hashid'] =
-
     def _parse_headers(self, response):
-        for field in ['nethash', 'os', 'version', 'hashid']:
+        for field in ['nethash', 'os', 'version']:
             value = response.headers.get(field) or getattr(self, field, None)
             setattr(self, field, value)
 
@@ -67,7 +79,6 @@ class Peer(object):
     def has_common_blocks(self, block_ids):
         print(block_ids)
         params = {
-            # 'ids': '11736050606814390998'#block_ids,
             'ids': ','.join(block_ids)
         }
 
@@ -92,8 +103,13 @@ class Peer(object):
         data = {
             'ip': self.ip,
             'port': self.port,
+            'chain_version': self.chain_version,
+            'nethash': self.nethash,
+            'os': self.os,
+
+            'height': self.height,
+            'status': self.status,
             'healthy': self.healthy,
-            'headers': self.headers,
             'no_common_blocks': self.no_common_blocks,
         }
         return json.dumps(data)
@@ -104,9 +120,14 @@ class Peer(object):
         return cls(
             ip=data['ip'],
             port=data['port'],
+            chain_version=data['chain_version'],
+            nethash=data['nethash'],
+            os=data['os'],
+            height=data['height'],
+            status=data['status'],
             healthy=data['healthy'],
             no_common_blocks=data['no_common_blocks'],
-            headers=data['headers'])
+        )
 
 
 

@@ -1,7 +1,6 @@
-from chain.common.plugins import load_plugin
+from flask import g
 
-from flask import current_app, g
-from flask.cli import with_appcontext
+from chain.common.plugins import load_plugin
 
 
 def get_db():

@@ -71,6 +71,7 @@ class PeerManager(object):
 
     # getRandomDownloadBlocksPeer
     def download_blocks(self, from_height):
+        # TODO: Missing error handling
         peer = self._get_random_peer_to_download_blocks()
         if peer:
             print(

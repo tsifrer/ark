@@ -319,8 +319,6 @@ class Transaction(CryptoObject):
 
     def _deserialize_signature(self, bytes_data):
         # Signature
-        self.signature = None
-        self.second_signature = None
         if len(bytes_data) > 0:
             signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
             self.signature = hexlify(bytes_data[:signature_length]).decode('utf-8')

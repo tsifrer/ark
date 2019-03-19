@@ -1,7 +1,7 @@
 .PHONY: build chain
 
 test:
-	py.test -vv -s -x $(ARGS)
+	POSTGRES_DB_NAME=testark CHAIN_CONFIG_FOLDER="tests/config/" py.test -vv -s -x $(ARGS)
 
 remove-pyc:
 	find . -name "*.pyc" -delete
@@ -11,7 +11,7 @@ create-migrations:
 	cd chain/plugins/database; python create_migrations.py
 
 migrate:
-	cd chain/plugins/database; python migrate.py
+	python chain/plugins/database/migrate.py
 
 black:
 	black .

@@ -34,6 +34,8 @@ class BigIntField(Field):
 
     @staticmethod
     def to_json_value(value):
+        if value is None:
+            return value
         return str(value)
 
 
@@ -72,8 +74,9 @@ class BytesField(Field):
 
     @staticmethod
     def to_json_value(value):
+        if value is None:
+            return value
         return value.decode('utf-8')
-
 
 
 class CryptoObjectMeta(type):

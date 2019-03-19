@@ -1,22 +1,15 @@
 import os
-import click
-
-from peewee import PostgresqlDatabase
 
 from peewee_migrate import Router
 
-# TODO: update this to work as it should
-@click.command()
-def migrate():
+from chain.common.plugins import load_plugin
 
-    database = PostgresqlDatabase(
-        database=os.environ.get('POSTGRES_DB_NAME', 'postgres'),
-        user=os.environ.get('POSTGRES_DB_USER', 'postgres'),
-        host=os.environ.get('POSTGRES_DB_HOST', '127.0.0.1'),
-        port=os.environ.get('POSTGRES_DB_PORT', '5432'),
-        # password='.password'
-    )
-    router = Router(database)
+
+def migrate():
+    database = load_plugin('chain.plugins.database')
+
+    migrate_dir = os.path.join(os.getcwd(), 'chain', 'plugins', 'database', 'migrations')
+    router = Router(database.db, migrate_dir=migrate_dir)
 
     router.run()
 

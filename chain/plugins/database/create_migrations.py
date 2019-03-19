@@ -1,8 +1,6 @@
-import os
-
 import click
 
-from peewee import PostgresqlDatabase
+from chain.common.plugins import load_plugin
 
 from peewee_migrate import Router
 
@@ -13,14 +11,8 @@ from peewee_migrate import Router
 )
 def create_migrations(name):
 
-    database = PostgresqlDatabase(
-        database=os.environ.get('POSTGRES_DB_NAME', 'postgres'),
-        user=os.environ.get('POSTGRES_DB_USER', 'postgres'),
-        host=os.environ.get('POSTGRES_DB_HOST', '127.0.0.1'),
-        port=os.environ.get('POSTGRES_DB_PORT', '5432'),
-        # password='.password'
-    )
-    router = Router(database)
+    database = load_plugin('chain.plugins.database')
+    router = Router(database.db)
 
     # Create migration
     router.create(name, auto='models')

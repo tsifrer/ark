@@ -1,8 +1,10 @@
+from copy import deepcopy
 import platform
 import json
 import os
 
-from flask import Flask, current_app, jsonify
+from flask import Flask, current_app, jsonify, request
+from flask.views import MethodView
 
 from gunicorn.app.base import BaseApplication
 
@@ -12,7 +14,38 @@ from chain.config import Config
 from chain.common.utils import get_version
 from .exceptions import P2PException
 from .external import close_db
-from .views.peer import PeerView, BlockView, TransactionView, BlockCommonView
+from .views import peer
+
+
+def _validate_request_headers():
+    # Don't validate request headers for paths that start with /config
+    if request.path.startswith('/config'):
+        return None
+
+    # TODO: Also validate that the values are correct
+    required_headers = ['version', 'nethash', 'port']
+    errors = []
+    for header in required_headers:
+        if header not in request.headers:
+            errors.append('Missing {} in request header'.format(header))
+
+    if errors:
+        raise P2PException('Missing request headers', payload={'errors': errors})
+    return None
+
+
+# TODO: tests for this
+def _accept_request():
+    if request.headers.get('x-auth') == 'forger' or request.path.startswith('/remote'):
+        config = Config()
+        if request.remote_addr in config['p2p_service']['remote_access']:
+            return None
+        else:
+            raise P2PException('Forbidden', status_code=403)
+
+    # Only forger requests are allowed to access /internal
+    if request.path.startswith('/internal'):
+        raise P2PException('Forbidden', status_code=403)
 
 
 def _handle_api_errors(ex):
@@ -33,10 +66,13 @@ def _handle_api_errors(ex):
 
     log = current_app.logger.debug
     if data['status_code'] >= 500:
-        log = current_app.logger.error
+        log = current_app.logger.exception
     elif data['status_code'] >= 400:
         log = current_app.logger.debug
-    log(json.dumps(data))
+
+    log_data = deepcopy(data)
+    log_data['error'] = str(ex)
+    log(json.dumps(log_data))
     return jsonify(data), data['status_code']
 
 
@@ -73,18 +109,22 @@ class P2PService(BaseApplication):
 
 
 def create_app():
-    app = Flask('p2p')
+    app = Flask(__name__)
 
     app.teardown_appcontext(close_db)
 
+    # Error handlers
     app.register_error_handler(Exception, _handle_api_errors)
 
+    # Before request
+    app.before_request(_validate_request_headers)
+    app.before_request(_accept_request)
+
+    # After request
     app.after_request(_set_default_response_headers)
 
-    app.add_url_rule('/peer/status', view_func=PeerView.as_view('peer'))
-    app.add_url_rule('/peer/blocks', view_func=BlockView.as_view('block'))
-    app.add_url_rule('/peer/blocks/common', view_func=BlockCommonView.as_view('block_common'))
-    app.add_url_rule('/peer/transactions', view_func=TransactionView.as_view('transaction'))
+    # Blueprints
+    app.register_blueprint(peer.blueprint(), url_prefix='/peer')
     return app
 
 

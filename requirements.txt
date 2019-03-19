@@ -18,6 +18,8 @@ chardet==3.0.4            # via requests
 click==7.0
 coincurve==11.0.0
 entrypoints==0.3          # via flake8
+factory-boy==2.11.1
+faker==1.0.4              # via factory-boy
 flake8-broken-line==0.1.0
 flake8-bugbear==18.8.0
 flake8-import-order==0.18
@@ -47,7 +49,8 @@ python-dateutil==2.7.5
 redis==3.2.0
 requests==2.21.0
 semver==2.8.1
-six==1.12.0               # via mock, more-itertools, pip-tools, pytest, python-dateutil, transitions
+six==1.12.0               # via faker, mock, more-itertools, pip-tools, pytest, python-dateutil, transitions
+text-unidecode==1.2       # via faker
 toml==0.10.0              # via black
 transitions==0.6.9
 urllib3==1.24.1           # via requests
