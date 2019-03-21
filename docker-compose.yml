@@ -33,6 +33,20 @@ services:
     ports:
       - '4002:8080'
 
+  # chain-p2p-huey:
+  #   image: chain
+  #   volumes:
+  #     - .:/home/app
+  #   command: huey_consumer.py chain.p2p_service.tasks.huey -n -w 1
+  #   depends_on:
+  #     - chain-db
+  #     - chain-redis
+  #   environment:
+  #     PYTHONUNBUFFERED: '1'
+  #     POSTGRES_DB_HOST: 'chain-db'
+  #     REDIS_HOST: 'chain-redis'
+  #     CHAIN_CONFIG_FOLDER: 'ark/devnet/'
+
   chain-db:
     image: postgres:11.2
     volumes:

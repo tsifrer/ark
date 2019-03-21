@@ -93,6 +93,9 @@ class Peer(object):
         print(body)
         return True if body.get('common') else False
 
+
+    # def ping(self)
+
     def download_blocks(self, from_height):
         params = {'lastBlockHeight': from_height}
         body = self._get('/peer/blocks', params=params)

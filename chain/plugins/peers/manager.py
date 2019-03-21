@@ -39,6 +39,14 @@ class PeerManager(object):
         print('Got {} peers from redis'.format(len(peers)))
         return [Peer.from_json(p) for p in peers]
 
+    def get_peer(self, ip):
+        # TODO: This is slow as it loads all peers. Maybe figure out how to get just
+        # the specific one by using something else than redis list
+        for peer in self.peers:
+            if peer.ip == ip:
+                return peer
+        return None
+
     def _populate_seed_peers(self):
         config = Config()
         peer_list = config['peers']['list']
@@ -88,6 +96,8 @@ class PeerManager(object):
         return []
 
     def add_peer(self, ip, port, chain_version, nethash, os):
+        # TODO: Disable this function if peer discoverability is disabled in config
+
         peer = Peer(
             ip=ip,
             port=port,
@@ -95,5 +105,8 @@ class PeerManager(object):
             nethash=nethash,
             os=os,
         )
+
+        if not is_valid_peer(peer) or self.get_peer(peer.ip):
+            return
 
 

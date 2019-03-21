@@ -169,6 +169,7 @@ def _accept_new_peer_on_request():
 def blueprint():
     bp = Blueprint('peer', __name__)
 
+    # TODO: Disable this if peer discoverability is disabled in config
     # bp.before_request(_accept_new_peer_on_request)
 
     bp.add_url_rule('/status', view_func=PeerView.as_view('peer'))
