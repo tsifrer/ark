@@ -42,10 +42,10 @@ For any other questions, find me on Ark Slack @tsifrer
 
 If you find a bug, open an issue or contact me on Slack.
 
-<aside class="warning">
+
     Current implementation does NOT broadcast blocks/transactions as it's not yet
     implemented. That will be done after a bit of testing and proper implementation and
     fixes to some of the other features.
-</aside>
+
 
 .. _read this: https://arkcommunity.fund/proposal/python-port-of-ark-core
