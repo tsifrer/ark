@@ -3,6 +3,7 @@ from flask.views import MethodView
 
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
+from chain.plugins.peers.tasks import add_peer
 
 from ..exceptions import P2PException
 
@@ -156,8 +157,7 @@ class BlockCommonView(MethodView):
 
 
 def _accept_new_peer_on_request():
-    peer_manager = get_peer_manager()
-    peer_manager.add_peer(
+    add_peer(
         ip=request.remote_addr,
         port=request.headers['port'],
         chain_version=request.headers['version'],
@@ -170,7 +170,7 @@ def blueprint():
     bp = Blueprint('peer', __name__)
 
     # TODO: Disable this if peer discoverability is disabled in config
-    # bp.before_request(_accept_new_peer_on_request)
+    bp.before_request(_accept_new_peer_on_request)
 
     bp.add_url_rule('/status', view_func=PeerView.as_view('peer'))
     bp.add_url_rule('/blocks', view_func=BlockView.as_view('block'))

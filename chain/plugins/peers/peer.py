@@ -93,8 +93,12 @@ class Peer(object):
         print(body)
         return True if body.get('common') else False
 
+    def ping(self):
+        # TODO: Make this more obvious somehow. _get sets 'healthy' flag on self
+        # which is then used elsewhere to check if ping was successful or not.
+        self._get('/peer/status', timeout=3)
 
-    # def ping(self)
+        # TODO: Peer verification (PeerVerifier)
 
     def download_blocks(self, from_height):
         params = {'lastBlockHeight': from_height}
@@ -131,9 +135,3 @@ class Peer(object):
             healthy=data['healthy'],
             no_common_blocks=data['no_common_blocks'],
         )
-
-
-
-
-
-

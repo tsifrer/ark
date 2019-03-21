@@ -50,7 +50,7 @@ class PeerManager(object):
     def _populate_seed_peers(self):
         config = Config()
         peer_list = config['peers']['list']
-
+        # TODO: put this trough add_peer task
         for peer_obj in peer_list:
             peer = Peer(
                 ip=peer_obj['ip'],
@@ -94,19 +94,4 @@ class PeerManager(object):
             blocks = peer.download_blocks(from_height)
             return blocks
         return []
-
-    def add_peer(self, ip, port, chain_version, nethash, os):
-        # TODO: Disable this function if peer discoverability is disabled in config
-
-        peer = Peer(
-            ip=ip,
-            port=port,
-            chain_version=chain_version,
-            nethash=nethash,
-            os=os,
-        )
-
-        if not is_valid_peer(peer) or self.get_peer(peer.ip):
-            return
-
 
