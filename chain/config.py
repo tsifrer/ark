@@ -53,7 +53,7 @@ class Config(dict, metaclass=Singleton):
         #  */
         # remoteAccess: ["127.0.0.1", "::ffff:127.0.0.1"],
         self['p2p_service'] = {
-            'remote_access': []
+            'remote_access': [],
         }
 
         with open(os.path.join(folder, 'milestones.json')) as f:

@@ -1,13 +1,12 @@
 from flask import jsonify, request, current_app
 from flask.views import MethodView
 
-from chain.common.plugins import load_plugin
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
 
 from ..exceptions import P2PException
 
-from ..external import get_db
+from ..external import get_db, get_peer_manager, get_process_queue
 
 from flask import Blueprint
 
@@ -88,7 +87,7 @@ class BlockView(MethodView):
             print(errors)  # TODO:
             raise P2PException('Verification failed')
 
-        queue = load_plugin('chain.plugins.process_queue')
+        queue = get_process_queue()
         queue.push_block(block)
 
         return jsonify({'success': True}), 200
@@ -122,7 +121,7 @@ class BlockCommonView(MethodView):
             block_ids.append(block_id)
 
         # TODO: This is REALLY bad, to connect to db on every request
-        db = load_plugin('chain.plugins.database')
+        db = get_db()
         last_block = db.get_last_block()
         if block_ids:
             common_blocks = db.get_blocks_by_id(block_ids)
@@ -156,13 +155,15 @@ class BlockCommonView(MethodView):
 # #     peers = peer_manager.peers
 
 
-# def _accept_new_peer_on_request():
-#     print(request.path)
-#     # required_headers = ['version', 'nethash', 'port', 'os']
-
-#     ip = request.remote_addr
-
-    # TODO:
+def _accept_new_peer_on_request():
+    peer_manager = get_peer_manager()
+    peer_manager.add_peer(
+        ip=request.remote_addr,
+        port=request.headers['port'],
+        chain_version=request.headers['version'],
+        nethash=request.headers['nethash'],
+        os=request.headers.get('os')
+    )
 
 
 def blueprint():

@@ -67,7 +67,7 @@ class PeerManager(object):
     def _get_random_peer_to_download_blocks(self):
         peer = self.get_random_peer()
         if not peer:
-            raise Exception('Can not find any valid peers')
+            raise Exception("Can't find any valid peers")
         recent_block_ids = self.database.get_recent_block_ids()
         if not peer.has_common_blocks(recent_block_ids):
             # TODO: implement guard
@@ -87,4 +87,13 @@ class PeerManager(object):
             return blocks
         return []
 
-    # def add_peer(self, ip, port):
+    def add_peer(self, ip, port, chain_version, nethash, os):
+        peer = Peer(
+            ip=ip,
+            port=port,
+            chain_version=chain_version,
+            nethash=nethash,
+            os=os,
+        )
+
+
