@@ -5,10 +5,11 @@ from redis import Redis
 
 from .peer import Peer
 from .utils import is_valid_peer
-from chain.config import Config
 
 from chain.common.plugins import load_plugin
 from chain.common.utils import get_chain_version
+from chain.config import Config
+from chain.plugins.peers.tasks import add_peer
 
 
 class PeerManager(object):
@@ -52,17 +53,13 @@ class PeerManager(object):
         peer_list = config['peers']['list']
         # TODO: put this trough add_peer task
         for peer_obj in peer_list:
-            peer = Peer(
+            add_peer(
                 ip=peer_obj['ip'],
                 port=peer_obj['port'],
                 chain_version=get_chain_version(),
                 nethash=config['network']['nethash'],
                 os=None,
             )
-            if is_valid_peer(peer):
-                self.redis.rpush(self.key, peer.to_json())
-            else:
-                print('Invalid peer: {} ({})'.format(peer, peer.ip))  # TODO:
 
     def get_random_peer(self):
         # TODO: If random peer can't be found, raise an exception and then handle it
@@ -94,4 +91,3 @@ class PeerManager(object):
             blocks = peer.download_blocks(from_height)
             return blocks
         return []
-

@@ -157,14 +157,16 @@ class BlockCommonView(MethodView):
 
 
 def _accept_new_peer_on_request():
-    # TODO: before creating a task, check if IP is already a part of peers
-    add_peer(
-        ip=request.remote_addr,
-        port=request.headers['port'],
-        chain_version=request.headers['version'],
-        nethash=request.headers['nethash'],
-        os=request.headers.get('os')
-    )
+    peer_manager = get_peer_manager()
+    # TODO: improve how we check if the peer exists in redis
+    if not peer_manager.get_peer(request.remote_addr):
+        add_peer(
+            ip=request.remote_addr,
+            port=request.headers['port'],
+            chain_version=request.headers['version'],
+            nethash=request.headers['nethash'],
+            os=request.headers.get('os')
+        )
 
 
 def blueprint():

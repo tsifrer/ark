@@ -266,7 +266,6 @@ class Block(CryptoObject):
 
     def verify(self):
         errors = []
-        print('VERIFYING')
 
         # TODO: find a better way to get milestone data
         config = Config()

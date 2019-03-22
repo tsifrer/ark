@@ -37,7 +37,7 @@ services:
     image: chain
     volumes:
       - .:/home/app
-    command: huey_consumer.py chain.hughie.main.huey -n -C -k greenlet -w 10
+    command: huey_consumer.py chain.hughie.main.huey -n -C -k greenlet -w 50
     depends_on:
       - chain-db
       - chain-redis

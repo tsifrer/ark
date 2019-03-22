@@ -53,18 +53,24 @@ class Peer(object):
         print(full_url)
         print(params)
         config = Config()
-        response = requests.get(
-            full_url,
-            params=params,
-            headers=self.headers,
-            timeout=timeout or config['peers']['global_timeout'],
-        )
+        try:
+            response = requests.get(
+                full_url,
+                params=params,
+                headers=self.headers,
+                timeout=timeout or config['peers']['global_timeout'],
+            )
+        except requests.exceptions.ConnectTimeout as e:
+            print('Request to {} failed because of {} {}'.format(full_url, e))
+            self.healthy = False
+            return {}
+
         # TODO: rewrite _parse_headers to make it more meaningful
         self._parse_headers(response)
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            print('Request to {} failed because of {}'.format(full_url, e))
+            print('Request to {} failed because of {} {}'.format(full_url, e, response.content))
             self.healthy = False
         else:
             body = response.json()
