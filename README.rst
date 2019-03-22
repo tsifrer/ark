@@ -30,6 +30,7 @@ This will run relay node against the devnet.
 Node is currently set up to run with docker.
 
 - Clone this repo
+- :code:`docker-compose build`
 - :code:`docker-compose up -d`
 
 For logs blockchain logs, you can run:
