@@ -351,9 +351,12 @@ class Transaction(CryptoObject):
                 self.sender_public_key, self.network
             )
         elif self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
-            self.asset['multisignature']['keysgroup'] = [
-                '+{}'.format(key) for key in self.asset['multisignature']['keysgroup']
-            ]
+            keysgroup = []
+            for key in self.asset['multisignature']['keysgroup']:
+                if not key.startswith('+'):
+                    key = '+{}'.format(key)
+                keysgroup.append(key)
+            self.asset['multisignature']['keysgroup'] = keysgroup
 
         if self.vendor_field_hex:
             self.vendor_field = unhexlify(self.vendor_field_hex).decode('utf-8')

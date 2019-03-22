@@ -1,3 +1,5 @@
+from binascii import unhexlify
+
 from chain.crypto.utils import verify_hash
 from chain.config import Config
 from chain.crypto.address import address_from_public_key
@@ -41,7 +43,11 @@ class Wallet(object):
             transaction_bytes = transaction.get_bytes(
                 skip_signature=True, skip_second_signature=True
             )
-            is_verified = verify_hash(transaction_bytes, signature, public_key)
+            is_verified = verify_hash(
+                transaction_bytes,
+                unhexlify(signature.encode('utf-8')),
+                unhexlify(public_key.encode('utf-8')),
+            )
             if is_verified:
                 return signature
 

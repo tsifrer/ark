@@ -350,7 +350,7 @@ class Blockchain(object):
         print()
         print()
         print('Started processing block {}'.format(block.id))
-        print(block.__dict__)
+        print(block.to_json())
 
         print('Last block height: {}'.format(last_block.height))
 
