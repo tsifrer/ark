@@ -11,7 +11,7 @@ from gunicorn.app.base import BaseApplication
 from werkzeug.exceptions import HTTPException
 
 from chain.config import Config
-from chain.common.utils import get_version
+from chain.common.utils import get_chain_version
 from .exceptions import P2PException
 from .external import close_db
 from .views import peer
@@ -81,7 +81,7 @@ def _set_default_response_headers(response):
     # to be used anywhere and it just adds an extra DB query on each request.
     config = Config()
     response.headers['nethash'] = config['network']['nethash']
-    response.headers['version'] = get_version()
+    response.headers['version'] = get_chain_version()
     response.headers['port'] = 4002  # TODO: get this from the config somewhere
     response.headers['os'] = platform.system().lower()
     return response
