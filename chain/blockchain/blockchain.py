@@ -14,6 +14,7 @@ from chain.crypto.objects.block import Block
 from chain.common.plugins import load_plugin
 from chain.config import Config
 from chain.plugins.process_queue.queue import Queue
+from chain.common.exceptions import PeerNotFoundException
 
 
 class Blockchain(object):
@@ -132,7 +133,12 @@ class Blockchain(object):
         while True:
             last_block = self.database.get_last_block()
             if not self.is_synced(last_block):
-                self.sync_blocks(last_block)
+                try:
+                    self.sync_blocks(last_block)
+                except PeerNotFoundException as e:
+                    print(str(e))
+                    print('Waiting for 1 second before continuing to give peers time to populate')
+                    sleep(1)
             else:
                 break
             print('Time taken', datetime.now() - start)

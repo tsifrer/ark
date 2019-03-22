@@ -10,6 +10,7 @@ from chain.common.plugins import load_plugin
 from chain.common.utils import get_chain_version
 from chain.config import Config
 from chain.plugins.peers.tasks import add_peer
+from chain.common.exceptions import PeerNotFoundException
 
 
 class PeerManager(object):
@@ -72,7 +73,7 @@ class PeerManager(object):
     def _get_random_peer_to_download_blocks(self):
         peer = self.get_random_peer()
         if not peer:
-            raise Exception("Can't find any valid peers")
+            raise PeerNotFoundException("Can't find any valid peers")
         recent_block_ids = self.database.get_recent_block_ids()
         if not peer.has_common_blocks(recent_block_ids):
             # TODO: implement guard
