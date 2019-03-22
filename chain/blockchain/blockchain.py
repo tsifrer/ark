@@ -370,8 +370,6 @@ class Blockchain(object):
 
     def consume_queue(self):
         queue = load_plugin('chain.plugins.process_queue')
-        last_process_run = datetime.now()
-        last_block = self.database.get_last_block()
         config = Config()
         while True:
             serialized_block = queue.pop_block()
@@ -388,24 +386,16 @@ class Blockchain(object):
                     if current_slot * milestone['blocktime'] <= block.timestamp:
                         # TODO: THIS IS MISSING
                         print('MISSING: IMPLEMENT BROADCASTING')
-
-                last_process_run = datetime.now()
             else:
-                # If we don't receive any blocks trough p2p from our peers, force sync
-                # with peers on every third missing block. We don't sinc on every
-                # missing block as sometimes blocks arrive late from other peers.
-                milestone = config.get_milestone(last_block.height)
-                threshold = milestone['blocktime'] * 3
-                if (datetime.now() - last_process_run).total_seconds() > threshold:
-                    print(
-                        ("Force syncing with the network as we haven't received new"
-                         'blocks for more than {} seconds trough P2P').format(threshold)
-                    )
-                    self.start_syncing()
-                    print('Done syncing')
-                    last_block = self.database.get_last_block()
-                    last_process_run = datetime.now()
-
                 # TODO: change this
                 print('Nothing to process. Sleeping for 1 sec')
                 sleep(1)
+
+            # Our chain can get out of sync when it doesn't receive all the blocks
+            # to the p2p endpoint, so if we're not in sync, force sync to the last
+            # block
+            last_block = self.database.get_last_block()
+            if not self.is_synced(last_block):
+                print('Force syncing with the network as we got out of sync')
+                self.start_syncing()
+                print('Done force syncing')
