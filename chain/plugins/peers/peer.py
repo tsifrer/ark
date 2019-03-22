@@ -60,7 +60,7 @@ class Peer(object):
                 headers=self.headers,
                 timeout=timeout or config['peers']['global_timeout'],
             )
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.RequestException as e:
             print('Request to {} failed because of {}'.format(full_url, e))
             self.healthy = False
             return {}
@@ -69,7 +69,7 @@ class Peer(object):
         self._parse_headers(response)
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.RequestException as e:
             print('Request to {} failed because of {} {}'.format(full_url, e, response.content))
             self.healthy = False
         else:
