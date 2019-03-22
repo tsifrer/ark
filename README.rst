@@ -49,4 +49,14 @@ If you find a bug, open an issue or contact me on Slack.
     fixes to some of the other features.
 
 
+===============
+Troubleshooting
+===============
+
+**Can't connect to postgres when first starting up containers**
+
+Postgres usually takes time to startup, so if you get this, just run
+:code:`docker-compose up -d` again and it should fix it.
+
+
 .. _read this: https://arkcommunity.fund/proposal/python-port-of-ark-core
