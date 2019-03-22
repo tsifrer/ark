@@ -30,6 +30,8 @@ class Blockchain(object):
         # TODO: change prints to loggers
         config = Config()
         print('Starting the blockchain')
+
+        apply_genesis_round = False
         try:
             block = self.database.get_last_block()
 
@@ -47,6 +49,7 @@ class Blockchain(object):
 
                 else:
                     self.database.save_block(block)
+                    apply_genesis_round = True
 
             # If database did not just restore database integrity, verify the blockchain
             if not self.database.restored_database_integrity:
@@ -113,7 +116,7 @@ class Blockchain(object):
             # for wallet in delegate_wallets:
             #     print(wallet.public_key, wallet.username, wallet.vote_balance)
 
-            if block.height == 1:
+            if apply_genesis_round:
                 self.database.apply_round(block.height)
 
             self.start_syncing()

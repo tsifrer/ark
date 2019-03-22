@@ -9,9 +9,6 @@ remove-pyc:
 create-migrations:
 	cd chain/plugins/database; python create_migrations.py
 
-migrate:
-	python chain/plugins/database/migrate.py
-
 black:
 	black .
 
@@ -27,8 +24,26 @@ snakeviz:
 build:
 	docker-compose build
 
-chain:
-	docker-compose up blockchain
+blockchain:
+	docker-compose up -d blockchain
 
-p2p:
-	docker-compose up chain-p2p
+migrate:
+	docker-compose run blockchain python chain/plugins/database/migrate.py
+
+database:
+	docker-compose up -d chain-db
+	sleep 3s
+
+start:
+	make database
+	make migrate
+	docker-compose up -d
+
+blockchain-logs:
+	docker-compose logs --tail 50 -f blockchain
+
+p2p-logs:
+	docker-compose logs --tail 50 -f chain-p2p
+
+huey-logs:
+	docker-compose logs --tail 50 -f chain-huey

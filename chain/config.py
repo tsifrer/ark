@@ -39,6 +39,7 @@ class Config(dict, metaclass=Singleton):
 
         with open(os.path.join(folder, 'exceptions.json')) as f:
             self['exceptions'] = json.loads(f.read())
+        print(self['exceptions'])
 
         with open(os.path.join(folder, 'peers.json')) as f:
             self['peers'] = json.loads(f.read())

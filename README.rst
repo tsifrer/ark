@@ -30,14 +30,17 @@ This will run relay node against the devnet.
 Node is currently set up to run with docker.
 
 - Clone this repo
-- :code:`docker-compose build`
-- :code:`docker-compose up -d`
+- :code:`make build`
+- :code:`make start`
 
 For logs blockchain logs, you can run:
-:code:`docker-compose logs --tail 50 -f blockchain`
+:code:`make blockchain-logs`
 
-And for p2p-chain (p2p service) logs:
-:code:`docker-compose logs --tail 50 -f p2p-chain`
+For chain-p2p (p2p service) logs:
+:code:`make p2p-logs`
+
+For chain-huey (huey service for running async tasks) logs:
+:code:`make huey-logs`
 
 For any other questions, find me on Ark Slack @tsifrer
 
@@ -47,16 +50,5 @@ If you find a bug, open an issue or contact me on Slack.
     Current implementation does NOT broadcast blocks/transactions as it's not yet
     implemented. That will be done after a bit of testing and proper implementation and
     fixes to some of the other features.
-
-
-===============
-Troubleshooting
-===============
-
-**Can't connect to postgres when first starting up containers**
-
-Postgres usually takes time to startup, so if you get this, just run
-:code:`docker-compose up -d` again and it should fix it.
-
 
 .. _read this: https://arkcommunity.fund/proposal/python-port-of-ark-core

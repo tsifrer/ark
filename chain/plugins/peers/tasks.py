@@ -22,7 +22,12 @@ def add_peer(ip, port, chain_version, nethash, os):
     if not is_valid_peer(peer) or peer_manager.get_peer(peer.ip):
         return
 
-    peer.ping()
+    # Wait for a bit more than 3s for response in case the node you're pinging is
+    # the official node and is trying to add you as their peer and your p2p is not
+    # responding. When they ping you, they wait for 3 seconds for response and if they
+    # don't get any, they reject your response even though the request to them was
+    # valid
+    peer.ping(timeout=3.5)
 
     if peer.healthy:
         peer_manager.redis.rpush(peer_manager.key, peer.to_json())

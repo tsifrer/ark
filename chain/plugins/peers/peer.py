@@ -60,8 +60,8 @@ class Peer(object):
                 headers=self.headers,
                 timeout=timeout or config['peers']['global_timeout'],
             )
-        except requests.exceptions.ConnectTimeout as e:
-            print('Request to {} failed because of {} {}'.format(full_url, e))
+        except requests.exceptions.HTTPError as e:
+            print('Request to {} failed because of {}'.format(full_url, e))
             self.healthy = False
             return {}
 
@@ -99,10 +99,10 @@ class Peer(object):
         print(body)
         return True if body.get('common') else False
 
-    def ping(self):
+    def ping(self, timeout=3):
         # TODO: Make this more obvious somehow. _get sets 'healthy' flag on self
         # which is then used elsewhere to check if ping was successful or not.
-        self._get('/peer/status', timeout=3)
+        self._get('/peer/status', timeout=timeout)
 
         # TODO: Peer verification (PeerVerifier)
 

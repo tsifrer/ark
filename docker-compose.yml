@@ -10,6 +10,7 @@ services:
     depends_on:
       - chain-db
       - chain-redis
+      - chain-huey
     environment:
       PYTHONUNBUFFERED: '1'
       POSTGRES_DB_HOST: 'chain-db'
@@ -24,6 +25,7 @@ services:
     depends_on:
       - chain-db
       - chain-redis
+      - chain-huey
     environment:
       PYTHONUNBUFFERED: '1'
       POSTGRES_DB_HOST: 'chain-db'
@@ -33,7 +35,7 @@ services:
     ports:
       - '4002:8080'
 
-  chain-p2p-huey:
+  chain-huey:
     image: chain
     volumes:
       - .:/home/app
@@ -50,10 +52,10 @@ services:
   chain-db:
     image: postgres:11.2
     volumes:
-        - ark-db:/var/lib/postgresql/data
+        - chain-db-volume:/var/lib/postgresql/data
 
   chain-redis:
     image: redis:5.0.3
 
 volumes:
-  ark-db:
+  chain-db-volume:
