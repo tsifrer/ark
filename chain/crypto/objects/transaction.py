@@ -52,7 +52,7 @@ class Transaction(CryptoObject):
     signature = StrField(attr='signature', required=False, default=None)
     second_signature = StrField(attr='secondSignature', required=False, default=None)
     sign_signature = StrField(attr='signSignature', required=False, default=None)
-    signatures = Field(attr='signatures', required=False, default=None)
+    signatures = Field(attr='signatures', required=False, default=[])
     block_id = StrField(attr='blockId', required=False, default=None)
     sequence = IntField(attr='sequence', required=False, default=0)
     timelock = Field(attr='timelock', required=False, default=None)
@@ -329,9 +329,11 @@ class Transaction(CryptoObject):
             is_multi_sig = read_bit8(bytes_data) == 255
             if is_multi_sig:
                 # Multiple signatures
-                self.signatures = []
-                # TODO: implement this
-                raise NotImplementedError()
+                bytes_data = bytes_data[1:]
+                while bytes_data:
+                    multi_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
+                    self.signatures.append(hexlify(bytes_data[:multi_signature_length]).decode('utf-8'))
+                    bytes_data = bytes_data[multi_signature_length:]
             else:
                 # Second signature
                 second_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2

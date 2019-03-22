@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 from time import sleep
 
@@ -13,7 +14,6 @@ from chain.crypto.utils import is_block_exception
 from chain.crypto.objects.block import Block
 from chain.common.plugins import load_plugin
 from chain.config import Config
-from chain.plugins.process_queue.queue import Queue
 from chain.common.exceptions import PeerNotFoundException
 
 
@@ -52,27 +52,39 @@ class Blockchain(object):
                     apply_genesis_round = True
 
             # If database did not just restore database integrity, verify the blockchain
-            if not self.database.restored_database_integrity:
-                print('Verifying database integrity')
+            # if not self.database.restored_database_integrity:
+            print('Verifying database integrity')
+            is_valid = False
+            errors = None
+            for _ in range(1, 6):
                 is_valid, errors = self.database.verify_blockchain()
-                if not is_valid:
-                    print('FATAL: Database is corrupted')
-                    print(errors)
-                    # return self.rollback() # TODO: uncomment
-                print('Verified database integrity')
+                if is_valid:
+                    break
+                else:
+                    print('Database is corrupted: {}'.format(errors))
+                    milestone = config.get_milestone(block.height)
+                    previous_round = math.floor((block.height - 1) / milestone['activeDelegates'])
+                    if previous_round <= 1:
+                        raise Exception('FATAL: Database is corrupted: {}'.format(errors))
+
+                    print('Rolling back to round {}'.format(previous_round))
+                    self.database.rollback_to_round(previous_round)
+                    print('Rolled back to round {}'.format(previous_round))
             else:
-                print(
-                    'Skipping database integrity check after successful database '
-                    'recovery'
-                )
+                raise Exception('FATAL: After rolling back for 5 rounds, database is still corrupted: {}'.format(errors))
+
+            print('Verified database integrity')
+            # else:
+            #     print(
+            #         'Skipping database integrity check after successful database '
+            #         'recovery'
+            #     )
 
             # TODO: figure this  out
             # // only genesis block? special case of first round needs to be dealt with
             # if (block.data.height === 1) {
             #     await blockchain.database.deleteRound(1);
             # }
-
-            milestone = config.get_milestone(block.height)
 
             # TODO: Watafak
             # stateStorage.setLastBlock(block);
@@ -178,6 +190,7 @@ class Blockchain(object):
                         msg = 'Block {} was {}. Skipping all other blocks in this batch'.format(
                             block.id, status
                         )
+                        print(block.to_json())
                         print(msg)
                         raise Exception(msg)
                 # TODO:
@@ -198,10 +211,10 @@ class Blockchain(object):
     def stop(self):
         print('Stopping blockchain')
 
-    def rollback_current_round(self):
-        # TODO: implement this
-        print('Rollback current round is not yet implemented')
-        pass
+    # def rollback_current_round(self):
+    #     # TODO: implement this
+    #     print('Rollback current round is not yet implemented')
+    #     pass
 
     def fork_block(self, block):
         # TODO:
@@ -350,8 +363,6 @@ class Blockchain(object):
         print()
         print()
         print('Started processing block {}'.format(block.id))
-        print(block.to_json())
-
         print('Last block height: {}'.format(last_block.height))
 
         if is_block_exception(block):

@@ -316,3 +316,26 @@ class Database(object):
     def get_blocks_by_id(self, block_ids):
         blocks = Block.select().where(Block.id.in_(block_ids)).order_by(Block.height.desc())
         return [CryptoBlock.from_object(block) for block in blocks]
+
+    def rollback_to_round(self, to_round):
+        """
+        Removes all rounds, block and transactions to the start of the `to_round`.
+        NOTE: You need to restart the chain after calling this as this does not rollback
+        wallets and any data that's in memory/redis cache.
+        """
+        height = to_round * 51
+
+        block_select_query = Block.select(Block.id).where(Block.height >= height)
+        transaction_query = Transaction.delete().where(
+            Transaction.block_id.in_(block_select_query)
+        )
+        deleted_transactions = transaction_query.execute()
+        print('Deleted transactions: {}'.format(deleted_transactions))
+
+        block_query = Block.delete().where(Block.height >= height)
+        deleted_blocks = block_query.execute()
+        print('Deleted blocks: {}'.format(deleted_blocks))
+
+        round_query = Round.delete().where(Round.round > to_round)
+        deleted_rounds = round_query.execute()
+        print('Deleted roudns: {}'.format(deleted_rounds))
