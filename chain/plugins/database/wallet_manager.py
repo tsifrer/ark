@@ -133,20 +133,17 @@ class WalletManager(object):
     def _build_votes(self):
         # TODO: try to optimize this query. We only need the last vote that happened
         # per sender_public_key
-        print('fetching votes', get_memory_precent())
         transactions = (
             Transaction.select(Transaction.sender_public_key, Transaction.serialized)
             .where(Transaction.type == TRANSACTION_TYPE_VOTE)
             .order_by(Transaction.timestamp.desc(), Transaction.sequence.asc())
         )
-        print('votes fetched:', get_memory_precent())
         # TODO: This already_processed_wallets overhead is here so we always just
         # process the last vote transaction per sender_public_key. If we optimize
         # the SQL query to only return last record per sender_public_key, this overhead
         # can go away
         already_processed_wallets = set()
         for nr, transaction in enumerate(transactions):
-            print(nr, '>', 'Memory percent:', get_memory_precent())
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if wallet.address not in already_processed_wallets:
                 crypto_transaction = CryptoTransaction.from_serialized(

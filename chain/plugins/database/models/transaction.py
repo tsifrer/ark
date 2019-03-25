@@ -62,7 +62,8 @@ class Transaction(Model):
         model.vendor_field_hex = transaction.vendor_field_hex
         model.amount = transaction.amount
         model.fee = transaction.fee
-        model.serialized = transaction.serialize()
+        serialized = transaction.serialize()
+        model.serialized = serialized
         return model
 
     @staticmethod

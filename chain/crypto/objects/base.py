@@ -19,6 +19,18 @@ class Field(object):
         return value
 
 
+class DictField(Field):
+    def __init__(self, attr, required=True):
+        default = {}
+        super().__init__(attr, required, default)
+
+
+class ListField(Field):
+    def __init__(self, attr, required=True):
+        default = []
+        super().__init__(attr, required, default)
+
+
 class BigIntField(Field):
     """
     Python doesn't need this field. It's here because we need to convert int to str

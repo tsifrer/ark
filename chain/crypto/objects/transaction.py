@@ -32,6 +32,8 @@ from chain.crypto.objects.base import (
     Field,
     IntField,
     StrField,
+    ListField,
+    DictField,
 )
 
 
@@ -45,14 +47,14 @@ class Transaction(CryptoObject):
     amount = BigIntField(attr='amount', required=True, default=0)
     expiration = IntField(attr='expiration', required=False, default=None)
     recipient_id = StrField(attr='recipientId', required=False, default=None)
-    asset = Field(attr='asset', required=False, default={})
+    asset = DictField(attr='asset', required=False)
     vendor_field = StrField(attr='vendorField', required=False, default=None)
     vendor_field_hex = BytesField(attr='vendorFieldHex', required=False, default=None)
     id = StrField(attr='id', required=False, default=None)
     signature = StrField(attr='signature', required=False, default=None)
     second_signature = StrField(attr='secondSignature', required=False, default=None)
     sign_signature = StrField(attr='signSignature', required=False, default=None)
-    signatures = Field(attr='signatures', required=False, default=[])
+    signatures = ListField(attr='signatures', required=False)
     block_id = StrField(attr='blockId', required=False, default=None)
     sequence = IntField(attr='sequence', required=False, default=0)
     timelock = Field(attr='timelock', required=False, default=None)
@@ -97,6 +99,14 @@ class Transaction(CryptoObject):
         cls = cls()
         cls.deserialize(bytes_string)
         cls._construct_common()
+
+        for field in cls._fields:
+            value = getattr(cls, field.name, None)
+            if value is None:
+                if field.required:
+                    raise ValueError('Attribute {} is required'.format(field.name))
+                else:
+                    setattr(cls, field.name, field.default)
         return cls
 
     @staticmethod
@@ -329,6 +339,7 @@ class Transaction(CryptoObject):
             is_multi_sig = read_bit8(bytes_data) == 255
             if is_multi_sig:
                 # Multiple signatures
+                self.signatures = []
                 bytes_data = bytes_data[1:]
                 while bytes_data:
                     multi_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
@@ -380,7 +391,6 @@ class Transaction(CryptoObject):
             remaining_bytes = bytes_data[49 + 1 + vendor_length :]
         else:
             remaining_bytes = bytes_data[49 + 1 :]
-
         signature_bytes = self._deserialize_type(remaining_bytes)
         self._deserialize_signature(signature_bytes)
 
