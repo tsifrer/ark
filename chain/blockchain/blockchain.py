@@ -56,7 +56,7 @@ class Blockchain(object):
             print('Verifying database integrity')
             is_valid = False
             errors = None
-            for _ in range(1, 6):
+            for _ in range(5):
                 is_valid, errors = self.database.verify_blockchain()
                 if is_valid:
                     break
