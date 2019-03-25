@@ -130,15 +130,6 @@ class Database(object):
                             balance=wallet.vote_balance,
                             round=current_round,
                         )
-                except peewee.IntegrityError as e:
-                    if 'duplicate key value violates unique constraint "round_round_public_key"' in str(e):
-                        print('Got a duplicate Round in the database. Not saving the current one, but usin the one already stored in the db.')
-                        db_txn.rollback()
-                    else:
-                        print('Got an exception while saving a round')
-                        db_txn.rollback()
-                        print(e)  # TODO: replace with logger.error
-                        raise e
                 except Exception as e:  # TODO: make this not so broad!
                     print('Got an exception while saving a round')
                     db_txn.rollback()

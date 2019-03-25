@@ -30,6 +30,8 @@ class PeerManager(object):
             db=os.environ.get('REDIS_DB', 0),
         )
 
+        # TODO: peer discovery
+
     def setup(self):
         # Clear the peers list in redis
         self.redis.delete(self.key)
