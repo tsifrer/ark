@@ -1,3 +1,4 @@
+import psutil
 from peewee import fn
 
 from chain.crypto.utils import calculate_round
@@ -16,6 +17,11 @@ from chain.crypto.utils import is_transaction_exception
 
 from .models.block import Block
 from .models.transaction import Transaction
+
+
+def get_memory_precent():
+    mem = psutil.virtual_memory()
+    return mem.percent
 
 
 # Wallets are stored in memory, as they're rebuilt every time you startup the relay.
@@ -127,17 +133,20 @@ class WalletManager(object):
     def _build_votes(self):
         # TODO: try to optimize this query. We only need the last vote that happened
         # per sender_public_key
+        print('fetching votes', get_memory_precent())
         transactions = (
             Transaction.select(Transaction.sender_public_key, Transaction.serialized)
             .where(Transaction.type == TRANSACTION_TYPE_VOTE)
             .order_by(Transaction.timestamp.desc(), Transaction.sequence.asc())
         )
+        print('votes fetched:', get_memory_precent())
         # TODO: This already_processed_wallets overhead is here so we always just
         # process the last vote transaction per sender_public_key. If we optimize
         # the SQL query to only return last record per sender_public_key, this overhead
         # can go away
         already_processed_wallets = set()
-        for transaction in transactions:
+        for nr, transaction in enumerate(transactions):
+            print(nr, '>', 'Memory percent:', get_memory_precent())
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if wallet.address not in already_processed_wallets:
                 crypto_transaction = CryptoTransaction.from_serialized(
@@ -212,25 +221,26 @@ class WalletManager(object):
                 wallet.multisignature = crypto_transaction.asset['multisignature']
 
     def build(self):
+        print('Memory percent:', get_memory_precent())
         print('Building wallets Step 1 of 8: Received Transactions')
         self._build_received_transactions()
-
+        print('Memory percent:', get_memory_precent())
         print('Building wallets Step 2 of 8: Block Rewards')
         self._build_block_rewards()
 
         # TODO: This step seems useless
         # print('Building wallets Step 3 of 8: Last Forged Blocks')
         # self._build_last_forged_blocks()
-
+        print('Memory percent:', get_memory_precent())
         print('Building wallets Step 4 of 8: Sent Transactions')
         self._build_sent_transactions()
-
+        print('Memory percent:', get_memory_precent())
         print('Building wallets Step 5 of 8: Second Signatures')
         self._build_second_signatures()
-
+        print('Memory percent:', get_memory_precent())
         print('Building wallets Step 6 of 8: Votes')
         self._build_votes()
-
+        print('Memory percent:', get_memory_precent())
         print('Building wallets Step 7 of 8: Delegates')
         self._build_delegates()
 

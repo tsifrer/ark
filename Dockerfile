@@ -5,7 +5,7 @@ ENV PYTHONPATH=/home/app
 COPY requirements.txt /tmp/requirements.txt
 
 RUN apt-get update && \
-    apt-get install -y git-core
+    apt-get install -y git-core gcc
 
 RUN pip install -r /tmp/requirements.txt && \
     rm -f /tmp/requirements.txt

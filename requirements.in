@@ -23,3 +23,4 @@ redis
 requests
 semver
 transitions
+psutil
