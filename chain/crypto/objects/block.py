@@ -15,6 +15,7 @@ from chain.crypto.objects.base import (
     StrField,
 )
 from chain.crypto.utils import verify_hash
+from chain.crypto.bytebuffer import ByteBuffer
 
 
 class Block(CryptoObject):
@@ -163,15 +164,33 @@ class Block(CryptoObject):
     def get_id_hex(self):
         payload_hash = unhexlify(self.serialize())
         full_hash = sha256(payload_hash).digest()
+        config = Config()
+        milestone = config.get_milestone(self.height)
+        if milestone['block']['idFullSha256']:
+            return hexlify(full_hash)
+
         small_hash = full_hash[:8][::-1]
         return hexlify(small_hash)
 
     def get_id(self):
         id_hex = self.get_id_hex()
+        config = Config()
+        milestone = config.get_milestone(self.height)
+        if milestone['block']['idFullSha256']:
+            return id_hex
         return str(int(id_hex, 16))
 
     def serialize(self, include_signature=True):
-        self.previous_block_hex = Block.to_bytes_hex(self.previous_block)
+        config = Config()
+        milestone = config.get_milestone(self.height - 1)
+        if milestone['block']['idFullSha256']:
+            if len(self.previous_block) != 64:
+                raise Exception(
+                    'Previous block shoud be SHA256, but found a non SHA256 block id'
+                )
+            self.previous_block_hex = self.previous_block
+        else:
+            self.previous_block_hex = Block.to_bytes_hex(self.previous_block)
 
         bytes_data = bytes()
         bytes_data += write_bit32(self.version)
@@ -209,42 +228,49 @@ class Block(CryptoObject):
         bytes_data += all_transaction_bytes
         return hexlify(bytes_data)
 
-    def _deserialize_transactions(self, bytes_data):
+    def _deserialize_transactions(self, buff):
         transaction_lenghts = []
-        for x in range(self.number_of_transactions):
-            transaction_lenghts.append(read_bit32(bytes_data, offset=x * 4))
+        for _ in range(self.number_of_transactions):
+            transaction_lenghts.append(buff.pop_uint32())
         self.transactions = []
-        start = 4 * self.number_of_transactions
         for trans_len in transaction_lenghts:
-            serialized_hex = hexlify(bytes_data[start : start + trans_len])
+            serialized_hex = hexlify(buff.pop_bytes(trans_len))
             self.transactions.append(Transaction.from_serialized(serialized_hex))
-            start += trans_len
+
+    def _deserialize_previous_block(self, buff):
+        """
+        For deserializing previous block id, we need to check the milestone for
+        previous block
+        """
+        config = Config()
+        milestone = config.get_milestone(self.height - 1)
+        if milestone['block']['idFullSha256']:
+            self.previous_block_hex = hexlify(buff.pop_bytes(32)).decode('utf-8')
+            self.previous_block = self.previous_block_hex
+        else:
+            self.previous_block_hex = hexlify(buff.pop_bytes(8)).decode('utf-8')
+            self.previous_block = str(int(self.previous_block_hex, 16))
 
     def deserialize(self, serialized_hex):
-        bytes_data = unhexlify(serialized_hex)
-
-        self.version = read_bit32(bytes_data)
-        self.timestamp = read_bit32(bytes_data, offset=4)
-        self.height = read_bit32(bytes_data, offset=8)
-        self.previous_block_hex = hexlify(bytes_data[12 : 8 + 12]).decode('utf-8')
-
-        self.previous_block = str(int(self.previous_block_hex, 16))
-        self.number_of_transactions = read_bit32(bytes_data, offset=20)
-        self.total_amount = read_bit64(bytes_data, offset=24)
-        self.total_fee = read_bit64(bytes_data, offset=32)
-        self.reward = read_bit64(bytes_data, offset=40)
-        self.payload_length = read_bit32(bytes_data, offset=48)
-        self.payload_hash = hexlify(bytes_data[52 : 32 + 52]).decode('utf-8')
-        self.generator_public_key = hexlify(bytes_data[84 : 33 + 84]).decode('utf-8')
+        buff = ByteBuffer(unhexlify(serialized_hex))
+        self.version = buff.pop_uint32()
+        self.timestamp = buff.pop_uint32()
+        self.height = buff.pop_uint32()
+        self._deserialize_previous_block(buff)
+        self.number_of_transactions = buff.pop_uint32()
+        self.total_amount = buff.pop_uint64()
+        self.total_fee = buff.pop_uint64()
+        self.reward = buff.pop_uint64()
+        self.payload_length = buff.pop_uint32()
+        self.payload_hash = hexlify(buff.pop_bytes(32)).decode('utf-8')
+        self.generator_public_key = hexlify(buff.pop_bytes(33)).decode('utf-8')
         # TODO: test the case where block signature is not present
-        signature_len = int(hexlify(bytes_data[118:119]), 16)
-        signature_to = signature_len + 2 + 117
-        self.block_signature = hexlify(bytes_data[117:signature_to]).decode('utf-8')
+        signature_len = int(hexlify(buff.read_bytes(1, offset=1)), 16)
+        signature_to = signature_len + 2
+        self.block_signature = hexlify(buff.pop_bytes(signature_to)).decode('utf-8')
 
-        remaining_bytes = bytes_data[signature_to:]
-
-        if len(remaining_bytes) != 0:
-            self._deserialize_transactions(remaining_bytes)
+        if len(buff) != 0:
+            self._deserialize_transactions(buff)
 
         # TODO: implement edge cases (outlookTable thingy) where some block ids are broken
         # const { outlookTable } = configManager.config.exceptions;

@@ -7,7 +7,8 @@
         "block": {
             "version": 0,
             "maxTransactions": 50,
-            "maxPayload": 2097152
+            "maxPayload": 2097152,
+            "idFullSha256": false
         },
         "epoch": "2017-03-21T13:00:00.000Z",
         "fees": {
@@ -23,7 +24,8 @@
                 "delegateResignation": 0
             }
         },
-        "ignoreInvalidSecondSignatureField": true
+        "ignoreInvalidSecondSignatureField": true,
+        "vendorFieldLength": 64
     },
     {
         "height": 10800,
@@ -33,7 +35,8 @@
         "block": {
             "version": 0,
             "maxTransactions": 50,
-            "maxPayload": 2097152
+            "maxPayload": 2097152,
+            "idFullSha256": false
         },
         "epoch": "2017-03-21T13:00:00.000Z",
         "fees": {
@@ -49,7 +52,8 @@
                 "delegateResignation": 0
             }
         },
-        "ignoreInvalidSecondSignatureField": true
+        "ignoreInvalidSecondSignatureField": true,
+        "vendorFieldLength": 64
     },
     {
         "height": 21600,
@@ -59,7 +63,8 @@
         "block": {
             "version": 0,
             "maxTransactions": 150,
-            "maxPayload": 6300000
+            "maxPayload": 6300000,
+            "idFullSha256": false
         },
         "epoch": "2017-03-21T13:00:00.000Z",
         "fees": {
@@ -75,7 +80,8 @@
                 "delegateResignation": 0
             }
         },
-        "ignoreInvalidSecondSignatureField": true
+        "ignoreInvalidSecondSignatureField": true,
+        "vendorFieldLength": 64
     },
     {
         "height": 910000,
@@ -85,7 +91,8 @@
         "block": {
             "version": 0,
             "maxTransactions": 500,
-            "maxPayload": 21000000
+            "maxPayload": 21000000,
+            "idFullSha256": false
         },
         "epoch": "2017-03-21T13:00:00.000Z",
         "fees": {
@@ -101,7 +108,8 @@
                 "delegateResignation": 0
             }
         },
-        "ignoreInvalidSecondSignatureField": true
+        "ignoreInvalidSecondSignatureField": true,
+        "vendorFieldLength": 64
     },
     {
         "height": 950000,
@@ -111,7 +119,8 @@
         "block": {
             "version": 0,
             "maxTransactions": 500,
-            "maxPayload": 21000000
+            "maxPayload": 21000000,
+            "idFullSha256": false
         },
         "epoch": "2017-03-21T13:00:00.000Z",
         "fees": {
@@ -127,6 +136,63 @@
                 "delegateResignation": 0
             }
         },
-        "ignoreInvalidSecondSignatureField": false
+        "ignoreInvalidSecondSignatureField": false,
+        "vendorFieldLength": 64
+    },
+    {
+        "height": 1750000,
+        "reward": 200000000,
+        "activeDelegates": 51,
+        "blocktime": 8,
+        "block": {
+            "version": 0,
+            "maxTransactions": 500,
+            "maxPayload": 21000000,
+            "idFullSha256": false
+        },
+        "epoch": "2017-03-21T13:00:00.000Z",
+        "fees": {
+            "staticFees": {
+                "transfer": 10000000,
+                "secondSignature": 500000000,
+                "delegateRegistration": 2500000000,
+                "vote": 100000000,
+                "multiSignature": 500000000,
+                "ipfs": 0,
+                "timelockTransfer": 0,
+                "multiPayment": 0,
+                "delegateResignation": 0
+            }
+        },
+        "ignoreInvalidSecondSignatureField": false,
+        "vendorFieldLength": 255
+    },
+    {
+        "height": 1895000,
+        "reward": 200000000,
+        "activeDelegates": 51,
+        "blocktime": 8,
+        "block": {
+            "version": 0,
+            "maxTransactions": 500,
+            "maxPayload": 21000000,
+            "idFullSha256": true
+        },
+        "epoch": "2017-03-21T13:00:00.000Z",
+        "fees": {
+            "staticFees": {
+                "transfer": 10000000,
+                "secondSignature": 500000000,
+                "delegateRegistration": 2500000000,
+                "vote": 100000000,
+                "multiSignature": 500000000,
+                "ipfs": 0,
+                "timelockTransfer": 0,
+                "multiPayment": 0,
+                "delegateResignation": 0
+            }
+        },
+        "ignoreInvalidSecondSignatureField": false,
+        "vendorFieldLength": 255
     }
 ]
