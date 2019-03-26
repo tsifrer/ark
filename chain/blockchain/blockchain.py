@@ -199,12 +199,10 @@ class Blockchain(object):
 
             else:
                 print(
-                    'Downloaded block not accepted: {}'.format(blocks[0].id)
-                )  # TODO: output block data
-                print(
                     'Last downloaded block: {}'.format(last_block.id)
                 )  # TODO: output block data
                 print('WTF: {}'.format(last_block.height))
+                raise Exception('Downloaded block not accepted: {}'.format(blocks[0].id))
         else:
             print('No new block found on this peer')
 
