@@ -245,10 +245,11 @@ class Block(CryptoObject):
         config = Config()
         milestone = config.get_milestone(self.height - 1)
         if milestone['block']['idFullSha256']:
-            self.previous_block_hex = hexlify(buff.pop_bytes(32)).decode('utf-8')
-            self.previous_block = self.previous_block_hex
+            self.previous_block_hex = hexlify(buff.pop_bytes(32))
+            self.previous_block = self.previous_block_hex.decode('utf-8')
         else:
-            self.previous_block_hex = hexlify(buff.pop_bytes(8)).decode('utf-8')
+
+            self.previous_block_hex = hexlify(buff.pop_bytes(8))
             self.previous_block = str(int(self.previous_block_hex, 16))
 
     def deserialize(self, serialized_hex):
@@ -271,7 +272,6 @@ class Block(CryptoObject):
 
         if len(buff) != 0:
             self._deserialize_transactions(buff)
-
         # TODO: implement edge cases (outlookTable thingy) where some block ids are broken
         # const { outlookTable } = configManager.config.exceptions;
         # if (outlookTable && outlookTable[block.id]) {
