@@ -188,7 +188,7 @@ class Block(CryptoObject):
                 raise Exception(
                     'Previous block shoud be SHA256, but found a non SHA256 block id'
                 )
-            self.previous_block_hex = hexlify(self.previous_block)
+            self.previous_block_hex = self.previous_block.encode('utf-8')
         else:
             self.previous_block_hex = Block.to_bytes_hex(self.previous_block)
 
