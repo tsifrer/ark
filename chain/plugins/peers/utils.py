@@ -71,7 +71,7 @@ def _find_highest_common_block_height(peer, min_height, max_height):
         if min_height + n_samples >= max_height:
             raise Exception('Checked for every height but could not find a match')
 
-        min_height += 1
+        min_height = highest_matching + 1
         max_height = heights[heights.index(highest_matching) + 1] - 1
 
     return highest_matching

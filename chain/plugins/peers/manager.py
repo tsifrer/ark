@@ -103,7 +103,7 @@ class PeerManager(object):
             print("Peer {}:{} can't be suspended as it's whitelisted".format(peer.ip, peer.port))
             return None
 
-        print('Suspending peer {}:{}').format(peer.ip, peer.port)
+        print('Suspending peer {}:{}'.format(peer.ip, peer.port))
         self.redis.delete(self.key_active.format(peer.ip))
         # TODO: also record for how long peer needs to be suspended
         self.redis.set(self.key_suspended.format(peer.ip), peer.to_json())
