@@ -71,13 +71,6 @@ class BlockView(MethodView):
             )
         )
 
-        process_queue = get_process_queue()
-
-        # If received block is already in queue, don't try and process it again
-        queued_block = process_queue.fetch_last_block()
-        if queued_block.height == block.height and queued_block.id == block.id:
-            return jsonify({'success': True}), 200
-
         is_verified, errors = block.verify()
         if not is_verified:
             print(errors)  # TODO:
@@ -86,10 +79,21 @@ class BlockView(MethodView):
         db = get_db()
         last_block = db.get_last_block()
 
+        if last_block.height >= block.height:
+            print('Received block with height {} which was already processed. Our last block height {}. Skipping process queue.'.format(block.height, last_block.height))
+            return jsonify({'success': True}), 200
+
+        process_queue = get_process_queue()
+
+        if process_queue.block_exists(block):
+            print('Received block with height {} is already in process queue.'.format(block.height))
+            return jsonify({'success': True}), 200
+
         current_slot = slots.get_slot_number(last_block.height, time.get_time())
         received_slot = slots.get_slot_number(last_block.height, block.timestamp)
 
         if current_slot >= received_slot:
+            # Put the block to process queue
             process_queue.push_block(block)
         else:
             print('Discarded block {} because it takes a future slot'.format(block.height))

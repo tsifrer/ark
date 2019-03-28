@@ -2,7 +2,7 @@ import os
 
 from redis import Redis
 
-from chain.crypto.objects.block import Block
+from chain.config import Config
 
 
 class Queue(object):
@@ -27,13 +27,18 @@ class Queue(object):
     def pop_block(self):
         return self.db.lpop(self.list_name)
 
-    def fetch_last_block(self):
-        serialized_block = self.db.lindex(-1)
-        if serialized_block:
-            return Block.from_serialized(serialized_block)
-        return None
+    def block_exists(self, block):
+        key = 'process_queue:block:{}:{}'.format(block.height, block.id)
 
-
+        if self.db.exists(key):
+            self.db.incr(self._get_block_key(block))
+            return True
+        else:
+            config = Config()
+            blocktime = config.get_milestone(block.height)['blocktime']
+            # Expire the key after `blocktime` seconds
+            self.db.set(self._get_block_key(block), 0, ex=blocktime)
+            return False
 
     def clear(self):
         print('Clearing process queue')
