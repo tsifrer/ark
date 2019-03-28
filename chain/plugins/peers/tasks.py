@@ -42,7 +42,7 @@ def add_peer(ip, port, chain_version, nethash, os):
     peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
 
     # except:  # TODO: verify_peer should return just specific exception, handle it here
-
+    # peer_manager.suspend_peer(peer)
     # if peer.healthy:
         
     #     print('Accepted new peer {}:{}'.format(peer.ip, peer.port))

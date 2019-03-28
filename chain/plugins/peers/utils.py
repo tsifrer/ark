@@ -38,7 +38,9 @@ def _find_highest_common_between_heights(peer, heights):
     for block in our_blocks:
         heights_by_id[block.id] = block.height
 
-    common = peer.get_common_block_by_ids(list(heights_by_id.keys()))
+    print('waka waka')
+    print(list(heights_by_id.keys()))
+    common = peer.fetch_common_block_by_ids(list(heights_by_id.keys()))
 
     if not common:
         print("Couldn't find a common block for peer {}:{} for block heights {}".format(peer.ip, peer.port, heights))

@@ -10,7 +10,7 @@ from chain.common.utils import get_chain_version
 from chain.config import Config
 from chain.plugins.peers.tasks import add_peer
 from chain.common.exceptions import PeerNotFoundException
-
+from .utils import ip_is_blacklisted, ip_is_whitelisted
 
 class PeerManager(object):
 
@@ -85,22 +85,10 @@ class PeerManager(object):
         if peers:
             return random.choice(peers)
 
-    def _get_random_peer_to_download_blocks(self):
-        # TODO: Refactor as most of this is obsolete with the peer verification
-        peer = self.get_random_peer()
-        if not peer:
-            raise PeerNotFoundException("Can't find any valid peers")
-        # recent_block_ids = self.database.get_recent_block_ids()
-        # if not peer.has_common_blocks(recent_block_ids):
-        #     # TODO: implement guard
-        #     peer.no_common_blocks = True
-        #     return self._get_random_peer_to_download_blocks()
-        return peer
-
     # getRandomDownloadBlocksPeer
     def fetch_blocks(self, from_height):
         # TODO: Missing error handling
-        peer = self._get_random_peer_to_download_blocks()
+        peer = self.get_random_peer()
         if peer:
             print(
                 'Downloading blocks from height {} via {}'.format(from_height, peer.ip)
@@ -108,3 +96,14 @@ class PeerManager(object):
             blocks = peer.fetch_blocks_from_height(from_height)
             return blocks
         return []
+
+
+    def suspend_peer(self, peer):
+        if ip_is_whitelisted(peer.ip):
+            print("Peer {}:{} can't be suspended as it's whitelisted".format(peer.ip, peer.port))
+            return None
+
+        print('Suspending peer {}:{}').format(peer.ip, peer.port)
+        self.redis.delete(self.key_active.format(peer.ip))
+        # TODO: also record for how long peer needs to be suspended
+        self.redis.set(self.key_suspended.format(peer.ip), peer.to_json())

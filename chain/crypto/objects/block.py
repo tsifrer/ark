@@ -177,7 +177,7 @@ class Block(CryptoObject):
         config = Config()
         milestone = config.get_milestone(self.height)
         if milestone['block']['idFullSha256']:
-            return id_hex
+            return id_hex.decode('utf-8')
         return str(int(id_hex, 16))
 
     def serialize(self, include_signature=True):

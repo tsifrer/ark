@@ -19,7 +19,6 @@ class Peer(object):
                  os,
                  height=None,
                  status=None,
-                 no_common_blocks=False,
                  latency=None,
                  verification=None
                  ):
@@ -32,7 +31,6 @@ class Peer(object):
 
         self.height = height
         self.status = status
-        self.no_common_blocks = no_common_blocks
         self.latency = latency
         self.verification = verification
 
@@ -106,11 +104,6 @@ class Peer(object):
             print('Peer is invalid, because the IP is private IP')
             return False
 
-        if self.no_common_blocks:
-            print('Peer is invalid, as it has no common blocks')
-            # TODO: This should be implemented as part of the guard thingy
-            return False
-
         # TODO: check for valid network version
 
         return True
@@ -119,19 +112,11 @@ class Peer(object):
         config = Config()
         return self.nethash == config['network']['nethash']
 
-    def get_common_block_by_ids(self, block_ids):
+    def fetch_common_block_by_ids(self, block_ids):
         print(block_ids)
         params = {
             'ids': ','.join(block_ids)
         }
-
-        # TODO: This might not work as if only one block_id is passed in, othe relays
-        # might not return what we want, based on the source code
-        #
-        # let url = `/peer/blocks/common?ids=${ids.join(",")}`;
-        # if (ids.length === 1) {
-        #     url += ",";
-        # }
         body = self._get('/peer/blocks/common', params=params)
         print(body)
         return body.get('common')
@@ -152,7 +137,6 @@ class Peer(object):
 
             'height': self.height,
             'status': self.status,
-            'no_common_blocks': self.no_common_blocks,
             'latency': self.latency,
             'verification': self.verification,
         }
@@ -169,7 +153,6 @@ class Peer(object):
             os=data['os'],
             height=data['height'],
             status=data['status'],
-            no_common_blocks=data['no_common_blocks'],
             latency=data['latency'],
             verification=data['verification'],
         )
@@ -189,6 +172,3 @@ class Peer(object):
         self.verification = verify_peer_status(self, body)
         if not self.verification:
             raise Exception('Peer not verified')
-
-
-
