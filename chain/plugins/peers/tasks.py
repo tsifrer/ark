@@ -33,19 +33,9 @@ def add_peer(ip, port, chain_version, nethash, os):
     # don't get any, they reject your response even though the request to them was
     # valid
     # try:
-    
-    peer.verify_peer()
-
-    print('DONE VERIFYING')
-    print(peer.verification)
-
-    peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
-
-    # except:  # TODO: verify_peer should return just specific exception, handle it here
-    # peer_manager.suspend_peer(peer)
-    # if peer.healthy:
-        
-    #     print('Accepted new peer {}:{}'.format(peer.ip, peer.port))
-    # else:
-    #     print('Could not accept new peer {}:{}'.format(peer.ip, peer.port))
-    # TODO: Suspend peer if it's not verified
+    try:
+        peer.verify_peer()
+        print('Accepting peer {}:{}. Vefification: {}'.format(peer.ip, peer.port, peer.verification))
+        peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
+    except:
+        peer_manager.suspend_peer(peer)
