@@ -1,11 +1,16 @@
 import json
+from datetime import datetime
+from ipaddress import ip_address
+
 import requests
 
-from chain.crypto.objects.block import Block
 from chain.config import Config
+from chain.crypto.objects.block import Block
+from .utils import ip_is_blacklisted, ip_is_whitelisted, verify_peer_status
 
 
 class Peer(object):
+    # TODO: Yeah, refactor this
     def __init__(self,
                  ip,
                  port,
@@ -14,8 +19,9 @@ class Peer(object):
                  os,
                  height=None,
                  status=None,
-                 healthy=True,
-                 no_common_blocks=False
+                 no_common_blocks=False,
+                 latency=None,
+                 verification=None
                  ):
         super().__init__()
         self.ip = ip
@@ -26,8 +32,9 @@ class Peer(object):
 
         self.height = height
         self.status = status
-        self.healthy = healthy
         self.no_common_blocks = no_common_blocks
+        self.latency = latency
+        self.verification = verification
 
     @property
     def headers(self):
@@ -58,31 +65,61 @@ class Peer(object):
                 full_url,
                 params=params,
                 headers=self.headers,
-                timeout=timeout or config['peers']['global_timeout'],
+                timeout=timeout or config['peers']['request_timeout'],
             )
         except requests.exceptions.RequestException as e:
             print('Request to {} failed because of {}'.format(full_url, e))
-            self.healthy = False
+            self.latency = -1
             return {}
 
+        self.latency = response.elapsed.total_seconds()
         # TODO: rewrite _parse_headers to make it more meaningful
         self._parse_headers(response)
+
         try:
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            print('Request to {} failed because of {} {}'.format(full_url, e, response.content))
-            self.healthy = False
-        else:
             body = response.json()
-            if body['success']:
-                self.healthy = True
+        except ValueError:
+            body = {}
+            print('Request to {} returned HTTP {}. {}'.format(full_url, response.status_code, response.content))
+        else:
+            if body.get('success'):
                 return body
-            else:
-                print('Request to {} failed because of {}'.format(full_url, body))
-                self.healthy = False
+
+        print('Request to {} failed. Response was {}'.format(full_url, body))
         return {}
 
-    def has_common_blocks(self, block_ids):
+    def is_valid(self):
+        if ip_is_whitelisted(self.ip):
+            return True
+
+        if ip_is_blacklisted(self.ip):
+            print('Peer is blacklisted {}'.format(self.ip))
+            return False
+
+        try:
+            ip = ip_address(self.ip)
+        except ValueError:
+            print('Peer is invalid, because the IP is not a valid ip {}'.format(self.ip))
+            return False
+
+        if ip.is_private:
+            print('Peer is invalid, because the IP is private IP')
+            return False
+
+        if self.no_common_blocks:
+            print('Peer is invalid, as it has no common blocks')
+            # TODO: This should be implemented as part of the guard thingy
+            return False
+
+        # TODO: check for valid network version
+
+        return True
+
+    def is_valid_network(self):
+        config = Config()
+        return self.nethash == config['network']['nethash']
+
+    def get_common_block_by_ids(self, block_ids):
         print(block_ids)
         params = {
             'ids': ','.join(block_ids)
@@ -97,16 +134,9 @@ class Peer(object):
         # }
         body = self._get('/peer/blocks/common', params=params)
         print(body)
-        return True if body.get('common') else False
+        return body.get('common')
 
-    def ping(self, timeout=3):
-        # TODO: Make this more obvious somehow. _get sets 'healthy' flag on self
-        # which is then used elsewhere to check if ping was successful or not.
-        self._get('/peer/status', timeout=timeout)
-
-        # TODO: Peer verification (PeerVerifier)
-
-    def download_blocks(self, from_height):
+    def fetch_blocks_from_height(self, from_height):
         params = {'lastBlockHeight': from_height}
         body = self._get('/peer/blocks', params=params)
         blocks = body.get('blocks', [])
@@ -122,8 +152,9 @@ class Peer(object):
 
             'height': self.height,
             'status': self.status,
-            'healthy': self.healthy,
             'no_common_blocks': self.no_common_blocks,
+            'latency': self.latency,
+            'verification': self.verification,
         }
         return json.dumps(data)
 
@@ -138,6 +169,26 @@ class Peer(object):
             os=data['os'],
             height=data['height'],
             status=data['status'],
-            healthy=data['healthy'],
             no_common_blocks=data['no_common_blocks'],
+            latency=data['latency'],
+            verification=data['verification'],
         )
+
+
+
+
+    def verify_peer(self, timeout=None):
+        verification_start = datetime.now()
+        if not timeout:
+            config = Config()
+            timeout = config['peers']['verification_timeout']
+
+        body = self._get('/peer/status', timeout=timeout)
+
+        # if not body:
+        self.verification = verify_peer_status(self, body)
+        if not self.verification:
+            raise Exception('Peer not verified')
+
+
+

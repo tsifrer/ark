@@ -4,6 +4,7 @@ from flask.views import MethodView
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
 from chain.plugins.peers.tasks import add_peer
+from chain.plugins.peers.utils import ip_is_blacklisted
 
 from ..exceptions import P2PException
 
@@ -158,10 +159,11 @@ class BlockCommonView(MethodView):
 
 def _accept_new_peer_on_request():
     peer_manager = get_peer_manager()
+    ip = request.remote_addr
     # TODO: improve how we check if the peer exists in redis
-    if not peer_manager.get_peer(request.remote_addr):
+    if not ip_is_blacklisted(ip) and not peer_manager.get_peer_by_ip(ip):
         add_peer(
-            ip=request.remote_addr,
+            ip=ip,
             port=request.headers['port'],
             chain_version=request.headers['version'],
             nethash=request.headers['nethash'],

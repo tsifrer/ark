@@ -165,7 +165,7 @@ class Blockchain(object):
         print()
         print('downloading harambe')
         print()
-        blocks = self.peers.download_blocks(last_block.height)
+        blocks = self.peers.fetch_blocks(last_block.height)
 
         if blocks:
             print('chained', is_block_chained(last_block, blocks[0]))

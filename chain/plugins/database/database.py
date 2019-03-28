@@ -115,8 +115,8 @@ class Database(object):
             # Get the active delegate list from in-memory wallet manager
             delegate_wallets = self.wallets.load_active_delegate_wallets(next_height)
 
-            for wallet in delegate_wallets:
-                print(wallet.username, wallet.public_key, wallet.vote_balance)
+            # for wallet in delegate_wallets:
+            #     print(wallet.username, wallet.public_key, wallet.vote_balance)
 
             # TODO: ark core states that this is saving next round delegate list into
             # the db. Is that true? Or are we saving the current round delegate list
@@ -219,7 +219,7 @@ class Database(object):
         is_valid = len(errors) == 0
         return is_valid, errors
 
-    def get_active_delegates(self, height, delegates=None):
+    def get_active_delegates(self, height):
         """Get the top 51 delegates
 
         TODO: this function is potentially very broken and returns all rounds?
@@ -237,9 +237,9 @@ class Database(object):
                 .order_by(Round.balance.desc(), Round.public_key.asc())
             )
 
-            for delegate in delegates:
-                wallet = self.wallets.find_by_public_key(delegate.public_key)
-                print(delegate.public_key, delegate.balance, wallet.vote_balance)
+            # for delegate in delegates:
+            #     wallet = self.wallets.find_by_public_key(delegate.public_key)
+            #     print(delegate.public_key, delegate.balance, wallet.vote_balance)
 
             if delegates:
                 seed = sha256(str(delegate_round).encode('utf-8')).digest()
@@ -299,8 +299,6 @@ class Database(object):
                 CryptoTransaction.from_serialized(trans.serialized)
             )
 
-            print(transactions_map[trans.block_id][0].block_id)
-
         crypto_blocks = []
         for block in blocks:
             crypto_block = CryptoBlock.from_object(block)
@@ -317,6 +315,13 @@ class Database(object):
 
     def get_blocks_by_id(self, block_ids):
         blocks = Block.select().where(Block.id.in_(block_ids)).order_by(Block.height.desc())
+        return [CryptoBlock.from_object(block) for block in blocks]
+
+    def get_blocks_by_heights(self, heights):
+        if not isinstance(heights, list):
+            raise Exception('heights must be a type of list')
+
+        blocks = Block.select().where(Block.height.in_(heights))
         return [CryptoBlock.from_object(block) for block in blocks]
 
     def rollback_to_round(self, to_round):
