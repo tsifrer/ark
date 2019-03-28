@@ -1,5 +1,6 @@
 import math
 from datetime import datetime
+from random import randint
 from time import sleep
 
 
@@ -25,6 +26,7 @@ class Blockchain(object):
         self.database = load_plugin('chain.plugins.database')
         self.peers = load_plugin('chain.plugins.peers')
         self.peers.setup()
+        self.process_queue = load_plugin('chain.plugins.process_queue')
 
     def start(self):
         # TODO: change prints to loggers
@@ -215,9 +217,38 @@ class Blockchain(object):
     #     pass
 
     def fork_block(self, block):
+        print('Starting fork recovery')
+
+        # Revert a random number of blocks. Somewhere between 4 and 102
+        n_blocks = randint(4, 102)
+
+        self.revert_blocks(n_blocks)
         # TODO:
-        print('FORKING')
-        raise NotImplementedError()
+        # stateStorage.numberOfBlocksToRollback = null;
+
+        # logger.info(`Removed ${pluralize("block", random, true)}`);
+
+        # await blockchain.transactionPool.buildWallets();
+        # await blockchain.p2p.refreshPeersAfterFork();
+
+    def revert_blocks(self, n_blocks):
+        block = self.database.get_last_block()
+        print('Reverting {} blocks. Reverting to height {}'.format(n_blocks, block.height - n_blocks))
+        for index in range(n_blocks):
+            if block.height == 1:
+                print("Can't revert genesis block.")
+                break
+
+            self.database.revert_block(block)
+            # TODO: Transaction pool stuff
+            # if (this.transactionPool) {
+            #     await this.transactionPool.addTransactions(lastBlock.transactions);
+            # }
+            print('Successfully reverted block {}'.format(block.id))
+
+            block = self.database.get_last_block()
+
+        self.process_queue.clear()
 
     def is_synced(self, last_block):
         current_time = time.get_time()
@@ -387,10 +418,9 @@ class Blockchain(object):
         return self._handle_accepted_block(block)
 
     def consume_queue(self):
-        queue = load_plugin('chain.plugins.process_queue')
         config = Config()
         while True:
-            serialized_block = queue.pop_block()
+            serialized_block = self.process_queue.pop_block()
             if serialized_block:
                 last_block = self.database.get_last_block()
                 block = Block.from_serialized(serialized_block)

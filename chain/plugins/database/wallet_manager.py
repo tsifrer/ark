@@ -393,15 +393,12 @@ class WalletManager(object):
                 self.revert_transaction(transaction)
             raise e
 
-        applied = delegate.apply_block(block)
-
-        # If the block has been applied to the delegate, the balance is increased
-        # by reward + totalFee, in which case the vote balance of the delegate's
-        # delegate has to be updated.
-        if applied and delegate.vote:
+        delegate.apply_block(block)
+        # If delegate votes for somewone, we need to update vote balance for the
+        # voted delegate
+        if delegate.vote:
             voted_delegate = self.find_by_public_key(delegate.vote)
-            voted_delegate.vote_balance += block.reward
-            voted_delegate.vote_balance += block.total_fee
+            voted_delegate.vote_balance += block.reward + block.total_fee
 
     def load_active_delegate_wallets(self, height):
         current_round, _, max_delegates = calculate_round(height)
@@ -447,3 +444,18 @@ class WalletManager(object):
             recipient.revert_transaction_for_recipient(transaction)
 
         self._update_vote_balances(sender, recipient, transaction, revert=True)
+
+    def revert_block(self, block):
+        delegate = self.find_by_public_key(block.generator_public_key)
+
+        # Revert transactions from last to first
+        for transaction in reversed(block.transactions):
+            self.revert_transaction(transaction)
+
+        delegate.revert_block()
+
+        # If delegate votes for somewone, we need to update vote balance for the
+        # voted delegate
+        if delegate.vote:
+            voted_delegate = self.find_by_public_key(delegate.vote)
+            voted_delegate.vote_balance -= block.reward + block.total_fee

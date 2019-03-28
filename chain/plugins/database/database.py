@@ -324,7 +324,20 @@ class Database(object):
         blocks = Block.select().where(Block.height.in_(heights))
         return [CryptoBlock.from_object(block) for block in blocks]
 
+
+    def revert_block(self, block):
+        current_round, next_round, max_delegates = calculate_round(block.height)
+        if next_round == current_round + 1 and block.height > max_delegates:
+            # const delegates = await this.calcPreviousActiveDelegates(round);
+            # this.forgingDelegates = await this.getActiveDelegates(height, delegates);
+            Round.delete().where(Round.round == next_round)
+
+        self.wallets.revert_block(block)
+
+
+
     def rollback_to_round(self, to_round):
+        # TODO: Get rid of this and use blockchain.revert_blocks instead
         """
         Removes all rounds, block and transactions to the start of the `to_round`.
         NOTE: You need to restart the chain after calling this as this does not rollback

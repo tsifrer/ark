@@ -24,3 +24,7 @@ class Queue(object):
 
     def pop_block(self):
         return self.db.lpop(self.list_name)
+
+    def clear(self):
+        print('Clearing process queue')
+        self.db.delete(self.list_name)
