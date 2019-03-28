@@ -89,8 +89,12 @@ class BlockView(MethodView):
             print(errors)  # TODO:
             raise P2PException('Verification failed')
 
-        queue = get_process_queue()
-        queue.push_block(block)
+        db = get_db()
+        last_block = db.get_last_block()
+
+        if last_block.height != block.height:
+            queue = get_process_queue()
+            queue.push_block(block)
 
         return jsonify({'success': True}), 200
 
