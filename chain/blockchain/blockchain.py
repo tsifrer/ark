@@ -392,7 +392,6 @@ class Blockchain(object):
         while True:
             serialized_block = queue.pop_block()
             if serialized_block:
-                print(serialized_block)
                 last_block = self.database.get_last_block()
                 block = Block.from_serialized(serialized_block)
                 status = self.process_block(block, last_block)
