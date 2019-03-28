@@ -2,6 +2,8 @@ import os
 
 from redis import Redis
 
+from chain.crypto.objects.block import Block
+
 
 class Queue(object):
 
@@ -24,6 +26,14 @@ class Queue(object):
 
     def pop_block(self):
         return self.db.lpop(self.list_name)
+
+    def fetch_last_block(self):
+        serialized_block = self.db.lindex(-1)
+        if serialized_block:
+            return Block.from_serialized(serialized_block)
+        return None
+
+
 
     def clear(self):
         print('Clearing process queue')

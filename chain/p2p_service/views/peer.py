@@ -71,18 +71,12 @@ class BlockView(MethodView):
             )
         )
 
-        # TODO: pingBlock
-        # if (blockchain.pingBlock(block)) {
-        #             return { success: true };
-        #         }
+        process_queue = get_process_queue()
 
-        # TODO: check if we already got the block
-        # const lastDownloadedBlock = blockchain.getLastDownloadedBlock();
-
-        # // Are we ready to get it?
-        # if (lastDownloadedBlock && lastDownloadedBlock.data.height + 1 !== block.height) {
-        #     return { success: true };
-        # }
+        # If received block is already in queue, don't try and process it again
+        queued_block = process_queue.fetch_last_block()
+        if queued_block.height == block.height and queued_block.id == block.id:
+            return jsonify({'success': True}), 200
 
         is_verified, errors = block.verify()
         if not is_verified:
@@ -92,9 +86,13 @@ class BlockView(MethodView):
         db = get_db()
         last_block = db.get_last_block()
 
-        if last_block.height != block.height:
-            queue = get_process_queue()
-            queue.push_block(block)
+        current_slot = slots.get_slot_number(last_block.height, time.get_time())
+        received_slot = slots.get_slot_number(last_block.height, block.timestamp)
+
+        if current_slot >= received_slot:
+            process_queue.push_block(block)
+        else:
+            print('Discarded block {} because it takes a future slot'.format(block.height))
 
         return jsonify({'success': True}), 200
 
