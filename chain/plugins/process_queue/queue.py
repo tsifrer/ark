@@ -31,13 +31,13 @@ class Queue(object):
         key = 'process_queue:block:{}:{}'.format(block.height, block.id)
 
         if self.db.exists(key):
-            self.db.incr(self._get_block_key(block))
+            self.db.incr(key)
             return True
         else:
             config = Config()
             blocktime = config.get_milestone(block.height)['blocktime']
             # Expire the key after `blocktime` seconds
-            self.db.set(self._get_block_key(block), 0, ex=blocktime)
+            self.db.set(key, 0, ex=blocktime)
             return False
 
     def clear(self):
