@@ -168,7 +168,7 @@ def _accept_new_peer_on_request():
     ip = request.remote_addr
     # TODO: improve how we check if the peer exists in redis
     # Don't try and add a peer if it's blacklisted or if it already is our peer
-    if not ip_is_blacklisted(ip) and not peer_manager.get_peer_by_ip(ip):
+    if not ip_is_blacklisted(ip) and not peer_manager.peer_with_ip_exists(ip):
         add_peer(
             ip=ip,
             port=request.headers['port'],

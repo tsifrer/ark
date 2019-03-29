@@ -52,17 +52,21 @@ class PeerManager(object):
         return [Peer.from_json(peer) for peer in peers if peer]
 
     def get_peer_by_ip(self, ip):
-        return self.redis.get(self.key_active.format(ip))
+        peer = self.redis.get(self.key_active.format(ip))
+        if peer:
+            return Peer.from_json(peer)
+        return None
+
+    def peer_with_ip_exists(self, ip):
+        return self.redis.exists(self.key_active.format(ip))
 
     def is_peer_suspended(self, peer):
         return self.redis.exists(self.key_suspended.format(peer.ip))
 
     def get_peer(self, ip):
-        # TODO: This is slow as it loads all peers. Maybe figure out how to get just
-        # the specific one by using something else than redis list
-        for peer in self.peers():
-            if peer.ip == ip:
-                return peer
+        peer = self.redis.get(self.key_active.format(ip))
+        if peer:
+            Peer.from_json(peer)
         return None
 
     def _populate_seed_peers(self):

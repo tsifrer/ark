@@ -27,7 +27,7 @@ def add_peer(ip, port, chain_version, nethash, os):
         print('Peer {}:{} is invalid or suspended.'.format(peer.ip, peer.port))
         return
 
-    if peer_manager.get_peer_by_ip(peer.ip):
+    if peer_manager.peer_with_ip_exists(peer.ip):
         print('Peer {}:{} already exists.'.format(peer.ip, peer.port))
         return
 
@@ -39,10 +39,28 @@ def add_peer(ip, port, chain_version, nethash, os):
     # try:
     try:
         peer.verify_peer()
-        print('Accepting peer {}:{}. Vefification: {}'.format(peer.ip, peer.port, peer.verification))
-        peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
     except:
         peer_manager.suspend_peer(peer)
+    else:
+        print('Accepting peer {}:{}. Vefification: {}'.format(peer.ip, peer.port, peer.verification))
+        peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
+
+
+@huey.task()
+def reverify_peer(ip):
+    peer_manager = load_plugin('chain.plugins.peers')
+    peer = peer_manager.get_peer_by_ip(ip)
+    print('Reverifying peer {}:{}'.format(peer.ip, peer.port))
+    if peer:
+        try:
+            peer.verify_peer()
+        except:
+            peer_manager.suspend_peer(peer)
+        else:
+            print('Peer {}:{} successfully reverified'.format(peer.ip, peer.port))
+            peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
+    else:
+        print("Couldn't find a peer to reverify")
 
 
 @huey.task()
@@ -51,10 +69,7 @@ def reverify_all_peers():
     peers = peer_manager.peers()
     print('Reverifying all {} peers'.format(len(peers)))
     for peer in peers:
-        try:
-            peer.verify_peer()
-        except:
-            peer_manager.suspend_peer(peer)
+        reverify_peer(peer.ip)
 
 
 @huey.periodic_task(crontab(minute='*/10'))
@@ -65,7 +80,9 @@ def discover_peers():
     # TODO: Disable this function if peer discoverability is disabled in config
 
     peer_manager = load_plugin('chain.plugins.peers')
-    peers = random.shuffle(peer_manager.peers())
+    peers = peer_manager.peers()
+    # Shuffle peers so we always get the peers from the different peers at the start
+    random.shuffle(peers)
     for index, peer in enumerate(peers):
         his_peers = peer.fetch_peers()
         for his_peer in his_peers:
@@ -81,6 +98,6 @@ def discover_peers():
         # `has_minimum_peers` might actually return wrong result, but that will only
         # increase the number of peers we have.
         if index >= 4 and peer_manager.has_minimum_peers():
-            return
+            break
 
     reverify_all_peers()

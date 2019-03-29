@@ -132,7 +132,7 @@ class Peer(object):
         body = self._get('/peer/list')
         print(body)
         peers = []
-        for peer in body['peers']:
+        for peer in body.get('peers', []):
             if not ip_is_blacklisted(peer['ip']):
                 peers.append(Peer(
                     ip=peer['ip'],
