@@ -1,3 +1,7 @@
+import random
+
+from huey import crontab
+
 from chain.common.plugins import load_plugin
 from chain.hughie.config import huey
 from chain.config import Config
@@ -39,3 +43,44 @@ def add_peer(ip, port, chain_version, nethash, os):
         peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
     except:
         peer_manager.suspend_peer(peer)
+
+
+@huey.task()
+def reverify_all_peers():
+    peer_manager = load_plugin('chain.plugins.peers')
+    peers = peer_manager.peers()
+    print('Reverifying all {} peers'.format(len(peers)))
+    for peer in peers:
+        try:
+            peer.verify_peer()
+        except:
+            peer_manager.suspend_peer(peer)
+
+
+@huey.periodic_task(crontab(minute='*/10'))
+def discover_peers():
+    """
+    Fetch peers of your existing peers to increase the number of peers.
+    """
+    # TODO: Disable this function if peer discoverability is disabled in config
+
+    peer_manager = load_plugin('chain.plugins.peers')
+    peers = random.shuffle(peer_manager.peers())
+    for index, peer in enumerate(peers):
+        his_peers = peer.fetch_peers()
+        for his_peer in his_peers:
+            add_peer(
+                ip=his_peer.ip,
+                port=his_peer.port,
+                chain_version=his_peer.chain_version,
+                nethash=his_peer.nethash,
+                os=his_peer.os,
+            )
+
+        # Always get peers from at least 4 sources. As add_peer is async,
+        # `has_minimum_peers` might actually return wrong result, but that will only
+        # increase the number of peers we have.
+        if index >= 4 and peer_manager.has_minimum_peers():
+            return
+
+    reverify_all_peers()

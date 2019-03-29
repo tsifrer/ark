@@ -127,6 +127,22 @@ class Peer(object):
         blocks = body.get('blocks', [])
         return [Block.from_dict(block) for block in blocks]
 
+    def fetch_peers(self):
+        print('Fetching a fresh peer list from {}:{}'.format(self.ip, self.port))
+        body = self._get('/peer/list')
+        print(body)
+        peers = []
+        for peer in body['peers']:
+            if not ip_is_blacklisted(peer['ip']):
+                peers.append(Peer(
+                    ip=peer['ip'],
+                    port=peer['port'],
+                    chain_version=peer['version'],
+                    nethash=peer['nethash'],
+                    os=peer['os'],
+                ))
+        return peers
+
     def to_json(self):
         data = {
             'ip': self.ip,
@@ -157,9 +173,6 @@ class Peer(object):
             verification=data['verification'],
         )
 
-
-
-
     def verify_peer(self, timeout=None):
         verification_start = datetime.now()
         if not timeout:
@@ -168,7 +181,9 @@ class Peer(object):
 
         body = self._get('/peer/status', timeout=timeout)
 
-        # if not body:
+        if not body:
+            raise Exception('Peer not verified')
+
         self.verification = verify_peer_status(self, body)
         if not self.verification:
             raise Exception('Peer not verified')

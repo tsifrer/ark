@@ -47,6 +47,7 @@ class Config(dict, metaclass=Singleton):
             self['peers']['verification_timeout'] = 3.5
             self['peers']['blacklist'] = []
             self['peers']['whitelist'] = []
+            self['peers']['minimum_network_reach'] = 5
 
         #     /**
         #  * The list of IPs can access the remote/internal API.

@@ -12,6 +12,7 @@ from chain.plugins.peers.tasks import add_peer
 from chain.common.exceptions import PeerNotFoundException
 from .utils import ip_is_blacklisted, ip_is_whitelisted
 
+
 class PeerManager(object):
 
     key_active = 'peer:active:{}'
@@ -44,7 +45,6 @@ class PeerManager(object):
             print('Deleted {} peers from redis'.format(num))
         self._populate_seed_peers()
 
-    @property
     def peers(self):
         keys = self.redis.keys(self.key_active.format('*'))
         peers = self.redis.mget(keys)
@@ -60,7 +60,7 @@ class PeerManager(object):
     def get_peer(self, ip):
         # TODO: This is slow as it loads all peers. Maybe figure out how to get just
         # the specific one by using something else than redis list
-        for peer in self.peers:
+        for peer in self.peers():
             if peer.ip == ip:
                 return peer
         return None
@@ -81,7 +81,7 @@ class PeerManager(object):
     def get_random_peer(self):
         # TODO: If random peer can't be found, raise an exception and then handle it
         # in functions that use this function
-        peers = [peer for peer in self.peers]
+        peers = [peer for peer in self.peers()]
         if peers:
             return random.choice(peers)
 
@@ -97,7 +97,6 @@ class PeerManager(object):
             return blocks
         return []
 
-
     def suspend_peer(self, peer):
         if ip_is_whitelisted(peer.ip):
             print("Peer {}:{} can't be suspended as it's whitelisted".format(peer.ip, peer.port))
@@ -107,3 +106,7 @@ class PeerManager(object):
         self.redis.delete(self.key_active.format(peer.ip))
         # TODO: also record for how long peer needs to be suspended
         self.redis.set(self.key_suspended.format(peer.ip), peer.to_json())
+
+    def has_minimum_peers(self):
+        config = Config()
+        return len(self.peers()) >= config['peers']['minimum_network_reach']
