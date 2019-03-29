@@ -22,7 +22,13 @@ def _get_sample_heights(min_height, max_height, n_samples):
     samples = []
     for x in range(n_samples):
         samples.append(min_height + round(step * x))
-    return samples
+
+    # Dedupe samples while also retaining order
+    unique = []
+    for sample in samples:
+        if sample not in unique:
+            unique.append(sample)
+    return unique
 
 
 def _find_highest_common_between_heights(peer, heights):

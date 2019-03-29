@@ -137,8 +137,15 @@ class Blockchain(object):
 
             print('Blockhain is syced!')
 
-            self.consume_queue()
+            # Blockchain was just synced, so remove all blocks from process queue
+            # as it was just synced. We clear it only on the start of the chain, to
+            # awoid processing old blocks. If we ever run sync while it's already
+            # runing, we don't want to run clear after sync as that might leave us
+            # with missing blocks which will cause the blockchain to always sync back
+            # rather than sync by accepting block from peers.
+            self.process_queue.clear()
 
+            self.consume_queue()
         except Exception as e:
             raise e  # TODO:
             # TODO: log exception

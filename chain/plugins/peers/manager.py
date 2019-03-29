@@ -37,7 +37,7 @@ class PeerManager(object):
         # Clear the peers list in redis
 
         # TODO: We might not want to delete peers from redis, but we shoud put them
-        # trough add_peer task so it correctly validates them 
+        # trough add_peer task so it correctly validates them
         keys = self.redis.keys(self.key_active.format('*'))
         keys.extend(self.redis.keys(self.key_suspended.format('*')))
         if keys:
@@ -83,23 +83,20 @@ class PeerManager(object):
             )
 
     def get_random_peer(self):
-        # TODO: If random peer can't be found, raise an exception and then handle it
-        # in functions that use this function
         peers = [peer for peer in self.peers()]
         if peers:
             return random.choice(peers)
+        else:
+            raise PeerNotFoundException("Can't find an active peer.")
 
-    # getRandomDownloadBlocksPeer
     def fetch_blocks(self, from_height):
         # TODO: Missing error handling
         peer = self.get_random_peer()
-        if peer:
-            print(
-                'Downloading blocks from height {} via {}'.format(from_height, peer.ip)
-            )
-            blocks = peer.fetch_blocks_from_height(from_height)
-            return blocks
-        return []
+        print(
+            'Downloading blocks from height {} via {}'.format(from_height, peer.ip)
+        )
+        blocks = peer.fetch_blocks_from_height(from_height)
+        return blocks
 
     def suspend_peer(self, peer):
         if ip_is_whitelisted(peer.ip):
