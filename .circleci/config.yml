@@ -4,7 +4,6 @@ jobs:
     environment:
       IMAGE_NAME: chain
       CHAIN_CONFIG_FOLDER: tests/config/
-      PIPENV_VENV_IN_PROJECT: true
     docker:
       - image: circleci/python:3.7.2-stretch
       - image: circleci/postgres:9.6.9
@@ -13,7 +12,7 @@ jobs:
       - checkout
       - run:
           name: Install requirements
-          command: pip install -r requirements.txt
+          command: sudo pip install -r requirements.txt
       - run:
           name: Run linting
           command: flake8 .
