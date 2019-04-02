@@ -17,7 +17,7 @@ def _create_genesis_block():
     Block.delete().execute()
 
     config = Config()
-    block = CryptoBlock.from_dict(config['genesis_block'])
+    block = CryptoBlock.from_dict(config["genesis_block"])
 
     db_block = Block.from_crypto(block)
     db_block.save(force_insert=True)
@@ -57,17 +57,17 @@ def _create_genesis_block():
     #     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db():
-    print('executed db')
+    print("executed db")
     migrate()
 
     _create_genesis_block()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app():
-    print('executed app')
+    print("executed app")
     return create_app()
 
 

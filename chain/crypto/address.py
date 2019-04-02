@@ -19,14 +19,14 @@ def address_from_public_key(public_key, network_version=None):
     Returns:
         bytes:
     """
-    match = re.fullmatch('^[0-9A-Fa-f]{66}$', public_key)
+    match = re.fullmatch("^[0-9A-Fa-f]{66}$", public_key)
     if not match:
-        raise Exception('Invalid public key')  # TODO: better exception
+        raise Exception("Invalid public key")  # TODO: better exception
 
     if not network_version:
         config = Config()
-        network_version = config['network']['pubKeyHash']
+        network_version = config["network"]["pubKeyHash"]
 
-    ripemd160 = hashlib.new('ripemd160', unhexlify(public_key.encode()))
+    ripemd160 = hashlib.new("ripemd160", unhexlify(public_key.encode()))
     payload = write_bit8(network_version) + ripemd160.digest()
     return b58encode_check(payload).decode()

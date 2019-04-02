@@ -40,15 +40,15 @@ class WalletManager(object):
 
         config = Config()
         self._genesis_addresses = set()
-        for transaction in config['genesis_block']['transactions']:
-            self._genesis_addresses.add(transaction['senderId'])
+        for transaction in config["genesis_block"]["transactions"]:
+            self._genesis_addresses.add(transaction["senderId"])
 
     def _build_received_transactions(self):
         """Load and apply received transactions to wallets.
         """
         transactions = (
             Transaction.select(
-                Transaction.recipient_id, fn.SUM(Transaction.amount).alias('amount')
+                Transaction.recipient_id, fn.SUM(Transaction.amount).alias("amount")
             )
             .where(Transaction.type == TRANSACTION_TYPE_TRANSFER)
             .group_by(Transaction.recipient_id)
@@ -64,7 +64,7 @@ class WalletManager(object):
         """
         blocks = Block.select(
             Block.generator_public_key,
-            fn.SUM(Block.reward + Block.total_fee).alias('reward'),
+            fn.SUM(Block.reward + Block.total_fee).alias("reward"),
         ).group_by(Block.generator_public_key)
 
         for block in blocks:
@@ -98,8 +98,8 @@ class WalletManager(object):
     def _build_sent_transactions(self):
         transactions = Transaction.select(
             Transaction.sender_public_key,
-            fn.SUM(Transaction.amount).alias('amount'),
-            fn.SUM(Transaction.fee).alias('fee'),
+            fn.SUM(Transaction.amount).alias("amount"),
+            fn.SUM(Transaction.fee).alias("fee"),
         ).group_by(Transaction.sender_public_key)
 
         for transaction in transactions:
@@ -110,7 +110,7 @@ class WalletManager(object):
             if wallet.balance < 0 and not self.is_genesis_address(wallet.address):
                 total = int(transaction.amount) + int(transaction.fee)
                 print(
-                    'Negative wallet balance: {} {}'.format(
+                    "Negative wallet balance: {} {}".format(
                         wallet.address, wallet.balance
                     )
                 )
@@ -126,8 +126,8 @@ class WalletManager(object):
             crypto_transaction = CryptoTransaction.from_serialized(
                 transaction.serialized
             )
-            wallet.sender_public_key = crypto_transaction.asset['signature'][
-                'publicKey'
+            wallet.sender_public_key = crypto_transaction.asset["signature"][
+                "publicKey"
             ]
 
     def _build_votes(self):
@@ -149,11 +149,11 @@ class WalletManager(object):
                 crypto_transaction = CryptoTransaction.from_serialized(
                     transaction.serialized
                 )
-                vote = crypto_transaction.asset['votes'][0]
+                vote = crypto_transaction.asset["votes"][0]
                 # wallet.vote is only set if the wallet voted for someone. If wallet
                 # did unvoted or haven't woted at all, wallet.vote needs to be set to
                 # None
-                if vote.startswith('+'):
+                if vote.startswith("+"):
                     wallet.vote = vote[1:]
                 already_processed_wallets.add(wallet.address)
 
@@ -173,15 +173,15 @@ class WalletManager(object):
             crypto_transaction = CryptoTransaction.from_serialized(
                 transaction.serialized
             )
-            wallet.username = crypto_transaction.asset['delegate']['username']
+            wallet.username = crypto_transaction.asset["delegate"]["username"]
             self._username_map[wallet.username.lower()] = wallet.address
 
         # Calculate forged blocks
         forged_blocks = Block.select(
             Block.generator_public_key,
-            fn.SUM(Block.total_fee).alias('total_fee'),
-            fn.SUM(Block.reward).alias('reward'),
-            fn.COUNT(Block.total_amount).alias('total_produced'),
+            fn.SUM(Block.total_fee).alias("total_fee"),
+            fn.SUM(Block.reward).alias("reward"),
+            fn.COUNT(Block.total_amount).alias("total_produced"),
         ).group_by(Block.generator_public_key)
         for block in forged_blocks:
             wallet = self.find_by_public_key(block.generator_public_key)
@@ -215,40 +215,40 @@ class WalletManager(object):
                 crypto_transaction = CryptoTransaction.from_serialized(
                     transaction.serialized
                 )
-                wallet.multisignature = crypto_transaction.asset['multisignature']
+                wallet.multisignature = crypto_transaction.asset["multisignature"]
 
     def build(self):
-        print('Memory percent:', get_memory_precent())
-        print('Building wallets Step 1 of 8: Received Transactions')
+        print("Memory percent:", get_memory_precent())
+        print("Building wallets Step 1 of 8: Received Transactions")
         self._build_received_transactions()
-        print('Memory percent:', get_memory_precent())
-        print('Building wallets Step 2 of 8: Block Rewards')
+        print("Memory percent:", get_memory_precent())
+        print("Building wallets Step 2 of 8: Block Rewards")
         self._build_block_rewards()
 
         # TODO: This step seems useless
         # print('Building wallets Step 3 of 8: Last Forged Blocks')
         # self._build_last_forged_blocks()
-        print('Memory percent:', get_memory_precent())
-        print('Building wallets Step 4 of 8: Sent Transactions')
+        print("Memory percent:", get_memory_precent())
+        print("Building wallets Step 4 of 8: Sent Transactions")
         self._build_sent_transactions()
-        print('Memory percent:', get_memory_precent())
-        print('Building wallets Step 5 of 8: Second Signatures')
+        print("Memory percent:", get_memory_precent())
+        print("Building wallets Step 5 of 8: Second Signatures")
         self._build_second_signatures()
-        print('Memory percent:', get_memory_precent())
-        print('Building wallets Step 6 of 8: Votes')
+        print("Memory percent:", get_memory_precent())
+        print("Building wallets Step 6 of 8: Votes")
         self._build_votes()
-        print('Memory percent:', get_memory_precent())
-        print('Building wallets Step 7 of 8: Delegates')
+        print("Memory percent:", get_memory_precent())
+        print("Building wallets Step 7 of 8: Delegates")
         self._build_delegates()
 
-        print('Building wallets Step 8 of 8: Multi Signatures')
+        print("Building wallets Step 8 of 8: Multi Signatures")
         self._build_multi_signatures()
 
         # TODO: Verify that no wallet has negative balance!
 
     def find_by_address(self, address):
         if address not in self._wallets:
-            self._wallets[address] = Wallet({'address': address})
+            self._wallets[address] = Wallet({"address": address})
         return self._wallets[address]
 
     def find_by_public_key(self, public_key):
@@ -275,9 +275,9 @@ class WalletManager(object):
     def _update_vote_balances(self, sender, recipient, transaction, revert=False):
         # TODO: refactor this to make more sense
         if transaction.type == TRANSACTION_TYPE_VOTE:
-            vote = transaction.asset['votes'][0]
+            vote = transaction.asset["votes"][0]
             delegate = self.find_by_public_key(vote[1:])
-            if vote.startswith('+'):
+            if vote.startswith("+"):
                 if revert:
                     delegate.vote_balance -= sender.balance - transaction.fee
                 else:
@@ -309,22 +309,22 @@ class WalletManager(object):
     def apply_transaction(self, transaction, block):
         if (
             transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION
-            and transaction.asset['delegate']['username'] in self._username_map
+            and transaction.asset["delegate"]["username"] in self._username_map
         ):
             # TODO: exception
             raise Exception(
                 "Can't apply transaction {}: delegate name {} already taken".format(
-                    transaction.id, transaction.asset['delegate']['username']
+                    transaction.id, transaction.asset["delegate"]["username"]
                 )
             )
 
         elif transaction.type == TRANSACTION_TYPE_VOTE and not self.is_delegate(
-            transaction.asset['votes'][0][1:]
+            transaction.asset["votes"][0][1:]
         ):
             # TODO: exception
             raise Exception(
                 "Can't apply transaction {}: delegate {} does not exist".format(
-                    transaction.id, transaction.asset['votes'][0][1:]
+                    transaction.id, transaction.asset["votes"][0][1:]
                 )
             )
         elif transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
@@ -338,7 +338,7 @@ class WalletManager(object):
         # to the sender
         if is_transaction_exception(transaction):
             print(
-                'Transaction {} forcibly applied because it has been added as an exception.'.format(
+                "Transaction {} forcibly applied because it has been added as an exception.".format(
                     self.id
                 )
             )
@@ -370,7 +370,7 @@ class WalletManager(object):
         if block.height != 1 and block.generator_public_key not in self._public_key_map:
             # TODO: exception
             raise Exception(
-                'Could not find a delegate with public key: {}'.format(
+                "Could not find a delegate with public key: {}".format(
                     block.generator_public_key
                 )
             )
@@ -387,7 +387,7 @@ class WalletManager(object):
                 applied_transactions.append(transaction)
         except Exception as e:  # TODO: better exception handling, not so broad
             print(
-                'Failed to apply all transactions in block - reverting previous transactions'
+                "Failed to apply all transactions in block - reverting previous transactions"
             )
             for transaction in reversed(applied_transactions):
                 self.revert_transaction(transaction)
@@ -404,7 +404,7 @@ class WalletManager(object):
         current_round, _, max_delegates = calculate_round(height)
         if height > 1 and height % max_delegates != 1:
             # TODO: exception
-            raise Exception('Trying to build delegates outside of round change')
+            raise Exception("Trying to build delegates outside of round change")
 
         delegate_wallets = []
         for address in self._username_map.values():
@@ -413,7 +413,7 @@ class WalletManager(object):
 
         if len(delegate_wallets) < max_delegates:
             raise Exception(
-                'Expected to find {} delegates but only found {}.'.format(
+                "Expected to find {} delegates but only found {}.".format(
                     max_delegates, len(delegate_wallets)
                 )
             )
@@ -427,7 +427,7 @@ class WalletManager(object):
         #     print(wallet.username, wallet.public_key, wallet.balance)
 
         delegate_wallets = delegate_wallets[:max_delegates]
-        print('Loaded {} active delegates'.format(len(delegate_wallets)))
+        print("Loaded {} active delegates".format(len(delegate_wallets)))
         return delegate_wallets
 
     def revert_transaction(self, transaction):
@@ -437,7 +437,7 @@ class WalletManager(object):
 
         # Removing the wallet from the delegates index
         if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
-            del self._username_map[transaction.asset['delegate']['username']]
+            del self._username_map[transaction.asset["delegate"]["username"]]
 
         recipient = self.find_by_address(transaction.recipient_id)
         if transaction.type == TRANSACTION_TYPE_TRANSFER:

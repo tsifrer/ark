@@ -13,16 +13,16 @@ from .peer import Peer
 def add_peer(ip, port, chain_version, nethash, os):
     # TODO: Disable this function if peer discoverability is disabled in config
 
-    peer_manager = load_plugin('chain.plugins.peers')
+    peer_manager = load_plugin("chain.plugins.peers")
 
     peer = Peer(ip=ip, port=port, chain_version=chain_version, nethash=nethash, os=os)
 
     if not peer.is_valid() or peer_manager.is_peer_suspended(peer):
-        print('Peer {}:{} is invalid or suspended.'.format(peer.ip, peer.port))
+        print("Peer {}:{} is invalid or suspended.".format(peer.ip, peer.port))
         return
 
     if peer_manager.peer_with_ip_exists(peer.ip):
-        print('Peer {}:{} already exists.'.format(peer.ip, peer.port))
+        print("Peer {}:{} already exists.".format(peer.ip, peer.port))
         return
 
     # Wait for a bit more than 3s for response in case the node you're pinging is
@@ -37,7 +37,7 @@ def add_peer(ip, port, chain_version, nethash, os):
         peer_manager.suspend_peer(peer)
     else:
         print(
-            'Accepting peer {}:{}. Vefification: {}'.format(
+            "Accepting peer {}:{}. Vefification: {}".format(
                 peer.ip, peer.port, peer.verification
             )
         )
@@ -46,16 +46,16 @@ def add_peer(ip, port, chain_version, nethash, os):
 
 @huey.task()
 def reverify_peer(ip):
-    peer_manager = load_plugin('chain.plugins.peers')
+    peer_manager = load_plugin("chain.plugins.peers")
     peer = peer_manager.get_peer_by_ip(ip)
-    print('Reverifying peer {}:{}'.format(peer.ip, peer.port))
+    print("Reverifying peer {}:{}".format(peer.ip, peer.port))
     if peer:
         try:
             peer.verify_peer()
         except:
             peer_manager.suspend_peer(peer)
         else:
-            print('Peer {}:{} successfully reverified'.format(peer.ip, peer.port))
+            print("Peer {}:{} successfully reverified".format(peer.ip, peer.port))
             peer_manager.redis.set(
                 peer_manager.key_active.format(peer.ip), peer.to_json()
             )
@@ -65,21 +65,21 @@ def reverify_peer(ip):
 
 @huey.task()
 def reverify_all_peers():
-    peer_manager = load_plugin('chain.plugins.peers')
+    peer_manager = load_plugin("chain.plugins.peers")
     peers = peer_manager.peers()
-    print('Reverifying all {} peers'.format(len(peers)))
+    print("Reverifying all {} peers".format(len(peers)))
     for peer in peers:
         reverify_peer(peer.ip)
 
 
-@huey.periodic_task(crontab(minute='*/10'))
+@huey.periodic_task(crontab(minute="*/10"))
 def discover_peers():
     """
     Fetch peers of your existing peers to increase the number of peers.
     """
     # TODO: Disable this function if peer discoverability is disabled in config
 
-    peer_manager = load_plugin('chain.plugins.peers')
+    peer_manager = load_plugin("chain.plugins.peers")
     peers = peer_manager.peers()
     # Shuffle peers so we always get the peers from the different peers at the start
     random.shuffle(peers)

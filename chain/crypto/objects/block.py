@@ -19,38 +19,38 @@ from chain.crypto.bytebuffer import ByteBuffer
 
 
 class Block(CryptoObject):
-    id = StrField(attr='id', required=False, default=None)
-    id_hex = BytesField(attr='idHex', required=False, default=None)
-    timestamp = IntField(attr='timestamp', required=True, default=None)
-    version = IntField(attr='version', required=True, default=None)
-    height = IntField(attr='height', required=True, default=None)
+    id = StrField(attr="id", required=False, default=None)
+    id_hex = BytesField(attr="idHex", required=False, default=None)
+    timestamp = IntField(attr="timestamp", required=True, default=None)
+    version = IntField(attr="version", required=True, default=None)
+    height = IntField(attr="height", required=True, default=None)
     previous_block_hex = BytesField(
-        attr='previousBlockHex', required=False, default=None
+        attr="previousBlockHex", required=False, default=None
     )
-    previous_block = StrField(attr='previousBlock', required=False, default=None)
+    previous_block = StrField(attr="previousBlock", required=False, default=None)
     number_of_transactions = IntField(
-        attr='numberOfTransactions', required=True, default=0
+        attr="numberOfTransactions", required=True, default=0
     )
-    total_amount = BigIntField(attr='totalAmount', required=True, default=0)
-    total_fee = BigIntField(attr='totalFee', required=True, default=0)
-    reward = BigIntField(attr='reward', required=True, default=0)
-    payload_length = IntField(attr='payloadLength', required=True, default=0)
-    payload_hash = StrField(attr='payloadHash', required=True, default=None)
+    total_amount = BigIntField(attr="totalAmount", required=True, default=0)
+    total_fee = BigIntField(attr="totalFee", required=True, default=0)
+    reward = BigIntField(attr="reward", required=True, default=0)
+    payload_length = IntField(attr="payloadLength", required=True, default=0)
+    payload_hash = StrField(attr="payloadHash", required=True, default=None)
     generator_public_key = StrField(
-        attr='generatorPublicKey', required=True, default=None
+        attr="generatorPublicKey", required=True, default=None
     )
-    block_signature = StrField(attr='blockSignature', required=False, default=None)
-    transactions = Field(attr='transactions', required=False, default=[])
+    block_signature = StrField(attr="blockSignature", required=False, default=None)
+    transactions = Field(attr="transactions", required=False, default=[])
 
     @staticmethod
     def to_bytes_hex(value):
         """Converts integer value to hex representation
         Automatically adds leading zeros if hex number is shorter than 16 characters.
         """
-        hex_num = ''
+        hex_num = ""
         if value is not None:
-            hex_num = format(int(value), 'x')
-        return ('{}{}'.format('0' * (16 - len(hex_num)), hex_num)).encode('utf-8')
+            hex_num = format(int(value), "x")
+        return ("{}{}".format("0" * (16 - len(hex_num)), hex_num)).encode("utf-8")
 
     def _set_id(self):
         if self.height == 1:
@@ -91,13 +91,13 @@ class Block(CryptoObject):
     @classmethod
     def from_dict(cls, data):
         if not isinstance(data, dict):
-            raise TypeError('data must be dict')
+            raise TypeError("data must be dict")
         cls = cls()
         for field in cls._fields:
             value = data.get(field.attr, field.default)
 
             if value is None and field.required:
-                raise ValueError('Attribute {} is required'.format(field.name))
+                raise ValueError("Attribute {} is required".format(field.name))
 
             if (
                 value is not None
@@ -105,7 +105,7 @@ class Block(CryptoObject):
                 and not isinstance(value, field.accepted_types)
             ):
                 raise TypeError(
-                    'Attribute {} ({}) must be of type {}'.format(
+                    "Attribute {} ({}) must be of type {}".format(
                         field.name, type(value), field.accepted_types
                     )
                 )
@@ -129,7 +129,7 @@ class Block(CryptoObject):
         for field in cls._fields:
             value = getattr(data, field.name, field.default)
             if value is None and field.required:
-                raise ValueError('Attribute {} is required'.format(field.name))
+                raise ValueError("Attribute {} is required".format(field.name))
 
             if (
                 value is not None
@@ -137,7 +137,7 @@ class Block(CryptoObject):
                 and not isinstance(value, field.accepted_types)
             ):
                 raise TypeError(
-                    'Attribute {} ({}) must be of type {}'.format(
+                    "Attribute {} ({}) must be of type {}".format(
                         field.name, type(value), field.accepted_types
                     )
                 )
@@ -148,14 +148,14 @@ class Block(CryptoObject):
         if cls.transactions:
             for transaction_data in cls.transactions:
                 if not isinstance(cls.transaction, Transaction):
-                    raise TypeError('Transactions must be a {}'.format(Transaction))
+                    raise TypeError("Transactions must be a {}".format(Transaction))
         cls._construct_common()
         return cls
 
     @classmethod
     def from_serialized(cls, bytes_string):
         if not isinstance(bytes_string, bytes):
-            raise TypeError('bytes_string must be bytes')
+            raise TypeError("bytes_string must be bytes")
         cls = cls()
         cls.deserialize(bytes_string)
         cls._construct_common()
@@ -166,7 +166,7 @@ class Block(CryptoObject):
         full_hash = sha256(payload_hash).digest()
         config = Config()
         milestone = config.get_milestone(self.height)
-        if milestone['block']['idFullSha256']:
+        if milestone["block"]["idFullSha256"]:
             return hexlify(full_hash)
 
         small_hash = full_hash[:8][::-1]
@@ -176,19 +176,19 @@ class Block(CryptoObject):
         id_hex = self.get_id_hex()
         config = Config()
         milestone = config.get_milestone(self.height)
-        if milestone['block']['idFullSha256']:
-            return id_hex.decode('utf-8')
+        if milestone["block"]["idFullSha256"]:
+            return id_hex.decode("utf-8")
         return str(int(id_hex, 16))
 
     def serialize(self, include_signature=True):
         config = Config()
         milestone = config.get_milestone(self.height - 1)
-        if milestone['block']['idFullSha256']:
+        if milestone["block"]["idFullSha256"]:
             if len(self.previous_block) != 64:
                 raise Exception(
-                    'Previous block shoud be SHA256, but found a non SHA256 block id'
+                    "Previous block shoud be SHA256, but found a non SHA256 block id"
                 )
-            self.previous_block_hex = self.previous_block.encode('utf-8')
+            self.previous_block_hex = self.previous_block.encode("utf-8")
         else:
             self.previous_block_hex = Block.to_bytes_hex(self.previous_block)
 
@@ -202,11 +202,11 @@ class Block(CryptoObject):
         bytes_data += write_bit64(int(self.total_fee))
         bytes_data += write_bit64(int(self.reward))
         bytes_data += write_bit32(self.payload_length)
-        bytes_data += unhexlify(self.payload_hash.encode('utf-8'))
+        bytes_data += unhexlify(self.payload_hash.encode("utf-8"))
         bytes_data += unhexlify(self.generator_public_key)
 
         if include_signature and self.block_signature:
-            bytes_data += unhexlify(self.block_signature.encode('utf-8'))
+            bytes_data += unhexlify(self.block_signature.encode("utf-8"))
 
         return hexlify(bytes_data)
 
@@ -244,9 +244,9 @@ class Block(CryptoObject):
         """
         config = Config()
         milestone = config.get_milestone(self.height - 1)
-        if milestone['block']['idFullSha256']:
+        if milestone["block"]["idFullSha256"]:
             self.previous_block_hex = hexlify(buff.pop_bytes(32))
-            self.previous_block = self.previous_block_hex.decode('utf-8')
+            self.previous_block = self.previous_block_hex.decode("utf-8")
         else:
 
             self.previous_block_hex = hexlify(buff.pop_bytes(8))
@@ -263,12 +263,12 @@ class Block(CryptoObject):
         self.total_fee = buff.pop_uint64()
         self.reward = buff.pop_uint64()
         self.payload_length = buff.pop_uint32()
-        self.payload_hash = hexlify(buff.pop_bytes(32)).decode('utf-8')
-        self.generator_public_key = hexlify(buff.pop_bytes(33)).decode('utf-8')
+        self.payload_hash = hexlify(buff.pop_bytes(32)).decode("utf-8")
+        self.generator_public_key = hexlify(buff.pop_bytes(33)).decode("utf-8")
         # TODO: test the case where block signature is not present
         signature_len = int(hexlify(buff.read_bytes(1, offset=1)), 16)
         signature_to = signature_len + 2
-        self.block_signature = hexlify(buff.pop_bytes(signature_to)).decode('utf-8')
+        self.block_signature = hexlify(buff.pop_bytes(signature_to)).decode("utf-8")
 
         if len(buff) != 0:
             self._deserialize_transactions(buff)
@@ -285,8 +285,8 @@ class Block(CryptoObject):
         bytes_data = unhexlify(self.serialize(include_signature=False))
         is_verified = verify_hash(
             bytes_data,
-            unhexlify(self.block_signature.encode('utf-8')),
-            unhexlify(self.generator_public_key.encode('utf-8')),
+            unhexlify(self.block_signature.encode("utf-8")),
+            unhexlify(self.generator_public_key.encode("utf-8")),
         )
         return is_verified
 
@@ -298,49 +298,49 @@ class Block(CryptoObject):
         milestone = config.get_milestone(self.height)
         # Check that the previous block is set if it's not a genesis block
         if self.height > 1 and not self.previous_block:
-            errors.append('Invalid previous block')
+            errors.append("Invalid previous block")
 
         # Chech that the block reward matches with the one specified in config
-        if self.reward != milestone['reward']:
+        if self.reward != milestone["reward"]:
             errors.append(
-                'Invalid block reward: {} expected: {}'.format(
-                    self.reward, milestone['reward']
+                "Invalid block reward: {} expected: {}".format(
+                    self.reward, milestone["reward"]
                 )
             )
 
         # Verify block signature
         is_valid_signature = self.verify_signature()
         if not is_valid_signature:
-            errors.append('Failed to verify block signature')
+            errors.append("Failed to verify block signature")
 
         # Check if version is correct on the block
-        if self.version != milestone['block']['version']:
-            errors.append('Invalid block version')
+        if self.version != milestone["block"]["version"]:
+            errors.append("Invalid block version")
 
         # Check that the block timestamp is not in the future
         is_invalid_timestamp = slots.get_slot_number(
             self.height, self.timestamp
         ) > slots.get_slot_number(self.height, time.get_time())
         if is_invalid_timestamp:
-            errors.append('Invalid block timestamp')
+            errors.append("Invalid block timestamp")
 
         # Check if all transactions are valid
         invalid_transactions = [
             trans for trans in self.transactions if not trans.verify()
         ]
         if len(invalid_transactions) > 0:
-            errors.append('One or more transactions are not verified')
+            errors.append("One or more transactions are not verified")
 
         # Check that number of transactions and block.number_of_transactions match
         if len(self.transactions) != self.number_of_transactions:
-            errors.append('Invalid number of transactions')
+            errors.append("Invalid number of transactions")
 
         # Check that number of transactions is not too high (except for genesis block)
         if (
             self.height > 1
-            and len(self.transactions) > milestone['block']['maxTransactions']
+            and len(self.transactions) > milestone["block"]["maxTransactions"]
         ):
-            errors.append('Too many transactions')
+            errors.append("Too many transactions")
 
         # Check if transactions add u pto the block values
         applied_transactions = []
@@ -350,7 +350,7 @@ class Block(CryptoObject):
         for transaction in self.transactions:
             if transaction.id in applied_transactions:
                 errors.append(
-                    'Encountered duplicate transaction: {}'.format(transaction.id)
+                    "Encountered duplicate transaction: {}".format(transaction.id)
                 )
 
             applied_transactions.append(transaction.id)
@@ -359,21 +359,21 @@ class Block(CryptoObject):
             bytes_data += unhexlify(transaction.id)
 
         if total_amount != self.total_amount:
-            errors.append('Invalid total amount')
+            errors.append("Invalid total amount")
 
         if total_fee != self.total_fee:
-            errors.append('Invalid total fee')
+            errors.append("Invalid total fee")
 
-        if len(bytes_data) > milestone['block']['maxPayload']:
-            errors.append('Payload is too large')
+        if len(bytes_data) > milestone["block"]["maxPayload"]:
+            errors.append("Payload is too large")
 
         if sha256(bytes_data).hexdigest() != self.payload_hash:
-            errors.append('Invalid payload hash')
+            errors.append("Invalid payload hash")
 
         return len(errors) == 0, errors
 
     def get_header(self):
-        exclude_fields = ['transactions']
+        exclude_fields = ["transactions"]
         data = {}
         for field in self._fields:
             if field.name in exclude_fields:
@@ -387,5 +387,5 @@ class Block(CryptoObject):
         # TODO: figure out another name for this as it's not really json, its a
         # dictionary but with the camelcase names as keys
         data = self.get_header()
-        data['transactions'] = [t.to_json() for t in self.transactions]
+        data["transactions"] = [t.to_json() for t in self.transactions]
         return data

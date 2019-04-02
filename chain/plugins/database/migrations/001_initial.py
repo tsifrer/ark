@@ -63,17 +63,17 @@ def migrate(migrator, database, fake=False, **kwargs):
 
         class Meta:
             table_name = "rounds"
-            indexes = [(('round', 'public_key'), True)]
+            indexes = [(("round", "public_key"), True)]
 
     @migrator.create_model
     class Transaction(pw.Model):
         id = pw.CharField(max_length=64, primary_key=True)
         version = pw.SmallIntegerField()
         block_id = pw.ForeignKeyField(
-            backref='transaction_set',
-            column_name='block_id',
-            field='id',
-            model=migrator.orm['blocks'],
+            backref="transaction_set",
+            column_name="block_id",
+            field="id",
+            model=migrator.orm["blocks"],
         )
         sequence = pw.SmallIntegerField()
         timestamp = pw.IntegerField(index=True)
@@ -90,10 +90,10 @@ def migrate(migrator, database, fake=False, **kwargs):
             indexes = [
                 (
                     (
-                        'sender_public_key',
-                        'recipient_id',
-                        'vendor_field_hex',
-                        'timestamp',
+                        "sender_public_key",
+                        "recipient_id",
+                        "vendor_field_hex",
+                        "timestamp",
                     ),
                     False,
                 )
@@ -113,16 +113,16 @@ def migrate(migrator, database, fake=False, **kwargs):
 
         class Meta:
             table_name = "wallets"
-            indexes = [(('public_key', 'vote'), True)]
+            indexes = [(("public_key", "vote"), True)]
 
 
 def rollback(migrator, database, fake=False, **kwargs):
     """Write your rollback migrations here."""
 
-    migrator.remove_model('wallets')
+    migrator.remove_model("wallets")
 
-    migrator.remove_model('transactions')
+    migrator.remove_model("transactions")
 
-    migrator.remove_model('rounds')
+    migrator.remove_model("rounds")
 
-    migrator.remove_model('blocks')
+    migrator.remove_model("blocks")

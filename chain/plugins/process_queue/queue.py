@@ -7,7 +7,7 @@ from chain.config import Config
 
 class Queue(object):
 
-    list_name = 'process_queue'
+    list_name = "process_queue"
     restored_database_integrity = False
     forging_delegates = []
 
@@ -15,9 +15,9 @@ class Queue(object):
         super().__init__()
 
         self.db = Redis(
-            host=os.environ.get('REDIS_HOST', 'localhost'),
-            port=os.environ.get('REDIS_PORT', 6379),
-            db=os.environ.get('REDIS_DB', 0),
+            host=os.environ.get("REDIS_HOST", "localhost"),
+            port=os.environ.get("REDIS_PORT", 6379),
+            db=os.environ.get("REDIS_DB", 0),
         )
 
     def push_block(self, block):
@@ -28,18 +28,18 @@ class Queue(object):
         return self.db.lpop(self.list_name)
 
     def block_exists(self, block):
-        key = 'process_queue:block:{}:{}'.format(block.height, block.id)
+        key = "process_queue:block:{}:{}".format(block.height, block.id)
 
         if self.db.exists(key):
             self.db.incr(key)
             return True
         else:
             config = Config()
-            blocktime = config.get_milestone(block.height)['blocktime']
+            blocktime = config.get_milestone(block.height)["blocktime"]
             # Expire the key after `blocktime` seconds
             self.db.set(key, 0, ex=blocktime)
             return False
 
     def clear(self):
-        print('Clearing process queue')
+        print("Clearing process queue")
         self.db.delete(self.list_name)

@@ -50,36 +50,36 @@ def test_from_serialized_correctly_deserializes_full_data(
     assert block.version == 0
     assert block.timestamp == 24760440
     assert block.height == 2243161
-    assert block.previous_block_hex == b'2b324b8b33a85802'
-    assert block.previous_block == '3112633353705641986'
+    assert block.previous_block_hex == b"2b324b8b33a85802"
+    assert block.previous_block == "3112633353705641986"
     assert block.number_of_transactions == 7
     assert block.total_amount == 3890300
     assert block.total_fee == 70000000
     assert block.reward == 200000000
     assert block.payload_length == 224
     assert block.payload_hash == (
-        '3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
+        "3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282"
     )
     assert block.generator_public_key == (
-        '020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325'
+        "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
     )
     assert block.block_signature == (
-        '3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022'
-        '0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
+        "3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022"
+        "0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29"
     )
-    assert block.id == '7176646138626297930'
-    assert block.id_hex == b'639891a3bb7fd04a'
+    assert block.id == "7176646138626297930"
+    assert block.id_hex == b"639891a3bb7fd04a"
     assert block.transactions is not None
     assert len(block.transactions) == 7
-    for transaction, expected in zip(block.transactions, dummy_block['transactions']):
+    for transaction, expected in zip(block.transactions, dummy_block["transactions"]):
         assert transaction.version == 1
         assert transaction.network == 30
-        assert transaction.type == expected['type']
-        assert transaction.timestamp == expected['timestamp']
-        assert transaction.sender_public_key == expected['senderPublicKey']
-        assert transaction.fee == expected['fee']
-        assert transaction.amount == expected['amount']
-        assert transaction.asset == expected['asset']
+        assert transaction.type == expected["type"]
+        assert transaction.timestamp == expected["timestamp"]
+        assert transaction.sender_public_key == expected["senderPublicKey"]
+        assert transaction.fee == expected["fee"]
+        assert transaction.amount == expected["amount"]
+        assert transaction.asset == expected["asset"]
 
 
 def test_from_dict_correctly_sets_data(dummy_block):
@@ -88,41 +88,41 @@ def test_from_dict_correctly_sets_data(dummy_block):
     assert block.version == 0
     assert block.timestamp == 24760440
     assert block.height == 2243161
-    assert block.previous_block_hex == b'2b324b8b33a85802'
-    assert block.previous_block == '3112633353705641986'
+    assert block.previous_block_hex == b"2b324b8b33a85802"
+    assert block.previous_block == "3112633353705641986"
     assert block.number_of_transactions == 7
     assert block.total_amount == 3890300
     assert block.total_fee == 70000000
     assert block.reward == 200000000
     assert block.payload_length == 224
     assert block.payload_hash == (
-        '3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282'
+        "3784b953afcf936bdffd43fdf005b5732b49c1fc6b11e195c364c20b2eb06282"
     )
     assert block.generator_public_key == (
-        '020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325'
+        "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
     )
     assert block.block_signature == (
-        '3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022'
-        '0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29'
+        "3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022"
+        "0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29"
     )
-    assert block.id == '7176646138626297930'
-    assert block.id_hex == b'639891a3bb7fd04a'
+    assert block.id == "7176646138626297930"
+    assert block.id_hex == b"639891a3bb7fd04a"
     assert block.transactions is not None
     assert len(block.transactions) == 7
-    for transaction, expected in zip(block.transactions, dummy_block['transactions']):
+    for transaction, expected in zip(block.transactions, dummy_block["transactions"]):
         assert transaction.version is None
         assert transaction.network is None
-        assert transaction.type == expected['type']
-        assert transaction.timestamp == expected['timestamp']
-        assert transaction.sender_public_key == expected['senderPublicKey']
-        assert transaction.fee == expected['fee']
-        assert transaction.amount == expected['amount']
-        assert transaction.asset == expected['asset']
+        assert transaction.type == expected["type"]
+        assert transaction.timestamp == expected["timestamp"]
+        assert transaction.sender_public_key == expected["senderPublicKey"]
+        assert transaction.fee == expected["fee"]
+        assert transaction.amount == expected["amount"]
+        assert transaction.asset == expected["asset"]
 
 
 def test_from_dict_raises_exception_for_wrong_type(dummy_block):
     data = deepcopy(dummy_block)
-    data['id'] = float(data['id'])
+    data["id"] = float(data["id"])
     with pytest.raises(TypeError) as excinfo:
         Block.from_dict(data)
 

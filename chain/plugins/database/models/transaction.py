@@ -39,10 +39,10 @@ class Transaction(Model):
     serialized = BytesField()
 
     class Meta:
-        table_name = 'transactions'
+        table_name = "transactions"
         indexes = (
             (
-                ('sender_public_key', 'recipient_id', 'vendor_field_hex', 'timestamp'),
+                ("sender_public_key", "recipient_id", "vendor_field_hex", "timestamp"),
                 False,
             ),
         )
@@ -77,7 +77,7 @@ class Transaction(Model):
         ).scalar(as_tuple=True)
 
         return {
-            'transactions_count': stats[0],
-            'total_fee': stats[1],
-            'total_amount': stats[2],
+            "transactions_count": stats[0],
+            "total_fee": stats[1],
+            "total_amount": stats[2],
         }

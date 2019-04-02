@@ -10,7 +10,7 @@ create-migrations:
 	cd chain/plugins/database; python create_migrations.py
 
 black:
-	black . --target-version=py37
+	black .
 
 black-check:
 	black --check .

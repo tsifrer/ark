@@ -1,7 +1,6 @@
 [tool.black]
 line-length = 88
-py36 = false
-skip-string-normalization = true
+target-version = ['py37', 'py38']
 skip-numeric-underscore-normalization = true
 include = '\.py$'
 exclude = '''

@@ -4,7 +4,7 @@ from .database import Database
 
 
 class Plugin(IPlugin):
-    name = 'database'
+    name = "database"
 
     def register(self):
         return Database()

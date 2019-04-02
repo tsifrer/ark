@@ -38,24 +38,24 @@ class Peer(object):
     @property
     def headers(self):
         return {
-            'version': self.chain_version,
-            'port': str(self.port),
-            'nethash': self.nethash,
-            'height': self.height,
-            'Content-Type': 'application/json',
-            'status': self.status,
+            "version": self.chain_version,
+            "port": str(self.port),
+            "nethash": self.nethash,
+            "height": self.height,
+            "Content-Type": "application/json",
+            "status": self.status,
         }
 
     def _parse_headers(self, response):
-        for field in ['nethash', 'os', 'version']:
+        for field in ["nethash", "os", "version"]:
             value = response.headers.get(field) or getattr(self, field, None)
             setattr(self, field, value)
 
-        self.milestone_hash = response.headers.get('milestonehash')
+        self.milestone_hash = response.headers.get("milestonehash")
 
     def _get(self, url, params=None, timeout=None):
-        scheme = 'https' if self.port == 443 else 'http'
-        full_url = '{}://{}:{}{}'.format(scheme, self.ip, self.port, url)
+        scheme = "https" if self.port == 443 else "http"
+        full_url = "{}://{}:{}{}".format(scheme, self.ip, self.port, url)
         print(full_url)
         print(params)
         config = Config()
@@ -64,10 +64,10 @@ class Peer(object):
                 full_url,
                 params=params,
                 headers=self.headers,
-                timeout=timeout or config['peers']['request_timeout'],
+                timeout=timeout or config["peers"]["request_timeout"],
             )
         except requests.exceptions.RequestException as e:
-            print('Request to {} failed because of {}'.format(full_url, e))
+            print("Request to {} failed because of {}".format(full_url, e))
             self.latency = -1
             return {}
 
@@ -80,15 +80,15 @@ class Peer(object):
         except ValueError:
             body = {}
             print(
-                'Request to {} returned HTTP {}. {}'.format(
+                "Request to {} returned HTTP {}. {}".format(
                     full_url, response.status_code, response.content
                 )
             )
         else:
-            if body.get('success'):
+            if body.get("success"):
                 return body
 
-        print('Request to {} failed. Response was {}'.format(full_url, body))
+        print("Request to {} failed. Response was {}".format(full_url, body))
         return {}
 
     def is_valid(self):
@@ -96,19 +96,19 @@ class Peer(object):
             return True
 
         if ip_is_blacklisted(self.ip):
-            print('Peer is blacklisted {}'.format(self.ip))
+            print("Peer is blacklisted {}".format(self.ip))
             return False
 
         try:
             ip = ip_address(self.ip)
         except ValueError:
             print(
-                'Peer is invalid, because the IP is not a valid ip {}'.format(self.ip)
+                "Peer is invalid, because the IP is not a valid ip {}".format(self.ip)
             )
             return False
 
         if ip.is_private:
-            print('Peer is invalid, because the IP is private IP')
+            print("Peer is invalid, because the IP is private IP")
             return False
 
         # TODO: check for valid network version
@@ -117,50 +117,50 @@ class Peer(object):
 
     def is_valid_network(self):
         config = Config()
-        return self.nethash == config['network']['nethash']
+        return self.nethash == config["network"]["nethash"]
 
     def fetch_common_block_by_ids(self, block_ids):
         print(block_ids)
-        params = {'ids': ','.join(block_ids)}
-        body = self._get('/peer/blocks/common', params=params)
+        params = {"ids": ",".join(block_ids)}
+        body = self._get("/peer/blocks/common", params=params)
         print(body)
-        return body.get('common')
+        return body.get("common")
 
     def fetch_blocks_from_height(self, from_height):
-        params = {'lastBlockHeight': from_height}
-        body = self._get('/peer/blocks', params=params)
-        blocks = body.get('blocks', [])
+        params = {"lastBlockHeight": from_height}
+        body = self._get("/peer/blocks", params=params)
+        blocks = body.get("blocks", [])
         return [Block.from_dict(block) for block in blocks]
 
     def fetch_peers(self):
-        print('Fetching a fresh peer list from {}:{}'.format(self.ip, self.port))
-        body = self._get('/peer/list')
+        print("Fetching a fresh peer list from {}:{}".format(self.ip, self.port))
+        body = self._get("/peer/list")
         print(body)
         peers = []
-        for peer in body.get('peers', []):
-            if not ip_is_blacklisted(peer['ip']):
+        for peer in body.get("peers", []):
+            if not ip_is_blacklisted(peer["ip"]):
                 peers.append(
                     Peer(
-                        ip=peer['ip'],
-                        port=peer['port'],
-                        chain_version=peer['version'],
-                        nethash=peer['nethash'],
-                        os=peer['os'],
+                        ip=peer["ip"],
+                        port=peer["port"],
+                        chain_version=peer["version"],
+                        nethash=peer["nethash"],
+                        os=peer["os"],
                     )
                 )
         return peers
 
     def to_json(self):
         data = {
-            'ip': self.ip,
-            'port': self.port,
-            'chain_version': self.chain_version,
-            'nethash': self.nethash,
-            'os': self.os,
-            'height': self.height,
-            'status': self.status,
-            'latency': self.latency,
-            'verification': self.verification,
+            "ip": self.ip,
+            "port": self.port,
+            "chain_version": self.chain_version,
+            "nethash": self.nethash,
+            "os": self.os,
+            "height": self.height,
+            "status": self.status,
+            "latency": self.latency,
+            "verification": self.verification,
         }
         return json.dumps(data)
 
@@ -168,28 +168,28 @@ class Peer(object):
     def from_json(cls, json_data):
         data = json.loads(json_data)
         return cls(
-            ip=data['ip'],
-            port=data['port'],
-            chain_version=data['chain_version'],
-            nethash=data['nethash'],
-            os=data['os'],
-            height=data['height'],
-            status=data['status'],
-            latency=data['latency'],
-            verification=data['verification'],
+            ip=data["ip"],
+            port=data["port"],
+            chain_version=data["chain_version"],
+            nethash=data["nethash"],
+            os=data["os"],
+            height=data["height"],
+            status=data["status"],
+            latency=data["latency"],
+            verification=data["verification"],
         )
 
     def verify_peer(self, timeout=None):
         verification_start = datetime.now()
         if not timeout:
             config = Config()
-            timeout = config['peers']['verification_timeout']
+            timeout = config["peers"]["verification_timeout"]
 
-        body = self._get('/peer/status', timeout=timeout)
+        body = self._get("/peer/status", timeout=timeout)
 
         if not body:
-            raise Exception('Peer not verified')
+            raise Exception("Peer not verified")
 
         self.verification = verify_peer_status(self, body)
         if not self.verification:
-            raise Exception('Peer not verified')
+            raise Exception("Peer not verified")

@@ -5,14 +5,14 @@ from chain.crypto.utils import calculate_round
 
 def ip_is_blacklisted(ip):
     config = Config()
-    if ip in config['peers']['blacklist']:
+    if ip in config["peers"]["blacklist"]:
         return True
     return False
 
 
 def ip_is_whitelisted(ip):
     config = Config()
-    if ip in config['peers']['whitelist']:
+    if ip in config["peers"]["whitelist"]:
         return True
     return False
 
@@ -32,16 +32,16 @@ def _get_sample_heights(min_height, max_height, n_samples):
 
 
 def _find_highest_common_between_heights(peer, heights):
-    database = load_plugin('chain.plugins.database')
+    database = load_plugin("chain.plugins.database")
     print(
-        'Checking for the highest common block height. Currently checking for heights {}'.format(
+        "Checking for the highest common block height. Currently checking for heights {}".format(
             heights
         )
     )
     our_blocks = database.get_blocks_by_heights(heights)
     if len(our_blocks) != len(heights):
         raise Exception(
-            'Did not fetch all blocks with heights {} from the db'.format(heights)
+            "Did not fetch all blocks with heights {} from the db".format(heights)
         )
 
     # TODO: something something deadline
@@ -59,14 +59,14 @@ def _find_highest_common_between_heights(peer, heights):
         )
         return None
 
-    if heights_by_id.get(common['id']) != common['height']:
+    if heights_by_id.get(common["id"]) != common["height"]:
         print(
-            'Our block height {} does not match with peer height {} for block with id {}'.format(
-                heights_by_id.get(common['id']), common['height'], common['id']
+            "Our block height {} does not match with peer height {} for block with id {}".format(
+                heights_by_id.get(common["id"]), common["height"], common["id"]
             )
         )
         return None
-    return common['height']
+    return common["height"]
 
 
 def _find_highest_common_block_height(peer, min_height, max_height):
@@ -85,7 +85,7 @@ def _find_highest_common_block_height(peer, min_height, max_height):
             break
 
         if min_height + n_samples >= max_height:
-            raise Exception('Checked for every height but could not find a match')
+            raise Exception("Checked for every height but could not find a match")
 
         min_height = highest_matching + 1
         max_height = heights[heights.index(highest_matching) + 1] - 1
@@ -122,7 +122,7 @@ def _is_valid_block(block, height, current_round, delegate_keys):
 
 
 def _verify_peer_blocks(peer, start_height, peer_height):
-    database = load_plugin('chain.plugins.database')
+    database = load_plugin("chain.plugins.database")
 
     current_round, _, max_delegates = calculate_round(start_height)
     last_height_in_round = current_round * max_delegates
@@ -150,7 +150,7 @@ def _verify_peer_blocks(peer, start_height, peer_height):
                 return False
         else:
             print(
-                'Could not find block with height {} in mapping {}'.format(
+                "Could not find block with height {} in mapping {}".format(
                     height, height_block_map
                 )
             )
@@ -195,10 +195,10 @@ def verify_peer_status(peer, body):
       This means that we have forked and the peer's chain is lower.
       We verify: the first few of the peer's blocks after the fork (up to the round end)
     """
-    database = load_plugin('chain.plugins.database')
+    database = load_plugin("chain.plugins.database")
     last_block = database.get_last_block()
-    peer_height = int(body['header']['height'])
-    peer_id = body['header']['id']
+    peer_height = int(body["header"]["height"])
+    peer_id = body["header"]["id"]
 
     """
     Case3. Peer height == our height and our latest blocks are the same.
@@ -211,9 +211,9 @@ def verify_peer_status(peer, body):
             )
         )
         return {
-            'my_height': last_block.height,
-            'his_height': peer_height,
-            'highest_common_height': peer_height,
+            "my_height": last_block.height,
+            "his_height": peer_height,
+            "highest_common_height": peer_height,
         }
 
     """
@@ -225,9 +225,9 @@ def verify_peer_status(peer, body):
         block = blocks[0]
         if block.id == peer_id:
             return {
-                'my_height': last_block.height,
-                'his_height': peer_height,
-                'highest_common_height': peer_height,
+                "my_height": last_block.height,
+                "his_height": peer_height,
+                "highest_common_height": peer_height,
             }
 
     highest_common_height = _find_highest_common_block_height(
@@ -243,7 +243,7 @@ def verify_peer_status(peer, body):
         return None
 
     return {
-        'my_height': last_block.height,
-        'his_height': peer_height,
-        'highest_common_height': highest_common_height,
+        "my_height": last_block.height,
+        "his_height": peer_height,
+        "highest_common_height": highest_common_height,
     }

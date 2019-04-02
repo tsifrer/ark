@@ -13,5 +13,5 @@ class Wallet(Model):
     missed_blocks = BigIntegerField()
 
     class Meta:
-        table_name = 'wallets'
-        indexes = ((('public_key', 'vote'), True),)
+        table_name = "wallets"
+        indexes = ((("public_key", "vote"), True),)

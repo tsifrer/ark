@@ -24,7 +24,7 @@ class Block(Model):
     block_signature = CharField(max_length=256)
 
     class Meta:
-        table_name = 'blocks'
+        table_name = "blocks"
 
     @classmethod
     def from_crypto(cls, block):
@@ -65,8 +65,8 @@ class Block(Model):
         ).scalar(as_tuple=True)
 
         return {
-            'transactions_count': stats[0],
-            'total_fee': stats[1],
-            'total_amount': stats[2],
-            'blocks_count': stats[3],
+            "transactions_count": stats[0],
+            "total_fee": stats[1],
+            "total_amount": stats[2],
+            "blocks_count": stats[3],
         }

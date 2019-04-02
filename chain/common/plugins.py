@@ -17,7 +17,7 @@ def load_plugin(plugin):
     module = import_module(plugin)
     for attr in dir(module):
         obj = getattr(module, attr)
-        if attr != 'IPlugin' and inspect.isclass(obj) and issubclass(obj, IPlugin):
+        if attr != "IPlugin" and inspect.isclass(obj) and issubclass(obj, IPlugin):
             plugin = obj()
             return plugin.register()
 

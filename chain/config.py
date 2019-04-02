@@ -26,28 +26,28 @@ class Config(dict, metaclass=Singleton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        folder = os.environ.get('CHAIN_CONFIG_FOLDER', 'config')
+        folder = os.environ.get("CHAIN_CONFIG_FOLDER", "config")
 
-        with open(os.path.join(folder, 'genesis_block.json')) as f:
+        with open(os.path.join(folder, "genesis_block.json")) as f:
             genesis_block = json.loads(f.read())
-            for transaction in genesis_block['transactions']:
-                transaction['version'] = 1
-            self['genesis_block'] = genesis_block
+            for transaction in genesis_block["transactions"]:
+                transaction["version"] = 1
+            self["genesis_block"] = genesis_block
 
-        with open(os.path.join(folder, 'network.json')) as f:
-            self['network'] = json.loads(f.read())
+        with open(os.path.join(folder, "network.json")) as f:
+            self["network"] = json.loads(f.read())
 
-        with open(os.path.join(folder, 'exceptions.json')) as f:
-            self['exceptions'] = json.loads(f.read())
+        with open(os.path.join(folder, "exceptions.json")) as f:
+            self["exceptions"] = json.loads(f.read())
 
-        with open(os.path.join(folder, 'peers.json')) as f:
-            self['peers'] = json.loads(f.read())
+        with open(os.path.join(folder, "peers.json")) as f:
+            self["peers"] = json.loads(f.read())
             # TODO: Put below things in config
-            self['peers']['request_timeout'] = 3
-            self['peers']['verification_timeout'] = 3.5
-            self['peers']['blacklist'] = []
-            self['peers']['whitelist'] = []
-            self['peers']['minimum_network_reach'] = 5
+            self["peers"]["request_timeout"] = 3
+            self["peers"]["verification_timeout"] = 3.5
+            self["peers"]["blacklist"] = []
+            self["peers"]["whitelist"] = []
+            self["peers"]["minimum_network_reach"] = 5
 
         #     /**
         #  * The list of IPs can access the remote/internal API.
@@ -57,20 +57,20 @@ class Config(dict, metaclass=Singleton):
         #  * you will need to specify the IP of your forger here.
         #  */
         # remoteAccess: ["127.0.0.1", "::ffff:127.0.0.1"],
-        self['p2p_service'] = {'remote_access': []}
+        self["p2p_service"] = {"remote_access": []}
 
-        with open(os.path.join(folder, 'milestones.json')) as f:
+        with open(os.path.join(folder, "milestones.json")) as f:
             milestones = json.loads(f.read())
-        milestones.sort(key=itemgetter('height'))
-        self['milestones'] = milestones
-        self['milestone_hash'] = self._calculate_milestone_hash(milestones)
+        milestones.sort(key=itemgetter("height"))
+        self["milestones"] = milestones
+        self["milestone_hash"] = self._calculate_milestone_hash(milestones)
 
     def _calculate_milestone_hash(self, milestones):
         milestones_json = json.dumps(milestones)
-        sha_hash = sha256(milestones_json.encode('utf-8')).hexdigest()
+        sha_hash = sha256(milestones_json.encode("utf-8")).hexdigest()
         return sha_hash[:16]
 
     def get_milestone(self, height):
-        for milestone in reversed(self['milestones']):
-            if height >= milestone['height']:
+        for milestone in reversed(self["milestones"]):
+            if height >= milestone["height"]:
                 return milestone

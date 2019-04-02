@@ -8,5 +8,5 @@ class Round(Model):
     round = BigIntegerField()
 
     class Meta:
-        table_name = 'rounds'
-        indexes = ((('round', 'public_key'), True),)
+        table_name = "rounds"
+        indexes = ((("round", "public_key"), True),)

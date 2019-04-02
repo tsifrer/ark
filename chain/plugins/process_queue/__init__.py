@@ -4,7 +4,7 @@ from .queue import Queue
 
 
 class Plugin(IPlugin):
-    name = 'process_queue'
+    name = "process_queue"
 
     def register(self):
         return Queue()

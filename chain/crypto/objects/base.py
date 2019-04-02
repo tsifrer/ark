@@ -70,7 +70,7 @@ class StrField(Field):
         if value is None:
             return None
         if isinstance(value, bytes):
-            return value.decode('utf-8')
+            return value.decode("utf-8")
         return value
 
 
@@ -82,14 +82,14 @@ class BytesField(Field):
         if value is None:
             return None
         if isinstance(value, str):
-            return value.encode('utf-8')
+            return value.encode("utf-8")
         return value
 
     @staticmethod
     def to_json_value(value):
         if value is None:
             return value
-        return value.decode('utf-8')
+        return value.decode("utf-8")
 
 
 class CryptoObjectMeta(type):

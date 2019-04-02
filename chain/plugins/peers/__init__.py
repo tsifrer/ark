@@ -4,7 +4,7 @@ from .manager import PeerManager
 
 
 class Plugin(IPlugin):
-    name = 'peers'
+    name = "peers"
 
     def register(self):
         return PeerManager()

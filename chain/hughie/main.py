@@ -10,7 +10,7 @@ monkey.patch_all()
 from .config import huey  # noqa
 
 # TODO: put this somewhere in config so it's extensible, or even as part of a plugin setup
-TASK_MODULES = ['chain.plugins.peers.tasks']
+TASK_MODULES = ["chain.plugins.peers.tasks"]
 
 for task_module in TASK_MODULES:
     import_module(task_module)

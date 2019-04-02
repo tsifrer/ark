@@ -1,2 +1,2 @@
-__version__ = '0.0.1-dev'
-__chain_version__ = '2.3.0'
+__version__ = "0.0.1-dev"
+__chain_version__ = "2.3.0"

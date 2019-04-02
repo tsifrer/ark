@@ -27,10 +27,10 @@ class Database(object):
     def __init__(self):
         super().__init__()
         self.db = PostgresqlDatabase(
-            database=os.environ.get('POSTGRES_DB_NAME', 'postgres'),
-            user=os.environ.get('POSTGRES_DB_USER', 'postgres'),
-            host=os.environ.get('POSTGRES_DB_HOST', '127.0.0.1'),
-            port=os.environ.get('POSTGRES_DB_PORT', '5432'),
+            database=os.environ.get("POSTGRES_DB_NAME", "postgres"),
+            user=os.environ.get("POSTGRES_DB_USER", "postgres"),
+            host=os.environ.get("POSTGRES_DB_HOST", "127.0.0.1"),
+            port=os.environ.get("POSTGRES_DB_PORT", "5432"),
             # password='password'
             autorollback=True,
         )
@@ -67,10 +67,10 @@ class Database(object):
             return crypto_block
 
     def save_block(self, block):
-        print('Saving block {}'.format(block.id))
+        print("Saving block {}".format(block.id))
         if not isinstance(block, CryptoBlock):
             raise Exception(
-                'Block must be a type of crypto.objects.Block'
+                "Block must be a type of crypto.objects.Block"
             )  # TODO: better exception
 
         with self.db.atomic() as db_txn:
@@ -78,7 +78,7 @@ class Database(object):
                 db_block = Block.from_crypto(block)
                 db_block.save(force_insert=True)
             except Exception as e:  # TODO: Make this not so broad!
-                print('Got an exception while saving a block')
+                print("Got an exception while saving a block")
                 db_txn.rollback()
                 print(e)  # TODO: replace with logger.error
                 return
@@ -89,7 +89,7 @@ class Database(object):
                     db_transaction = Transaction.from_crypto(transaction)
                     db_transaction.save(force_insert=True)
             except Exception as e:  # TODO: Make this not so broad!
-                print('Got an exception while saving transactions')
+                print("Got an exception while saving transactions")
                 db_txn.rollback()
                 db_block.delete_instance()
                 print(e)  # TODO: replace with logger.error
@@ -98,14 +98,14 @@ class Database(object):
 
     def apply_round(self, height):
         next_height = 1 if height == 1 else height + 1
-        print('Apply round next height: {}'.format(next_height))
+        print("Apply round next height: {}".format(next_height))
         current_round, _, max_delegates = calculate_round(next_height)
-        print('Current round {}'.format(current_round))
+        print("Current round {}".format(current_round))
         if next_height % max_delegates == 1:
             # TODO: Apparently forger can apply a round multiple times, so we need to
             # make sure that it only applies it once! Look at the code in ark core
             # to get the bigger picture of how it's done there
-            print('Starting round {}'.format(current_round))
+            print("Starting round {}".format(current_round))
 
             # TODO: This is to update missed blocks on the wallet
             # self.update_delegate_stats(self.forging_delegates)
@@ -121,7 +121,7 @@ class Database(object):
             # TODO: ark core states that this is saving next round delegate list into
             # the db. Is that true? Or are we saving the current round delegate list
             # into the db?
-            print('STORING CURRENT ROUND', current_round)
+            print("STORING CURRENT ROUND", current_round)
             with self.db.atomic() as db_txn:
                 try:
                     for wallet in delegate_wallets:
@@ -131,7 +131,7 @@ class Database(object):
                             round=current_round,
                         )
                 except Exception as e:  # TODO: make this not so broad!
-                    print('Got an exception while saving a round')
+                    print("Got an exception while saving a round")
                     db_txn.rollback()
                     print(e)  # TODO: replace with logger.error
                     raise e
@@ -176,44 +176,44 @@ class Database(object):
         transaction_stats = Transaction.statistics()
 
         if not last_block:
-            errors.append('Last block is not available')
+            errors.append("Last block is not available")
         else:
-            if last_block.height != block_stats['blocks_count']:
+            if last_block.height != block_stats["blocks_count"]:
                 errors.append(
-                    'Last block height: {}, number of stored blocks: {}'.format(
-                        last_block.height, block_stats['blocks_count']
+                    "Last block height: {}, number of stored blocks: {}".format(
+                        last_block.height, block_stats["blocks_count"]
                     )
                 )
 
         # Number of stored transactions must be equal to the sum of
         # Block.number_of_transactions in the database
-        if block_stats['transactions_count'] != transaction_stats['transactions_count']:
+        if block_stats["transactions_count"] != transaction_stats["transactions_count"]:
             errors.append(
                 (
-                    'Number of transactions: {}, '
-                    'number of transactions included in blocks: {}'
+                    "Number of transactions: {}, "
+                    "number of transactions included in blocks: {}"
                 ).format(
-                    transaction_stats['transactions_count'],
-                    block_stats['transactions_count'],
+                    transaction_stats["transactions_count"],
+                    block_stats["transactions_count"],
                 )
             )
 
         # Sum of all transaction fees must equal to the sum of Block.total_fee
-        if block_stats['total_fee'] != transaction_stats['total_fee']:
+        if block_stats["total_fee"] != transaction_stats["total_fee"]:
             errors.append(
                 (
-                    'Total transaction fees: {}, '
-                    'total transaction fees included in blocks: {}'
-                ).format(transaction_stats['total_fee'], block_stats['total_fee'])
+                    "Total transaction fees: {}, "
+                    "total transaction fees included in blocks: {}"
+                ).format(transaction_stats["total_fee"], block_stats["total_fee"])
             )
 
         # Sum of all transaction amounts must equal to the sum of Block.total_amount
-        if block_stats['total_amount'] != transaction_stats['total_amount']:
+        if block_stats["total_amount"] != transaction_stats["total_amount"]:
             errors.append(
                 (
-                    'Total transaction amounts: {}, '
-                    'total transaction amount included in blocks: {}'
-                ).format(transaction_stats['total_amount'], block_stats['total_amount'])
+                    "Total transaction amounts: {}, "
+                    "total transaction amount included in blocks: {}"
+                ).format(transaction_stats["total_amount"], block_stats["total_amount"])
             )
 
         is_valid = len(errors) == 0
@@ -230,7 +230,7 @@ class Database(object):
         ):
             # if not delegates or len(delegates) == 0:
             # TODO: Does this return only the first 51 delegates???
-            print('Load delegates for round {}'.format(delegate_round))
+            print("Load delegates for round {}".format(delegate_round))
             delegates = list(
                 Round.select()
                 .where(Round.round == delegate_round)
@@ -242,7 +242,7 @@ class Database(object):
             #     print(delegate.public_key, delegate.balance, wallet.vote_balance)
 
             if delegates:
-                seed = sha256(str(delegate_round).encode('utf-8')).digest()
+                seed = sha256(str(delegate_round).encode("utf-8")).digest()
                 # TODO: Look into why we don't reorder every 5th element (the second index += 1
                 # skips it). Also why do we create another seed, that is always the same after
                 # the first run?
@@ -323,7 +323,7 @@ class Database(object):
 
     def get_blocks_by_heights(self, heights):
         if not isinstance(heights, list):
-            raise Exception('heights must be a type of list')
+            raise Exception("heights must be a type of list")
 
         blocks = Block.select().where(Block.height.in_(heights))
         return [CryptoBlock.from_object(block) for block in blocks]
@@ -351,12 +351,12 @@ class Database(object):
             Transaction.block_id.in_(block_select_query)
         )
         deleted_transactions = transaction_query.execute()
-        print('Deleted transactions: {}'.format(deleted_transactions))
+        print("Deleted transactions: {}".format(deleted_transactions))
 
         block_query = Block.delete().where(Block.height >= height)
         deleted_blocks = block_query.execute()
-        print('Deleted blocks: {}'.format(deleted_blocks))
+        print("Deleted blocks: {}".format(deleted_blocks))
 
         round_query = Round.delete().where(Round.round > to_round)
         deleted_rounds = round_query.execute()
-        print('Deleted roudns: {}'.format(deleted_rounds))
+        print("Deleted roudns: {}".format(deleted_rounds))

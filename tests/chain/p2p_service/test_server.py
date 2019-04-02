@@ -2,30 +2,30 @@ import pytest
 
 
 def test_requests_without_headers_are_rejected(p2p_service):
-    response = p2p_service.get('/peer/status')
+    response = p2p_service.get("/peer/status")
     assert response.status_code == 400
     assert response.json == {
-        'errors': [
-            'Missing version in request header',
-            'Missing nethash in request header',
-            'Missing port in request header',
+        "errors": [
+            "Missing version in request header",
+            "Missing nethash in request header",
+            "Missing port in request header",
         ],
-        'message': 'Missing request headers',
-        'status_code': 400,
+        "message": "Missing request headers",
+        "status_code": 400,
     }
 
 
-@pytest.mark.parametrize('key', [('version'), ('nethash'), ('port')])
+@pytest.mark.parametrize("key", [("version"), ("nethash"), ("port")])
 def test_request_with_missing_header_is_rejected(key, p2p_service):
-    headers = {'version': '2.0.0', 'nethash': 'asdfas', 'port': 4003}
+    headers = {"version": "2.0.0", "nethash": "asdfas", "port": 4003}
     del headers[key]
 
-    response = p2p_service.get('/peer/status', headers=headers)
+    response = p2p_service.get("/peer/status", headers=headers)
     assert response.status_code == 400
     assert response.json == {
-        'errors': ['Missing {} in request header'.format(key)],
-        'message': 'Missing request headers',
-        'status_code': 400,
+        "errors": ["Missing {} in request header".format(key)],
+        "message": "Missing request headers",
+        "status_code": 400,
     }
 
 
