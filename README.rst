@@ -1,5 +1,5 @@
 *********************************************
-Ark Core implemented in Python
+ARK Blockchain implemented in Python
 *********************************************
 
 Work in Progress.

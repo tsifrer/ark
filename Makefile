@@ -1,4 +1,4 @@
-.PHONY: build chain
+.PHONY: build chain docs
 
 test:
 	POSTGRES_DB_NAME=testark CHAIN_CONFIG_FOLDER="tests/config/" py.test -vv -s -x $(ARGS)
@@ -50,3 +50,7 @@ p2p-logs:
 
 huey-logs:
 	docker-compose logs --tail 50 -f chain-huey
+
+docs:
+	cd docs && rm -r _build && make html
+	@echo "\033[95m\n\nBuild successful! View the docs homepage at docs/_build/html/index.html.\n\033[0m"

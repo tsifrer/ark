@@ -19,6 +19,9 @@ from chain.crypto.utils import is_block_exception
 
 
 class Blockchain(object):
+    """Blockchain class
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

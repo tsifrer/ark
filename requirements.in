@@ -15,11 +15,13 @@ huey
 peewee
 peewee-migrate
 pip-tools
+psutil
 psycopg2
 pytest
 python-dateutil
 redis
 requests
 semver
+sphinx
+sphinx_rtd_theme
 transitions
-psutil
