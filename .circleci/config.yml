@@ -1,52 +1,21 @@
-version: 2.1
-executors:
-  ark-executor:
+version: 2
+jobs:
+  test:
     environment:
       IMAGE_NAME: chain
       CHAIN_CONFIG_FOLDER: tests/config/
     docker:
-      - image: circleci/buildpack-deps:trusty
-jobs:
-  build:
-    executor: ark-executor
+      - image: circleci/python:3.7.2-stretch
+      - image: circleci/postgres:9.6.9
+      - image: circleci/redis:5.0.3
     steps:
       - checkout
-      - setup_remote_docker
       - run:
-          name: Build Docker image
-          command: docker-compose build blockchain
-      - run:
-          name: Archive Docker image
-          command: docker save -o image.tar $IMAGE_NAME
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./image.tar
-  lint:
-    executor: ark-executor
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - setup_remote_docker
-      - run:
-          name: Load archived Docker image
-          command: docker load -i /tmp/workspace/image.tar
+          name: Install requirements
+          command: pip install -r requirements.txt
       - run:
           name: Run linting
           command: flake8 .
-
-  test:
-    executor: ark-executor
-    docker:
-      - image: postgres:11.2
-      - image: redis:5.0.3
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - setup_remote_docker
-      - run:
-          name: Load archived Docker image
-          command: docker load -i /tmp/workspace/image.tar
       - run:
           name: Run tests
           command: py.test -vv -s -x
@@ -55,19 +24,7 @@ workflows:
   version: 2
   build-master:
     jobs:
-      - build:
-          filters:
-            branches:
-              only: master
-      - lint:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
       - test:
-          requires:
-            - build
           filters:
             branches:
               only: master

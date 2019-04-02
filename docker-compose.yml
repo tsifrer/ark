@@ -50,7 +50,7 @@ services:
       CHAIN_CONFIG_FOLDER: 'ark/devnet/'
 
   chain-db:
-    image: postgres:11.2
+    image: postgres:9.6.9
     volumes:
         - chain-db-volume:/var/lib/postgresql/data
 
