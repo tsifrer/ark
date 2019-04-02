@@ -1,6 +1,7 @@
 version: 2
 jobs:
   test:
+    working_directory: ~/ark
     environment:
       IMAGE_NAME: chain
       CHAIN_CONFIG_FOLDER: tests/config/
