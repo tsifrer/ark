@@ -83,7 +83,7 @@ def test_from_serialized_correctly_deserializes_full_data(dummy_transaction_hash
         "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c400220"
         "15918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
     )
-    assert transaction.signatures is None
+    assert transaction.signatures == []
     assert transaction.block_id is None
     assert transaction.sequence == 0
     assert transaction.timelock is None
@@ -122,7 +122,7 @@ def test_from_dict_correctly_sets_data(dummy_transaction):
         "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c400220"
         "15918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
     )
-    assert transaction.signatures is None
+    assert transaction.signatures == []
     assert transaction.block_id == "7176646138626297930"
     assert transaction.sequence == 0
     assert transaction.timelock is None
