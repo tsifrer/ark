@@ -5,7 +5,7 @@ executors:
       IMAGE_NAME: chain
       CHAIN_CONFIG_FOLDER: tests/config/
     docker:
-      - image: buildpack-deps:trusty
+      - image: circleci/buildpack-deps:trusty
 jobs:
   build:
     executor: ark-executor
