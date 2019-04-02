@@ -20,6 +20,8 @@ from chain.crypto.utils import is_block_exception
 
 class Blockchain(object):
     """Blockchain class
+
+        TODO: add docs
     """
 
     def __init__(self, *args, **kwargs):
