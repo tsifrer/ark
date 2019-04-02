@@ -1,40 +1,43 @@
-from struct import pack
 from binascii import hexlify, unhexlify
-from binary.hex import write_high, write_low
+from hashlib import sha256
+from struct import pack
+
+from base58 import b58decode_check, b58encode_check
+
+from binary.hex import write_high
 from binary.unsigned_integer import (
-    write_bit32,
-    write_bit8,
-    write_bit64,
     read_bit32,
     read_bit64,
     read_bit8,
+    write_bit32,
+    write_bit64,
+    write_bit8,
 )
+
+from chain.config import Config
+from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import (
-    TRANSACTION_TYPE_TRANSFER,
-    TRANSACTION_TYPE_TIMELOCK_TRANSFER,
-    TRANSACTION_TYPE_SECOND_SIGNATURE,
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
-    TRANSACTION_TYPE_VOTE,
-    TRANSACTION_TYPE_MULTI_SIGNATURE,
+    TRANSACTION_TYPE_DELEGATE_RESIGNATION,
     TRANSACTION_TYPE_IPFS,
     TRANSACTION_TYPE_MULTI_PAYMENT,
-    TRANSACTION_TYPE_DELEGATE_RESIGNATION,
+    TRANSACTION_TYPE_MULTI_SIGNATURE,
+    TRANSACTION_TYPE_SECOND_SIGNATURE,
+    TRANSACTION_TYPE_TIMELOCK_TRANSFER,
+    TRANSACTION_TYPE_TRANSFER,
+    TRANSACTION_TYPE_VOTE,
 )
-from base58 import b58decode_check, b58encode_check
-from chain.crypto.address import address_from_public_key
-from chain.config import Config
-from hashlib import sha256
-from chain.crypto.utils import verify_hash, is_transaction_exception
 from chain.crypto.objects.base import (
     BigIntField,
     BytesField,
     CryptoObject,
+    DictField,
     Field,
     IntField,
-    StrField,
     ListField,
-    DictField,
+    StrField,
 )
+from chain.crypto.utils import is_transaction_exception, verify_hash
 
 
 class Transaction(CryptoObject):
@@ -306,7 +309,7 @@ class Transaction(CryptoObject):
             total = read_bit32(bytes_data)
             offset = 4
             amount = 0
-            for x in total:
+            for _ in total:
                 payment_amount = read_bit64(bytes_data, offset=offset)
                 self.asset["payments"].append(
                     {

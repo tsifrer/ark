@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 
 from dateutil.parser import isoparse
-from dateutil.tz import tzutc, UTC
+from dateutil.tz import UTC, tzutc
 
 from chain.config import Config
 

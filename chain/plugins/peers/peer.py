@@ -1,11 +1,11 @@
 import json
-from datetime import datetime
 from ipaddress import ip_address
 
 import requests
 
 from chain.config import Config
 from chain.crypto.objects.block import Block
+
 from .utils import ip_is_blacklisted, ip_is_whitelisted, verify_peer_status
 
 
@@ -180,7 +180,7 @@ class Peer(object):
         )
 
     def verify_peer(self, timeout=None):
-        verification_start = datetime.now()
+        # verification_start = datetime.now()
         if not timeout:
             config = Config()
             timeout = config["peers"]["verification_timeout"]

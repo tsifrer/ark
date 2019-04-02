@@ -19,3 +19,8 @@ class BlockFactory(PeeWeeModelFactory):
 class TransactionFactory(PeeWeeModelFactory):
     class Meta:
         model = Transaction
+
+
+class RoundFactory(PeeWeeModelFactory):
+    class Meta:
+        model = Round

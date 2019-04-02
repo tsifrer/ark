@@ -1,19 +1,17 @@
 from binascii import unhexlify
 
-from chain.crypto.utils import verify_hash
 from chain.config import Config
 from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import (
-    TRANSACTION_TYPE_TRANSFER,
-    TRANSACTION_TYPE_TIMELOCK_TRANSFER,
-    TRANSACTION_TYPE_SECOND_SIGNATURE,
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
-    TRANSACTION_TYPE_VOTE,
-    TRANSACTION_TYPE_MULTI_SIGNATURE,
-    TRANSACTION_TYPE_IPFS,
-    TRANSACTION_TYPE_MULTI_PAYMENT,
     TRANSACTION_TYPE_DELEGATE_RESIGNATION,
+    TRANSACTION_TYPE_MULTI_PAYMENT,
+    TRANSACTION_TYPE_MULTI_SIGNATURE,
+    TRANSACTION_TYPE_SECOND_SIGNATURE,
+    TRANSACTION_TYPE_VOTE,
 )
+from chain.crypto.utils import verify_hash
+
 
 # TODO: there might be a better place for this. Maybe not though. Who knows.
 class Wallet(object):

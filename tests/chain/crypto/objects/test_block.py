@@ -1,8 +1,9 @@
 from copy import deepcopy
 
+import pytest
+
 from chain.crypto.objects.block import Block
 
-import pytest
 
 # TODO: MOARD TESTS!!!
 def test_serialize_full_correctly_serializes_block_and_its_transactions(
@@ -125,11 +126,10 @@ def test_from_dict_raises_exception_for_wrong_type(dummy_block):
     data["id"] = float(data["id"])
     with pytest.raises(TypeError) as excinfo:
         Block.from_dict(data)
-
     assert (
-        "Attribute id (<class 'float'>) must be of type (<class 'str'>, <class 'bytes'>)"
-        == str(excinfo.value)
-    )
+        "Attribute id (<class 'float'>) must be of type (<class 'str'>, <class 'bytes'>"
+        ")"
+    ) == str(excinfo.value)
 
 
 def test_from_object_correctly_sets_data():

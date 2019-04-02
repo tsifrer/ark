@@ -22,7 +22,9 @@ def test_wallet_sets_default_attributes_with_default_values():
 def test_wallet_sets_attributes_with_correct_values():
     data = {
         "address": "DSMxEhoudwLYVt1jtHDu1dtisa2gS7LeCW",
-        "public_key": "023918d30ff448ec897e12b77ccd529835c78aee07db1682639320c253cc21a1c7",
+        "public_key": (
+            "023918d30ff448ec897e12b77ccd529835c78aee07db1682639320c253cc21a1c7"
+        ),
         "second_public_key": None,
         "multisignature": None,
         "vote": "023918d30ff448ec897e12b77ccd529835c78aee07db1682639320c253cc21a1c7",

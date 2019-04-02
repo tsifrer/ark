@@ -34,9 +34,8 @@ def _get_sample_heights(min_height, max_height, n_samples):
 def _find_highest_common_between_heights(peer, heights):
     database = load_plugin("chain.plugins.database")
     print(
-        "Checking for the highest common block height. Currently checking for heights {}".format(
-            heights
-        )
+        "Checking for the highest common block height. Currently checking for heights "
+        "{}".format(heights)
     )
     our_blocks = database.get_blocks_by_heights(heights)
     if len(our_blocks) != len(heights):
@@ -61,9 +60,8 @@ def _find_highest_common_between_heights(peer, heights):
 
     if heights_by_id.get(common["id"]) != common["height"]:
         print(
-            "Our block height {} does not match with peer height {} for block with id {}".format(
-                heights_by_id.get(common["id"]), common["height"], common["id"]
-            )
+            "Our block height {} does not match with peer height {} for block with id "
+            "{}".format(heights_by_id.get(common["id"]), common["height"], common["id"])
         )
         return None
     return common["height"]
@@ -114,9 +112,8 @@ def _is_valid_block(block, height, current_round, delegate_keys):
         return True
 
     print(
-        "Peer's block with id {} and height {} is not signed by any of the delegates for the corresponding round {}".format(
-            block.id, block.height, current_round
-        )
+        "Peer's block with id {} and height {} is not signed by any of the delegates "
+        "for the corresponding round {}".format(block.id, block.height, current_round)
     )
     return False
 
@@ -206,9 +203,8 @@ def verify_peer_status(peer, body):
     """
     if last_block.height == peer_height and last_block.id == peer_id:
         print(
-            "Peer's latest block is the same as our latest block (height={}, id={}). Identical chains.".format(
-                last_block.height, last_block.id
-            )
+            "Peer's latest block is the same as our latest block (height={}, id={}). "
+            "Identical chains.".format(last_block.height, last_block.id)
         )
         return {
             "my_height": last_block.height,

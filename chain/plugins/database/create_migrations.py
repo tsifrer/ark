@@ -1,8 +1,9 @@
 import click
 
+from peewee_migrate import Router
+
 from chain.common.plugins import load_plugin
 
-from peewee_migrate import Router
 
 # TODO: update this to work as it should
 @click.command()

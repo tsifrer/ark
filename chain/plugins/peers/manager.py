@@ -3,14 +3,14 @@ import random
 
 from redis import Redis
 
-from .peer import Peer
-
+from chain.common.exceptions import PeerNotFoundException
 from chain.common.plugins import load_plugin
 from chain.common.utils import get_chain_version
 from chain.config import Config
 from chain.plugins.peers.tasks import add_peer
-from chain.common.exceptions import PeerNotFoundException
-from .utils import ip_is_blacklisted, ip_is_whitelisted
+
+from .peer import Peer
+from .utils import ip_is_whitelisted
 
 
 class PeerManager(object):

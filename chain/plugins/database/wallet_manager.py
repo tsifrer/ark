@@ -1,7 +1,7 @@
-import psutil
 from peewee import fn
 
-from chain.crypto.utils import calculate_round
+import psutil
+
 from chain.config import Config
 from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import (
@@ -11,9 +11,9 @@ from chain.crypto.constants import (
     TRANSACTION_TYPE_TRANSFER,
     TRANSACTION_TYPE_VOTE,
 )
-from chain.crypto.objects.transaction import Transaction as CryptoTransaction
 from chain.crypto.models.wallet import Wallet
-from chain.crypto.utils import is_transaction_exception
+from chain.crypto.objects.transaction import Transaction as CryptoTransaction
+from chain.crypto.utils import calculate_round, is_transaction_exception
 
 from .models.block import Block
 from .models.transaction import Transaction
@@ -143,7 +143,7 @@ class WalletManager(object):
         # the SQL query to only return last record per sender_public_key, this overhead
         # can go away
         already_processed_wallets = set()
-        for nr, transaction in enumerate(transactions):
+        for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if wallet.address not in already_processed_wallets:
                 crypto_transaction = CryptoTransaction.from_serialized(
@@ -338,9 +338,8 @@ class WalletManager(object):
         # to the sender
         if is_transaction_exception(transaction):
             print(
-                "Transaction {} forcibly applied because it has been added as an exception.".format(
-                    self.id
-                )
+                "Transaction {} forcibly applied because it has been added as an "
+                "exception.".format(self.id)
             )
         else:
             can_apply, errors = sender.can_apply(transaction, block)
@@ -387,7 +386,8 @@ class WalletManager(object):
                 applied_transactions.append(transaction)
         except Exception as e:  # TODO: better exception handling, not so broad
             print(
-                "Failed to apply all transactions in block - reverting previous transactions"
+                "Failed to apply all transactions in block - reverting previous "
+                "transactions"
             )
             for transaction in reversed(applied_transactions):
                 self.revert_transaction(transaction)

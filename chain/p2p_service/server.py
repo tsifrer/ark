@@ -1,20 +1,19 @@
-from copy import deepcopy
-import platform
 import json
 import os
+import platform
+from copy import deepcopy
 
 from flask import Flask, current_app, jsonify, request
-from flask.views import MethodView
 
 from gunicorn.app.base import BaseApplication
 
 from werkzeug.exceptions import HTTPException
 
-from chain.config import Config
 from chain.common.utils import get_chain_version
-from .exceptions import P2PException
-from .external import close_db
-from .views import peer
+from chain.config import Config
+from chain.p2p_service.exceptions import P2PException
+from chain.p2p_service.external import close_db
+from chain.p2p_service.views import peer
 
 
 def _validate_request_headers():

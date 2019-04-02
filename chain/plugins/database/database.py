@@ -1,11 +1,9 @@
-from collections import defaultdict
 import os
+from collections import defaultdict
 from hashlib import sha256
 
-import peewee
 from peewee import PostgresqlDatabase
 
-from chain.config import Config
 from chain.crypto.objects.block import Block as CryptoBlock
 from chain.crypto.objects.transaction import Transaction as CryptoTransaction
 from chain.crypto.utils import calculate_round
@@ -150,7 +148,8 @@ class Database(object):
 
         # TODO: em wat?
         # // Check if we recovered from a fork
-        # if (state.forkedBlock && state.forkedBlock.data.height === this.block.data.height) {
+        # if (state.forkedBlock &&
+        #     state.forkedBlock.data.height === this.block.data.height) {
         #     this.logger.info("Successfully recovered from fork :star2:");
         #     state.forkedBlock = null;
         # }
@@ -243,12 +242,13 @@ class Database(object):
 
             if delegates:
                 seed = sha256(str(delegate_round).encode("utf-8")).digest()
-                # TODO: Look into why we don't reorder every 5th element (the second index += 1
-                # skips it). Also why do we create another seed, that is always the same after
-                # the first run?
-                # Apparently this order is used in forger. Might be better to put it there
-                # instead of in a random function that doesn't tell you what it's for,
-                # whatdoyouthink?
+                # TODO: Look into why we don't reorder every 5th element
+                # (the second index += 1
+                # skips it). Also why do we create another seed, that is always the
+                # same after the first run?
+                # Apparently this order is used in forger. Might be better to put it
+                # there instead of in a random function that doesn't tell you what it's
+                # for, whatdoyouthink?
                 index = 0
                 while index < len(delegates):
                     for x in range(min(4, len(delegates) - index)):

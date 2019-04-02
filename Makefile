@@ -9,6 +9,9 @@ remove-pyc:
 create-migrations:
 	cd chain/plugins/database; python create_migrations.py
 
+lint:
+	flake8 .
+
 black:
 	black .
 

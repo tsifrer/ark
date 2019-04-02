@@ -1,11 +1,11 @@
 from binascii import hexlify, unhexlify
 from hashlib import sha256
 
-from binary.unsigned_integer import read_bit32, read_bit64, write_bit32, write_bit64
+from binary.unsigned_integer import write_bit32, write_bit64
 
 from chain.config import Config
 from chain.crypto import slots, time
-from chain.crypto.objects.transaction import Transaction
+from chain.crypto.bytebuffer import ByteBuffer
 from chain.crypto.objects.base import (
     BigIntField,
     BytesField,
@@ -14,8 +14,8 @@ from chain.crypto.objects.base import (
     IntField,
     StrField,
 )
+from chain.crypto.objects.transaction import Transaction
 from chain.crypto.utils import verify_hash
-from chain.crypto.bytebuffer import ByteBuffer
 
 
 class Block(CryptoObject):
@@ -146,7 +146,7 @@ class Block(CryptoObject):
             setattr(cls, field.name, value)
 
         if cls.transactions:
-            for transaction_data in cls.transactions:
+            for _ in cls.transactions:
                 if not isinstance(cls.transaction, Transaction):
                     raise TypeError("Transactions must be a {}".format(Transaction))
         cls._construct_common()
@@ -272,7 +272,8 @@ class Block(CryptoObject):
 
         if len(buff) != 0:
             self._deserialize_transactions(buff)
-        # TODO: implement edge cases (outlookTable thingy) where some block ids are broken
+        # TODO: implement edge cases (outlookTable thingy) where some block ids are
+        # broken
         # const { outlookTable } = configManager.config.exceptions;
         # if (outlookTable && outlookTable[block.id]) {
         #     block.id = outlookTable[block.id];

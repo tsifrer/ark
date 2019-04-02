@@ -4,18 +4,18 @@ from random import randint
 from time import sleep
 
 
-from .utils import is_block_chained
-from .constants import (
+from chain.blockchain.constants import (
     BLOCK_ACCEPTED,
     BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED,
     BLOCK_REJECTED,
 )
-from chain.crypto import time, slots
-from chain.crypto.utils import is_block_exception
-from chain.crypto.objects.block import Block
+from chain.blockchain.utils import is_block_chained
+from chain.common.exceptions import PeerNotFoundException
 from chain.common.plugins import load_plugin
 from chain.config import Config
-from chain.common.exceptions import PeerNotFoundException
+from chain.crypto import slots, time
+from chain.crypto.objects.block import Block
+from chain.crypto.utils import is_block_exception
 
 
 class Blockchain(object):
@@ -78,9 +78,8 @@ class Blockchain(object):
                     print("Rolled back to round {}".format(previous_round))
             else:
                 raise Exception(
-                    "FATAL: After rolling back for 5 rounds, database is still corrupted: {}".format(
-                        errors
-                    )
+                    "FATAL: After rolling back for 5 rounds, database is still "
+                    "corrupted: {}".format(errors)
                 )
 
             print("Verified database integrity")
@@ -110,7 +109,8 @@ class Blockchain(object):
             # }
 
             # if (process.env.NODE_ENV === "test") {
-            #     logger.verbose("TEST SUITE DETECTED! SYNCING WALLETS AND STARTING IMMEDIATELY. :bangbang:");
+            #     logger.verbose("TEST SUITE DETECTED! SYNCING WALLETS AND STARTING
+            # IMMEDIATELY. :bangbang:");
 
             #     stateStorage.setLastBlock(new Block(config.get("genesisBlock")));
             #     await blockchain.database.buildWallets(block.data.height);
@@ -120,7 +120,8 @@ class Blockchain(object):
 
             print("Last block in database: {}".format(block.height))
             # TODO: whatever the comment below means
-            # removing blocks up to the last round to compute active delegate list later if needed
+            # removing blocks up to the last round to compute active delegate list
+            # later if needed
             # active_delegates = self.database.get_active_delegates(block.height)
             # if not active_delegates:
             #     # TODO: rollback_current_round doesn't do anything ATM
@@ -170,7 +171,8 @@ class Blockchain(object):
                 except PeerNotFoundException as e:
                     print(str(e))
                     print(
-                        "Waiting for 1 second before continuing to give peers time to populate"
+                        "Waiting for 1 second before continuing to give peers time to "
+                        "populate"
                     )
                     sleep(1)
             else:
@@ -193,7 +195,8 @@ class Blockchain(object):
             )
             if is_chained:
                 print(
-                    "Downloaded {} new blocks accounting for a total of {} transactions".format(
+                    "Downloaded {} new blocks accounting for a total of {} "
+                    "transactions".format(
                         len(blocks), sum([x.number_of_transactions for x in blocks])
                     )
                 )
@@ -208,9 +211,8 @@ class Blockchain(object):
                         # likely that it's a bad peer
                         print(block.to_json())
                         print(
-                            "Block {} was {}. Skipping all other blocks in this batch".format(
-                                block.id, status
-                            )
+                            "Block {} was {}. Skipping all other blocks in this "
+                            "batch".format(block.id, status)
                         )
             else:
                 print(
@@ -253,7 +255,7 @@ class Blockchain(object):
                 n_blocks, block.height - n_blocks
             )
         )
-        for index in range(n_blocks):
+        for _ in range(n_blocks):
             if block.height == 1:
                 print("Can't revert genesis block.")
                 break
@@ -329,7 +331,8 @@ class Blockchain(object):
         # we still accept it as a valid generator
         if not forging_delegate:
             print(
-                "Could not decide if delegate {} ({}) is allowed to forge block {}".format(
+                "Could not decide if delegate {} ({}) is allowed to forge block "
+                "{}".format(
                     generator_username, block.generator_public_key, block.height
                 )
             )
@@ -367,9 +370,8 @@ class Blockchain(object):
 
         elif block.timestamp < last_block.timestamp:
             print(
-                "Block {} disregarded, because the timestamp is lower than the previous timestamp".format(
-                    block.height
-                )
+                "Block {} disregarded, because the timestamp is lower than the previous"
+                " timestamp".format(block.height)
             )
             return BLOCK_REJECTED
 
@@ -402,7 +404,8 @@ class Blockchain(object):
             forged_ids = self.database.get_forged_transaction_ids(transaction_ids)
             if len(forged_ids) > 0:
                 print(
-                    "Block {} disregarded, because it contains already forged transactions"
+                    "Block {} disregarded, because it contains already forged "
+                    "transactions"
                 )
                 return True
         return False

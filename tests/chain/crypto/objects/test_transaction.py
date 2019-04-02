@@ -1,10 +1,6 @@
-from copy import deepcopy
+from binascii import hexlify
 
 from chain.crypto.objects.transaction import Transaction
-
-import pytest
-
-from binascii import unhexlify, hexlify
 
 # TODO: MOARD TESTS!!!
 # TODO: Test specific transaction types
@@ -75,17 +71,17 @@ def test_from_serialized_correctly_deserializes_full_data(dummy_transaction_hash
         transaction.id
         == "170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11"
     )
-    assert (
-        transaction.signature
-        == "304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978"
+    assert transaction.signature == (
+        "304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010"
+        "121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978"
     )
-    assert (
-        transaction.second_signature
-        == "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
+    assert transaction.second_signature == (
+        "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c400220"
+        "15918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
     )
-    assert (
-        transaction.sign_signature
-        == "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
+    assert transaction.sign_signature == (
+        "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c400220"
+        "15918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
     )
     assert transaction.signatures is None
     assert transaction.block_id is None
@@ -117,14 +113,14 @@ def test_from_dict_correctly_sets_data(dummy_transaction):
         transaction.id
         == "1e5f0d734413f665cb5a859068cff1bccedcda9cc6df7e586ef61ba8fd74ef5d"
     )
-    assert (
-        transaction.signature
-        == "304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978"
+    assert transaction.signature == (
+        "304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010"
+        "121ab282f83efe1043de9c16bbf2c6845a03684229a0d7c965ffb9abdfb978"
     )
     assert transaction.second_signature is None
-    assert (
-        transaction.sign_signature
-        == "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c40022015918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
+    assert transaction.sign_signature == (
+        "30450221008327862f0b9178d6665f7d6674978c5caf749649558d814244b1c66cdf945c400220"
+        "15918134ef01fed3fe2a2efde3327917731344332724522c75c2799a14f78717"
     )
     assert transaction.signatures is None
     assert transaction.block_id == "7176646138626297930"

@@ -4,7 +4,6 @@ from huey import crontab
 
 from chain.common.plugins import load_plugin
 from chain.hughie.config import huey
-from chain.config import Config
 
 from .peer import Peer
 
@@ -33,7 +32,7 @@ def add_peer(ip, port, chain_version, nethash, os):
     # try:
     try:
         peer.verify_peer()
-    except:
+    except Exception:  # TODO: Be more specific
         peer_manager.suspend_peer(peer)
     else:
         print(
@@ -52,7 +51,7 @@ def reverify_peer(ip):
     if peer:
         try:
             peer.verify_peer()
-        except:
+        except Exception:  # TODO: be more specific
             peer_manager.suspend_peer(peer)
         else:
             print("Peer {}:{} successfully reverified".format(peer.ip, peer.port))

@@ -1,4 +1,4 @@
-from pyramid.view import notfound_view_config, exception_view_config
+from pyramid.view import exception_view_config, notfound_view_config
 
 
 @notfound_view_config(renderer="json")

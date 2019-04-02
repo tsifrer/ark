@@ -1,6 +1,7 @@
 from peewee import BigIntegerField, CharField, Model
 
-# TODO: This is potentially useless? Need to understand more about what this is used for.
+
+# TODO: This is potentially useless? Need to understand more about what this is used for
 class Wallet(Model):
     address = CharField(max_length=36, primary_key=True)
     public_key = CharField(max_length=66, unique=True)

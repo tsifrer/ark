@@ -1,4 +1,4 @@
-from flask import jsonify, request, current_app
+from flask import Blueprint, jsonify, request
 from flask.views import MethodView
 
 from chain.crypto import slots, time
@@ -7,10 +7,7 @@ from chain.plugins.peers.tasks import add_peer
 from chain.plugins.peers.utils import ip_is_blacklisted
 
 from ..exceptions import P2PException
-
 from ..external import get_db, get_peer_manager, get_process_queue
-
-from flask import Blueprint
 
 
 class PeerView(MethodView):
@@ -82,7 +79,8 @@ class BlockView(MethodView):
 
         if last_block.height >= block.height:
             print(
-                "Received block with height {} which was already processed. Our last block height {}. Skipping process queue.".format(
+                "Received block with height {} which was already processed. Our last "
+                "block height {}. Skipping process queue.".format(
                     block.height, last_block.height
                 )
             )
