@@ -73,27 +73,9 @@ def migrate(migrator, database, fake=False, **kwargs):
                 )
             ]
 
-    @migrator.create_model
-    class Wallet(pw.Model):
-        address = pw.CharField(max_length=36, primary_key=True)
-        public_key = pw.CharField(max_length=66, unique=True)
-        second_public_key = pw.CharField(max_length=66, null=True, unique=True)
-        vote = pw.CharField(max_length=66, null=True)
-        username = pw.CharField(max_length=64, null=True, unique=True)
-        balance = pw.BigIntegerField()
-        vote_balance = pw.BigIntegerField()
-        produced_blocks = pw.BigIntegerField()
-        missed_blocks = pw.BigIntegerField()
-
-        class Meta:
-            table_name = "wallets"
-            indexes = [(("public_key", "vote"), True)]
-
 
 def rollback(migrator, database, fake=False, **kwargs):
     """Write your rollback migrations here."""
-
-    migrator.remove_model("wallets")
 
     migrator.remove_model("transactions")
 
