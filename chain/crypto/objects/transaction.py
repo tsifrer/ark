@@ -343,7 +343,9 @@ class Transaction(CryptoObject):
                 bytes_data = bytes_data[1:]
                 while bytes_data:
                     multi_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-                    self.signatures.append(hexlify(bytes_data[:multi_signature_length]).decode('utf-8'))
+                    self.signatures.append(
+                        hexlify(bytes_data[:multi_signature_length]).decode('utf-8')
+                    )
                     bytes_data = bytes_data[multi_signature_length:]
             else:
                 # Second signature

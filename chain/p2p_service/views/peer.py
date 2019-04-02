@@ -20,7 +20,9 @@ class PeerView(MethodView):
         data = {
             'success': True,
             'height': last_block.height if last_block else 0,
-            'forgingAllowed': slots.is_forging_allowed(last_block.height, time.get_time()),
+            'forgingAllowed': slots.is_forging_allowed(
+                last_block.height, time.get_time()
+            ),
             'currentSlot': slots.get_slot_number(last_block.height, time.get_time()),
             'header': last_block.get_header() if last_block else {},
         }
@@ -42,16 +44,13 @@ class BlockView(MethodView):
             blocks = [last_block]
             last_block_height = last_block.height
 
-        print('{} has downloaded {} blocks from height {}'.format(
-            request.remote_addr,
-            len(blocks),
-            last_block_height
-        ))
+        print(
+            '{} has downloaded {} blocks from height {}'.format(
+                request.remote_addr, len(blocks), last_block_height
+            )
+        )
 
-        data = {
-            'success': True,
-            'blocks': [block.to_json() for block in blocks],
-        }
+        data = {'success': True, 'blocks': [block.to_json() for block in blocks]}
         return jsonify(data), 200
 
     def post(self):
@@ -60,7 +59,9 @@ class BlockView(MethodView):
         # TODO: Validate request data that it's correct block structure
         block_data = request.get_json().get('block')
         if not block_data:
-            raise Exception('There was no block in request to the /peer/blocks endpoint')
+            raise Exception(
+                'There was no block in request to the /peer/blocks endpoint'
+            )
 
         block = Block.from_dict(block_data)
         print(
@@ -80,13 +81,21 @@ class BlockView(MethodView):
         last_block = db.get_last_block()
 
         if last_block.height >= block.height:
-            print('Received block with height {} which was already processed. Our last block height {}. Skipping process queue.'.format(block.height, last_block.height))
+            print(
+                'Received block with height {} which was already processed. Our last block height {}. Skipping process queue.'.format(
+                    block.height, last_block.height
+                )
+            )
             return jsonify({'success': True}), 200
 
         process_queue = get_process_queue()
 
         if process_queue.block_exists(block):
-            print('Received block with height {} is already in process queue.'.format(block.height))
+            print(
+                'Received block with height {} is already in process queue.'.format(
+                    block.height
+                )
+            )
             return jsonify({'success': True}), 200
 
         current_slot = slots.get_slot_number(last_block.height, time.get_time())
@@ -96,17 +105,16 @@ class BlockView(MethodView):
             # Put the block to process queue
             process_queue.push_block(block)
         else:
-            print('Discarded block {} because it takes a future slot'.format(block.height))
+            print(
+                'Discarded block {} because it takes a future slot'.format(block.height)
+            )
 
         return jsonify({'success': True}), 200
 
 
 class TransactionView(MethodView):
     def get(self):
-        data = {
-            'success': True,
-            'transactions': [],
-        }
+        data = {'success': True, 'transactions': []}
         return jsonify(data), 200
 
     def post(self):
@@ -174,7 +182,7 @@ def _accept_new_peer_on_request():
             port=request.headers['port'],
             chain_version=request.headers['version'],
             nethash=request.headers['nethash'],
-            os=request.headers.get('os')
+            os=request.headers.get('os'),
         )
 
 

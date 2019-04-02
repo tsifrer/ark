@@ -1,4 +1,3 @@
-
 class P2PException(Exception):
     status_code = 400
 
@@ -10,10 +9,7 @@ class P2PException(Exception):
         self.payload = payload
 
     def to_dict(self):
-        data = {
-            'status_code': self.status_code,
-            'message': self.message,
-        }
+        data = {'status_code': self.status_code, 'message': self.message}
         if self.payload:
             data.update(self.payload)
         return data

@@ -92,15 +92,17 @@ class PeerManager(object):
     def fetch_blocks(self, from_height):
         # TODO: Missing error handling
         peer = self.get_random_peer()
-        print(
-            'Downloading blocks from height {} via {}'.format(from_height, peer.ip)
-        )
+        print('Downloading blocks from height {} via {}'.format(from_height, peer.ip))
         blocks = peer.fetch_blocks_from_height(from_height)
         return blocks
 
     def suspend_peer(self, peer):
         if ip_is_whitelisted(peer.ip):
-            print("Peer {}:{} can't be suspended as it's whitelisted".format(peer.ip, peer.port))
+            print(
+                "Peer {}:{} can't be suspended as it's whitelisted".format(
+                    peer.ip, peer.port
+                )
+            )
             return None
 
         print('Suspending peer {}:{}'.format(peer.ip, peer.port))

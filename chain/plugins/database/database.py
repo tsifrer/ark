@@ -32,7 +32,7 @@ class Database(object):
             host=os.environ.get('POSTGRES_DB_HOST', '127.0.0.1'),
             port=os.environ.get('POSTGRES_DB_PORT', '5432'),
             # password='password'
-            autorollback=True
+            autorollback=True,
         )
 
         # database.set_allow_sync(False)
@@ -291,7 +291,11 @@ class Database(object):
     def _convert_blocks_to_crypto_and_load_transactions(self, blocks):
         block_ids = [block.id for block in blocks]
 
-        transactions = Transaction.select().where(Transaction.block_id.in_(block_ids)).order_by(Transaction.block_id.asc(), Transaction.sequence.asc())
+        transactions = (
+            Transaction.select()
+            .where(Transaction.block_id.in_(block_ids))
+            .order_by(Transaction.block_id.asc(), Transaction.sequence.asc())
+        )
 
         transactions_map = defaultdict(list)
         for trans in transactions:
@@ -308,13 +312,13 @@ class Database(object):
         return crypto_blocks
 
     def get_blocks(self, height, limit):
-        blocks = (
-            Block.select().where(Block.height.between(height, height + limit))
-        )
+        blocks = Block.select().where(Block.height.between(height, height + limit))
         return self._convert_blocks_to_crypto_and_load_transactions(blocks)
 
     def get_blocks_by_id(self, block_ids):
-        blocks = Block.select().where(Block.id.in_(block_ids)).order_by(Block.height.desc())
+        blocks = (
+            Block.select().where(Block.id.in_(block_ids)).order_by(Block.height.desc())
+        )
         return [CryptoBlock.from_object(block) for block in blocks]
 
     def get_blocks_by_heights(self, heights):
@@ -324,7 +328,6 @@ class Database(object):
         blocks = Block.select().where(Block.height.in_(heights))
         return [CryptoBlock.from_object(block) for block in blocks]
 
-
     def revert_block(self, block):
         current_round, next_round, max_delegates = calculate_round(block.height)
         if next_round == current_round + 1 and block.height > max_delegates:
@@ -333,8 +336,6 @@ class Database(object):
             Round.delete().where(Round.round == next_round)
 
         self.wallets.revert_block(block)
-
-
 
     def rollback_to_round(self, to_round):
         # TODO: Get rid of this and use blockchain.revert_blocks instead

@@ -36,6 +36,7 @@ class BigIntField(Field):
     Python doesn't need this field. It's here because we need to convert int to str
     when responding as json, so other nodes know what we're doing.
     """
+
     accepted_types = (str, int)
 
     @staticmethod

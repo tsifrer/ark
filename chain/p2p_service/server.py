@@ -50,11 +50,7 @@ def _accept_request():
 
 def _handle_api_errors(ex):
     if isinstance(ex, HTTPException):
-        data = {
-            'success': False,
-            'status_code': ex.code,
-            'message': ex.description
-        }
+        data = {'success': False, 'status_code': ex.code, 'message': ex.description}
     elif isinstance(ex, P2PException):
         data = ex.to_dict()
     else:
@@ -88,19 +84,23 @@ def _set_default_response_headers(response):
 
 
 class P2PService(BaseApplication):
-
     def __init__(self):
         self.options = {
             'bind': '{}:{}'.format(os.environ.get('SERVER_HOST', '127.0.0.1'), '8080'),
-            'workers': 1, #number_of_workers(),
+            'workers': 1,  # number_of_workers(),
             'accesslog': '-',
         }
         self.application = create_app()
         super().__init__()
 
     def load_config(self):
-        config = dict([(key, value) for key, value in self.options.items()
-                       if key in self.cfg.settings and value is not None])
+        config = dict(
+            [
+                (key, value)
+                for key, value in self.options.items()
+                if key in self.cfg.settings and value is not None
+            ]
+        )
         for key, value in config.items():
             self.cfg.set(key.lower(), value)
 

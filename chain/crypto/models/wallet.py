@@ -211,7 +211,9 @@ class Wallet(object):
             self.forged_fees += block.total_fee
             self.forged_rewards += block.reward
         else:
-            raise Exception("Couldn't apply block {} to wallet {}".format(block.id, self.public_key))
+            raise Exception(
+                "Couldn't apply block {} to wallet {}".format(block.id, self.public_key)
+            )
 
     def revert_transaction_for_sender(self, transaction):
         address = address_from_public_key(transaction.sender_public_key)
@@ -251,4 +253,8 @@ class Wallet(object):
             self.forged_fees -= block.total_fee
             self.forged_rewards -= block.reward
         else:
-            raise Exception("Couldn't revert block {} for wallet {}".format(block.id, self.public_key))
+            raise Exception(
+                "Couldn't revert block {} for wallet {}".format(
+                    block.id, self.public_key
+                )
+            )

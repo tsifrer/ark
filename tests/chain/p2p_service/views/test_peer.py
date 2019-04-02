@@ -1,10 +1,6 @@
 from chain.crypto import slots, time
 
-DEFAULT_HEADERS = {
-    'version': '2.0.0',
-    'nethash': 'asdfas',
-    'port': 4003,
-}
+DEFAULT_HEADERS = {'version': '2.0.0', 'nethash': 'asdfas', 'port': 4003}
 
 # def test_bla(p2p_service, dummy_block):
 #     data = {
@@ -39,7 +35,9 @@ def test_sataus_returns_correct_response(p2p_service):
     assert response.status_code == 200
     assert response.json['success'] is True
     assert response.json['currentSlot'] == slots.get_slot_number(1, time.get_time())
-    assert response.json['forgingAllowed'] == slots.is_forging_allowed(1, time.get_time())
+    assert response.json['forgingAllowed'] == slots.is_forging_allowed(
+        1, time.get_time()
+    )
     assert response.json['height'] == 1
     assert response.json['header'] == {
         'blockSignature': '3045022100b0cbfdfabb77b7d431cb7fdc3acd148032898eb6b0026d4e8f6f08f8e5ca23b5022044cfad1c8e0df615b0969c5d1fe4965b2c18e6656becc2d5410c68ed19452770',
@@ -56,5 +54,5 @@ def test_sataus_returns_correct_response(p2p_service):
         'timestamp': 0,
         'totalAmount': '153000000000000',
         'totalFee': '0',
-        'version': 0
+        'version': 0,
     }

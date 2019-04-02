@@ -15,13 +15,7 @@ def add_peer(ip, port, chain_version, nethash, os):
 
     peer_manager = load_plugin('chain.plugins.peers')
 
-    peer = Peer(
-        ip=ip,
-        port=port,
-        chain_version=chain_version,
-        nethash=nethash,
-        os=os,
-    )
+    peer = Peer(ip=ip, port=port, chain_version=chain_version, nethash=nethash, os=os)
 
     if not peer.is_valid() or peer_manager.is_peer_suspended(peer):
         print('Peer {}:{} is invalid or suspended.'.format(peer.ip, peer.port))
@@ -42,7 +36,11 @@ def add_peer(ip, port, chain_version, nethash, os):
     except:
         peer_manager.suspend_peer(peer)
     else:
-        print('Accepting peer {}:{}. Vefification: {}'.format(peer.ip, peer.port, peer.verification))
+        print(
+            'Accepting peer {}:{}. Vefification: {}'.format(
+                peer.ip, peer.port, peer.verification
+            )
+        )
         peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
 
 
@@ -58,7 +56,9 @@ def reverify_peer(ip):
             peer_manager.suspend_peer(peer)
         else:
             print('Peer {}:{} successfully reverified'.format(peer.ip, peer.port))
-            peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
+            peer_manager.redis.set(
+                peer_manager.key_active.format(peer.ip), peer.to_json()
+            )
     else:
         print("Couldn't find a peer to reverify")
 

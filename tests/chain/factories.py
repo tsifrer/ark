@@ -6,7 +6,6 @@ from chain.plugins.database.models.transaction import Transaction
 
 
 class PeeWeeModelFactory(Factory):
-
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
         return model_class.create(*args, **kwargs)

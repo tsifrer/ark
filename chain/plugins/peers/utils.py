@@ -33,10 +33,16 @@ def _get_sample_heights(min_height, max_height, n_samples):
 
 def _find_highest_common_between_heights(peer, heights):
     database = load_plugin('chain.plugins.database')
-    print('Checking for the highest common block height. Currently checking for heights {}'.format(heights))
+    print(
+        'Checking for the highest common block height. Currently checking for heights {}'.format(
+            heights
+        )
+    )
     our_blocks = database.get_blocks_by_heights(heights)
     if len(our_blocks) != len(heights):
-        raise Exception('Did not fetch all blocks with heights {} from the db'.format(heights))
+        raise Exception(
+            'Did not fetch all blocks with heights {} from the db'.format(heights)
+        )
 
     # TODO: something something deadline
 
@@ -46,15 +52,19 @@ def _find_highest_common_between_heights(peer, heights):
 
     common = peer.fetch_common_block_by_ids(list(heights_by_id.keys()))
     if not common:
-        print("Couldn't find a common block for peer {}:{} for block heights {}".format(peer.ip, peer.port, heights))
+        print(
+            "Couldn't find a common block for peer {}:{} for block heights {}".format(
+                peer.ip, peer.port, heights
+            )
+        )
         return None
 
     if heights_by_id.get(common['id']) != common['height']:
-        print('Our block height {} does not match with peer height {} for block with id {}'.format(
-            heights_by_id.get(common['id']),
-            common['height'],
-            common['id']
-        ))
+        print(
+            'Our block height {} does not match with peer height {} for block with id {}'.format(
+                heights_by_id.get(common['id']), common['height'], common['id']
+            )
+        )
         return None
     return common['height']
 
@@ -63,7 +73,7 @@ def _find_highest_common_block_height(peer, min_height, max_height):
     n_samples = 9
     highest_matching = None
 
-    while(True):
+    while True:
         heights = _get_sample_heights(min_height, max_height, n_samples)
         common = _find_highest_common_between_heights(peer, heights)
         if not common:
@@ -87,17 +97,27 @@ def _is_valid_block(block, height, current_round, delegate_keys):
     verified, errors = block.verify()
 
     if not verified:
-        print("Peer's block at height {} does not pass crypto validation".format(height))
+        print(
+            "Peer's block at height {} does not pass crypto validation".format(height)
+        )
         return False
 
     if block.height != height:
-        print("Peer's block height {} is different than the expected height {}".format(block.height. height))
+        print(
+            "Peer's block height {} is different than the expected height {}".format(
+                block.height.height
+            )
+        )
         return False
 
     if block.generator_public_key in delegate_keys:
         return True
 
-    print("Peer's block with id {} and height {} is not signed by any of the delegates for the corresponding round {}".format(block.id, block.height, current_round))
+    print(
+        "Peer's block with id {} and height {} is not signed by any of the delegates for the corresponding round {}".format(
+            block.id, block.height, current_round
+        )
+    )
     return False
 
 
@@ -123,11 +143,17 @@ def _verify_peer_blocks(peer, start_height, peer_height):
                 height_block_map[block.height] = block
 
         if height in height_block_map:
-            is_valid = _is_valid_block(height_block_map[height], height, current_round, delegate_keys)
+            is_valid = _is_valid_block(
+                height_block_map[height], height, current_round, delegate_keys
+            )
             if not is_valid:
                 return False
         else:
-            print('Could not find block with height {} in mapping {}'.format(height, height_block_map))
+            print(
+                'Could not find block with height {} in mapping {}'.format(
+                    height, height_block_map
+                )
+            )
             return False
 
     return True
@@ -179,11 +205,15 @@ def verify_peer_status(peer, body):
       This means that our chains are the same.
     """
     if last_block.height == peer_height and last_block.id == peer_id:
-        print("Peer's latest block is the same as our latest block (height={}, id={}). Identical chains.".format(last_block.height, last_block.id))
+        print(
+            "Peer's latest block is the same as our latest block (height={}, id={}). Identical chains.".format(
+                last_block.height, last_block.id
+            )
+        )
         return {
             'my_height': last_block.height,
             'his_height': peer_height,
-            'highest_common_height': peer_height
+            'highest_common_height': peer_height,
         }
 
     """
@@ -197,20 +227,23 @@ def verify_peer_status(peer, body):
             return {
                 'my_height': last_block.height,
                 'his_height': peer_height,
-                'highest_common_height': peer_height
+                'highest_common_height': peer_height,
             }
 
     highest_common_height = _find_highest_common_block_height(
-        peer, 1, min(peer_height, last_block.height))
+        peer, 1, min(peer_height, last_block.height)
+    )
     if not highest_common_height:
         return None
 
-    valid_peer_blocks = _verify_peer_blocks(peer, highest_common_height + 1, peer_height)
+    valid_peer_blocks = _verify_peer_blocks(
+        peer, highest_common_height + 1, peer_height
+    )
     if not valid_peer_blocks:
         return None
 
     return {
         'my_height': last_block.height,
         'his_height': peer_height,
-        'highest_common_height': highest_common_height
+        'highest_common_height': highest_common_height,
     }

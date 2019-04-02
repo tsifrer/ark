@@ -65,15 +65,23 @@ class Blockchain(object):
                 else:
                     print('Database is corrupted: {}'.format(errors))
                     milestone = config.get_milestone(block.height)
-                    previous_round = math.floor((block.height - 1) / milestone['activeDelegates'])
+                    previous_round = math.floor(
+                        (block.height - 1) / milestone['activeDelegates']
+                    )
                     if previous_round <= 1:
-                        raise Exception('FATAL: Database is corrupted: {}'.format(errors))
+                        raise Exception(
+                            'FATAL: Database is corrupted: {}'.format(errors)
+                        )
 
                     print('Rolling back to round {}'.format(previous_round))
                     self.database.rollback_to_round(previous_round)
                     print('Rolled back to round {}'.format(previous_round))
             else:
-                raise Exception('FATAL: After rolling back for 5 rounds, database is still corrupted: {}'.format(errors))
+                raise Exception(
+                    'FATAL: After rolling back for 5 rounds, database is still corrupted: {}'.format(
+                        errors
+                    )
+                )
 
             print('Verified database integrity')
             # else:
@@ -161,7 +169,9 @@ class Blockchain(object):
                     self.sync_blocks(last_block)
                 except PeerNotFoundException as e:
                     print(str(e))
-                    print('Waiting for 1 second before continuing to give peers time to populate')
+                    print(
+                        'Waiting for 1 second before continuing to give peers time to populate'
+                    )
                     sleep(1)
             else:
                 break
@@ -198,15 +208,19 @@ class Blockchain(object):
                         # TODO: Think about banning the peer at this point as it's most
                         # likely that it's a bad peer
                         print(block.to_json())
-                        print('Block {} was {}. Skipping all other blocks in this batch'.format(
-                            block.id, status
-                        ))
+                        print(
+                            'Block {} was {}. Skipping all other blocks in this batch'.format(
+                                block.id, status
+                            )
+                        )
             else:
                 print(
                     'Last downloaded block: {}'.format(last_block.id)
                 )  # TODO: output block data
                 print('WTF: {}'.format(last_block.height))
-                raise Exception('Downloaded block not accepted: {}'.format(blocks[0].id))
+                raise Exception(
+                    'Downloaded block not accepted: {}'.format(blocks[0].id)
+                )
         else:
             print('No new block found on this peer')
 
@@ -235,7 +249,11 @@ class Blockchain(object):
 
     def revert_blocks(self, n_blocks):
         block = self.database.get_last_block()
-        print('Reverting {} blocks. Reverting to height {}'.format(n_blocks, block.height - n_blocks))
+        print(
+            'Reverting {} blocks. Reverting to height {}'.format(
+                n_blocks, block.height - n_blocks
+            )
+        )
         for index in range(n_blocks):
             if block.height == 1:
                 print("Can't revert genesis block.")

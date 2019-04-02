@@ -3,7 +3,6 @@ from binary.unsigned_integer import read_bit32, read_bit64
 
 # TODO: Put this into binary package
 class ByteBuffer(bytearray):
-
     def read_uint32(self):
         return read_bit32(self)
 
@@ -11,7 +10,7 @@ class ByteBuffer(bytearray):
         return read_bit64(self)
 
     def read_bytes(self, num_bytes, offset=0):
-        return self[offset:offset + num_bytes]
+        return self[offset : offset + num_bytes]
 
     def pop_uint32(self):
         data = read_bit32(self)

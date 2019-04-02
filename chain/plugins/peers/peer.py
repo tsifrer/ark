@@ -11,17 +11,18 @@ from .utils import ip_is_blacklisted, ip_is_whitelisted, verify_peer_status
 
 class Peer(object):
     # TODO: Yeah, refactor this
-    def __init__(self,
-                 ip,
-                 port,
-                 chain_version,
-                 nethash,
-                 os,
-                 height=None,
-                 status=None,
-                 latency=None,
-                 verification=None
-                 ):
+    def __init__(
+        self,
+        ip,
+        port,
+        chain_version,
+        nethash,
+        os,
+        height=None,
+        status=None,
+        latency=None,
+        verification=None,
+    ):
         super().__init__()
         self.ip = ip
         self.port = port
@@ -78,7 +79,11 @@ class Peer(object):
             body = response.json()
         except ValueError:
             body = {}
-            print('Request to {} returned HTTP {}. {}'.format(full_url, response.status_code, response.content))
+            print(
+                'Request to {} returned HTTP {}. {}'.format(
+                    full_url, response.status_code, response.content
+                )
+            )
         else:
             if body.get('success'):
                 return body
@@ -97,7 +102,9 @@ class Peer(object):
         try:
             ip = ip_address(self.ip)
         except ValueError:
-            print('Peer is invalid, because the IP is not a valid ip {}'.format(self.ip))
+            print(
+                'Peer is invalid, because the IP is not a valid ip {}'.format(self.ip)
+            )
             return False
 
         if ip.is_private:
@@ -114,9 +121,7 @@ class Peer(object):
 
     def fetch_common_block_by_ids(self, block_ids):
         print(block_ids)
-        params = {
-            'ids': ','.join(block_ids)
-        }
+        params = {'ids': ','.join(block_ids)}
         body = self._get('/peer/blocks/common', params=params)
         print(body)
         return body.get('common')
@@ -134,13 +139,15 @@ class Peer(object):
         peers = []
         for peer in body.get('peers', []):
             if not ip_is_blacklisted(peer['ip']):
-                peers.append(Peer(
-                    ip=peer['ip'],
-                    port=peer['port'],
-                    chain_version=peer['version'],
-                    nethash=peer['nethash'],
-                    os=peer['os'],
-                ))
+                peers.append(
+                    Peer(
+                        ip=peer['ip'],
+                        port=peer['port'],
+                        chain_version=peer['version'],
+                        nethash=peer['nethash'],
+                        os=peer['os'],
+                    )
+                )
         return peers
 
     def to_json(self):
@@ -150,7 +157,6 @@ class Peer(object):
             'chain_version': self.chain_version,
             'nethash': self.nethash,
             'os': self.os,
-
             'height': self.height,
             'status': self.status,
             'latency': self.latency,
