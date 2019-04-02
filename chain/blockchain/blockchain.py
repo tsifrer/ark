@@ -192,20 +192,15 @@ class Blockchain(object):
                 for block in blocks:
                     status = self.process_block(block, last_block)
                     print('Block {} was {}'.format(block.id, status))
-                    # TODO: this might be completely wrong to handle
                     if status == BLOCK_ACCEPTED:
                         last_block = block
                     else:
-                        msg = 'Block {} was {}. Skipping all other blocks in this batch'.format(
-                            block.id, status
-                        )
+                        # TODO: Think about banning the peer at this point as it's most
+                        # likely that it's a bad peer
                         print(block.to_json())
-                        print(msg)
-                        raise Exception(msg)
-                # TODO:
-                # blockchain.enqueueBlocks(blocks);
-                # blockchain.dispatch("DOWNLOADED");
-
+                        print('Block {} was {}. Skipping all other blocks in this batch'.format(
+                            block.id, status
+                        ))
             else:
                 print(
                     'Last downloaded block: {}'.format(last_block.id)
