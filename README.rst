@@ -2,6 +2,9 @@
 ARK Blockchain implemented in Python
 *********************************************
 
+.. image:: https://circleci.com/gh/tsifrer/ark.svg?style=svg
+    :target: https://circleci.com/gh/tsifrer/ark
+    
 Work in Progress.
 
 If you're new here, and don't know what this is about, `read this`_.
