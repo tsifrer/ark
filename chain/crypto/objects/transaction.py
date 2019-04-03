@@ -63,7 +63,7 @@ class Transaction(CryptoObject):
     timelock = Field(attr="timelock", required=False, default=None)
     timelock_type = IntField(attr="timelockType", required=False, default=None)
     ipfs_hash = BytesField(attr="ipfsHash", required=False, default=None)
-    payments = Field(attr="payments", required=False, default=None)
+    payments = Field(attr="payments", required=False)
 
     def _construct_common(self):
         self._apply_v1_compatibility()

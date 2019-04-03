@@ -102,7 +102,7 @@ class Blockchain(object):
                 current_round, _, _ = calculate_round(block.height + 1)
                 print(
                     "Start of new round detected {}. Removing it in order to correctly "
-                    "start the chain with new round."
+                    "start the chain with new round.".format(current_round)
                 )
                 self.database.delete_round(current_round)
 

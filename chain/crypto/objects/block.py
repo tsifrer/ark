@@ -10,8 +10,8 @@ from chain.crypto.objects.base import (
     BigIntField,
     BytesField,
     CryptoObject,
-    Field,
     IntField,
+    ListField,
     StrField,
 )
 from chain.crypto.objects.transaction import Transaction
@@ -40,19 +40,21 @@ class Block(CryptoObject):
         attr="generatorPublicKey", required=True, default=None
     )
     block_signature = StrField(attr="blockSignature", required=False, default=None)
-    transactions = Field(attr="transactions", required=False, default=[])
+    transactions = ListField(attr="transactions", required=False)
 
     @staticmethod
     def to_bytes_hex(value):
-        """Converts integer value to hex representation
-        Automatically adds leading zeros if hex number is shorter than 16 characters.
+        """Converts integer value to hex representation. Automatically adds leading
+        zeros if hex number is shorter than 16 characters.
+
+        :param int value: Integer value to convert to bytes hex
         """
         hex_num = ""
         if value is not None:
             hex_num = format(int(value), "x")
         return ("{}{}".format("0" * (16 - len(hex_num)), hex_num)).encode("utf-8")
 
-    def _set_id(self):
+    def _construct_common(self):
         if self.height == 1:
             # For genesis blocks, we don't recalculate the id as it is wrong.
             # The comment from the core code for this "fix" describes the problem
@@ -62,9 +64,6 @@ class Block(CryptoObject):
         else:
             self.id_hex = self.get_id_hex()
             self.id = self.get_id()
-
-    def _construct_common(self):
-        self._set_id()
 
         if self.transactions:
             for index, transaction in enumerate(self.transactions):
@@ -208,7 +207,6 @@ class Block(CryptoObject):
         return hexlify(bytes_data)
 
     def serialize_full(self):
-        # TODO: try to make these as default values instead of checking for it here
         if not self.transactions:
             self.transactions = []
         if not self.number_of_transactions:

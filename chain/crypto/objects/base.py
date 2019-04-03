@@ -8,7 +8,11 @@ class Field(object):
         super().__init__()
         self.attr = attr
         self.required = required
-        self.default = default
+        self._default = default
+
+    @property
+    def default(self):
+        return self._default
 
     @staticmethod
     def to_value(value):
@@ -21,14 +25,20 @@ class Field(object):
 
 class DictField(Field):
     def __init__(self, attr, required=True):
-        default = {}
-        super().__init__(attr, required, default)
+        super().__init__(attr, required)
+
+    @property
+    def default(self):
+        return {}
 
 
 class ListField(Field):
     def __init__(self, attr, required=True):
-        default = []
-        super().__init__(attr, required, default)
+        super().__init__(attr, required)
+
+    @property
+    def default(self):
+        return []
 
 
 class BigIntField(Field):
@@ -38,6 +48,10 @@ class BigIntField(Field):
     """
 
     accepted_types = (str, int)
+
+    @property
+    def default(self):
+        return 0
 
     @staticmethod
     def to_value(value):
@@ -96,11 +110,17 @@ class CryptoObjectMeta(type):
     @staticmethod
     def _compile_fields(field_map, serializer_cls):
         fields = []
-
         for name, field in field_map.items():
             field.name = name
             fields.append(field)
         return fields
+
+    def __call__(cls, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        # Set fields on object and set default values
+        for field in obj._fields:
+            setattr(obj, field.name, field.default)
+        return obj
 
     def __new__(cls, name, bases, attrs):
         fields = {}
@@ -110,13 +130,7 @@ class CryptoObjectMeta(type):
                 fields[attr_name] = field
 
         real_cls = super().__new__(cls, name, bases, attrs)
-        compiled_fields = cls._compile_fields(fields, real_cls)
-        real_cls._fields = compiled_fields
-
-        # Set fields on object and set default values
-        for field in compiled_fields:
-            setattr(real_cls, field.name, field.default)
-
+        real_cls._fields = cls._compile_fields(fields, real_cls)
         return real_cls
 
 

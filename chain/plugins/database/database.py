@@ -142,9 +142,8 @@ class Database(object):
         # if (this.blocksInCurrentRound) {
         #     this.blocksInCurrentRound.push(block);
         # }
-
-        self.apply_round(block.height)
         self.save_block(block)
+        self.apply_round(block.height)
 
         # TODO: em wat?
         # // Check if we recovered from a fork

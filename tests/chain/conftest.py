@@ -8,7 +8,15 @@ from chain.plugins.database.models.block import Block
 from chain.plugins.database.models.round import Round
 from chain.plugins.database.models.transaction import Transaction
 
-from tests.chain.fixtures import *  # noqa
+from tests.chain.fixtures import (  # noqa
+    dummy_block_full_hash,
+    dummy_block_hash,
+    dummy_transaction_hash,
+    dummy_transaction,
+    dummy_block,
+    crypto_transaction,
+    crypto_block,
+)
 
 
 def _create_genesis_block():
