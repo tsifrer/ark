@@ -26,5 +26,5 @@
     "verification_timeout": 3.5,
     "blacklist": [],
     "whitelist": [],
-    "minimum_network_reach": 5,
+    "minimum_network_reach": 5
 }
