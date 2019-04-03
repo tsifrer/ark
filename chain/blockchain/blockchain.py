@@ -219,23 +219,17 @@ class Blockchain(object):
                             "batch".format(block.id, status)
                         )
             else:
+                # TODO: Think about banning the peer at this point as it's most
+                # likely that it's a bad peer
                 print(
-                    "Last downloaded block: {}".format(last_block.id)
-                )  # TODO: output block data
-                print("WTF: {}".format(last_block.height))
-                raise Exception(
-                    "Downloaded block not accepted: {}".format(blocks[0].id)
+                    "First block in the current batch of block is not chained. "
+                    "Skipping all blocks in this batch."
                 )
         else:
             print("No new block found on this peer")
 
     def stop(self):
         print("Stopping blockchain")
-
-    # def rollback_current_round(self):
-    #     # TODO: implement this
-    #     print('Rollback current round is not yet implemented')
-    #     pass
 
     def fork_block(self, block):
         print("Starting fork recovery")
