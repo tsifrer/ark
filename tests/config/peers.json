@@ -4,5 +4,10 @@
             "ip": "0.0.0.99",
             "port": 4000
         }
-    ]
+    ],
+    "request_timeout": 3,
+    "verification_timeout": 3.5,
+    "blacklist": [],
+    "whitelist": [],
+    "minimum_network_reach": 5,
 }

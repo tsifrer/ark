@@ -37,12 +37,6 @@ class Config(dict, metaclass=SingletonMeta):
 
         with open(os.path.join(folder, "peers.json")) as f:
             self.peers = json.loads(f.read())
-            # TODO: Put below things in config
-            self.peers["request_timeout"] = 3
-            self.peers["verification_timeout"] = 3.5
-            self.peers["blacklist"] = []
-            self.peers["whitelist"] = []
-            self.peers["minimum_network_reach"] = 5
 
         #     /**
         #  * The list of IPs can access the remote/internal API.
