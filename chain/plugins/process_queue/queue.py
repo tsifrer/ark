@@ -2,7 +2,7 @@ import os
 
 from redis import Redis
 
-from chain.config import Config
+from chain.common.config import config
 
 
 class Queue(object):
@@ -34,7 +34,6 @@ class Queue(object):
             self.db.incr(key)
             return True
         else:
-            config = Config()
             blocktime = config.get_milestone(block.height)["blocktime"]
             # Expire the key after `blocktime` seconds
             self.db.set(key, 0, ex=blocktime)

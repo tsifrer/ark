@@ -9,8 +9,8 @@ from gunicorn.app.base import BaseApplication
 
 from werkzeug.exceptions import HTTPException
 
+from chain.common.config import config
 from chain.common.utils import get_chain_version
-from chain.config import Config
 from chain.p2p_service.exceptions import P2PException
 from chain.p2p_service.external import close_db
 from chain.p2p_service.views import peer
@@ -36,8 +36,7 @@ def _validate_request_headers():
 # TODO: tests for this
 def _accept_request():
     if request.headers.get("x-auth") == "forger" or request.path.startswith("/remote"):
-        config = Config()
-        if request.remote_addr in config["p2p_service"]["remote_access"]:
+        if request.remote_addr in config.p2p_service["remote_access"]:
             return None
         else:
             raise P2PException("Forbidden", status_code=403)
@@ -74,8 +73,7 @@ def _handle_api_errors(ex):
 def _set_default_response_headers(response):
     # Core implementation also sets `height` in the headers, but I it doesn't seem
     # to be used anywhere and it just adds an extra DB query on each request.
-    config = Config()
-    response.headers["nethash"] = config["network"]["nethash"]
+    response.headers["nethash"] = config.network["nethash"]
     response.headers["version"] = get_chain_version()
     response.headers["port"] = 4002  # TODO: get this from the config somewhere
     response.headers["os"] = platform.system().lower()
@@ -93,14 +91,14 @@ class P2PService(BaseApplication):
         super().__init__()
 
     def load_config(self):
-        config = dict(
+        cfg = dict(
             [
                 (key, value)
                 for key, value in self.options.items()
                 if key in self.cfg.settings and value is not None
             ]
         )
-        for key, value in config.items():
+        for key, value in cfg.items():
             self.cfg.set(key.lower(), value)
 
     def load(self):

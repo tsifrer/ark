@@ -3,10 +3,10 @@ import random
 
 from redis import Redis
 
+from chain.common.config import config
 from chain.common.exceptions import PeerNotFoundException
 from chain.common.plugins import load_plugin
 from chain.common.utils import get_chain_version
-from chain.config import Config
 from chain.plugins.peers.tasks import add_peer
 
 from .peer import Peer
@@ -70,15 +70,14 @@ class PeerManager(object):
         return None
 
     def _populate_seed_peers(self):
-        config = Config()
-        peer_list = config["peers"]["list"]
+        peer_list = config.peers["list"]
         # TODO: put this trough add_peer task
         for peer_obj in peer_list:
             add_peer(
                 ip=peer_obj["ip"],
                 port=peer_obj["port"],
                 chain_version=get_chain_version(),
-                nethash=config["network"]["nethash"],
+                nethash=config.network["nethash"],
                 os=None,
             )
 
@@ -111,5 +110,4 @@ class PeerManager(object):
         self.redis.set(self.key_suspended.format(peer.ip), peer.to_json())
 
     def has_minimum_peers(self):
-        config = Config()
-        return len(self.peers()) >= config["peers"]["minimum_network_reach"]
+        return len(self.peers()) >= config.peers["minimum_network_reach"]

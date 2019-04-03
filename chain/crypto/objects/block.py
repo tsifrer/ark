@@ -3,7 +3,7 @@ from hashlib import sha256
 
 from binary.unsigned_integer import write_bit32, write_bit64
 
-from chain.config import Config
+from chain.common.config import config
 from chain.crypto import slots, time
 from chain.crypto.bytebuffer import ByteBuffer
 from chain.crypto.objects.base import (
@@ -164,7 +164,6 @@ class Block(CryptoObject):
     def get_id_hex(self):
         payload_hash = unhexlify(self.serialize())
         full_hash = sha256(payload_hash).digest()
-        config = Config()
         milestone = config.get_milestone(self.height)
         if milestone["block"]["idFullSha256"]:
             return hexlify(full_hash)
@@ -174,14 +173,12 @@ class Block(CryptoObject):
 
     def get_id(self):
         id_hex = self.get_id_hex()
-        config = Config()
         milestone = config.get_milestone(self.height)
         if milestone["block"]["idFullSha256"]:
             return id_hex.decode("utf-8")
         return str(int(id_hex, 16))
 
     def serialize(self, include_signature=True):
-        config = Config()
         milestone = config.get_milestone(self.height - 1)
         if milestone["block"]["idFullSha256"]:
             if len(self.previous_block) != 64:
@@ -242,7 +239,6 @@ class Block(CryptoObject):
         For deserializing previous block id, we need to check the milestone for
         previous block
         """
-        config = Config()
         milestone = config.get_milestone(self.height - 1)
         if milestone["block"]["idFullSha256"]:
             self.previous_block_hex = hexlify(buff.pop_bytes(32))
@@ -295,7 +291,6 @@ class Block(CryptoObject):
         errors = []
 
         # TODO: find a better way to get milestone data
-        config = Config()
         milestone = config.get_milestone(self.height)
         # Check that the previous block is set if it's not a genesis block
         if self.height > 1 and not self.previous_block:

@@ -2,7 +2,7 @@ from peewee import fn
 
 import psutil
 
-from chain.config import Config
+from chain.common.config import config
 from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
@@ -38,9 +38,8 @@ class WalletManager(object):
         self._public_key_map = {}
         self._username_map = {}
 
-        config = Config()
         self._genesis_addresses = set()
-        for transaction in config["genesis_block"]["transactions"]:
+        for transaction in config.genesis_block["transactions"]:
             self._genesis_addresses.add(transaction["senderId"])
 
     def _build_received_transactions(self):

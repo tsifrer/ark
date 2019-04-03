@@ -3,7 +3,7 @@ from ipaddress import ip_address
 
 import requests
 
-from chain.config import Config
+from chain.common.config import config
 from chain.crypto.objects.block import Block
 
 from .utils import ip_is_blacklisted, ip_is_whitelisted, verify_peer_status
@@ -58,13 +58,12 @@ class Peer(object):
         full_url = "{}://{}:{}{}".format(scheme, self.ip, self.port, url)
         print(full_url)
         print(params)
-        config = Config()
         try:
             response = requests.get(
                 full_url,
                 params=params,
                 headers=self.headers,
-                timeout=timeout or config["peers"]["request_timeout"],
+                timeout=timeout or config.peers["request_timeout"],
             )
         except requests.exceptions.RequestException as e:
             print("Request to {} failed because of {}".format(full_url, e))
@@ -116,8 +115,7 @@ class Peer(object):
         return True
 
     def is_valid_network(self):
-        config = Config()
-        return self.nethash == config["network"]["nethash"]
+        return self.nethash == config.network["nethash"]
 
     def fetch_common_block_by_ids(self, block_ids):
         print(block_ids)
@@ -182,8 +180,7 @@ class Peer(object):
     def verify_peer(self, timeout=None):
         # verification_start = datetime.now()
         if not timeout:
-            config = Config()
-            timeout = config["peers"]["verification_timeout"]
+            timeout = config.peers["verification_timeout"]
 
         body = self._get("/peer/status", timeout=timeout)
 

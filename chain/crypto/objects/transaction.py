@@ -14,7 +14,7 @@ from binary.unsigned_integer import (
     write_bit8,
 )
 
-from chain.config import Config
+from chain.common.config import config
 from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
@@ -507,8 +507,7 @@ class Transaction(CryptoObject):
     def get_id(self):
         transaction_id = self.get_hash()
 
-        config = Config()
-        exceptions = config["exceptions"].get("transactionIdFixTable", {})
+        exceptions = config.exceptions.get("transactionIdFixTable", {})
 
         # Some transactions in the past might have erroneously calculated IDs
         # so if they are defined as exceptions, override the ID with the one defined

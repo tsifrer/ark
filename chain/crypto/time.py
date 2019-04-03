@@ -4,7 +4,7 @@ from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
 
-from chain.config import Config
+from chain.common.config import config
 
 # TODO: move this to utils or someting and out of crypto?
 
@@ -12,8 +12,7 @@ from chain.config import Config
 def get_epoch_time():
     # TODO: Might be better to use `get_milestone` from the config, but then
     # we need to figure out how to pass/store the height
-    config = Config()
-    date = isoparse(config["milestones"][0]["epoch"])
+    date = isoparse(config.milestones[0]["epoch"])
     return date.astimezone(UTC)
 
 

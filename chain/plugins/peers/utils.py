@@ -1,18 +1,16 @@
+from chain.common.config import config
 from chain.common.plugins import load_plugin
-from chain.config import Config
 from chain.crypto.utils import calculate_round
 
 
 def ip_is_blacklisted(ip):
-    config = Config()
-    if ip in config["peers"]["blacklist"]:
+    if ip in config.peers["blacklist"]:
         return True
     return False
 
 
 def ip_is_whitelisted(ip):
-    config = Config()
-    if ip in config["peers"]["whitelist"]:
+    if ip in config.peers["whitelist"]:
         return True
     return False
 

@@ -1,6 +1,6 @@
 from binascii import unhexlify
 
-from chain.config import Config
+from chain.common.config import config
 from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
@@ -96,7 +96,6 @@ class Wallet(object):
 
         has_signature = transaction.second_signature or transaction.sign_signature
         if not self.second_public_key and has_signature:
-            config = Config()
             milestone = config.get_milestone(block.height)
             # Accept invalid second signature fields prior the applied patch
             if not milestone["ignoreInvalidSecondSignatureField"]:

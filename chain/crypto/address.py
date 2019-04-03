@@ -6,7 +6,7 @@ from base58 import b58encode_check
 
 from binary.unsigned_integer import write_bit8
 
-from chain.config import Config
+from chain.common.config import config
 
 
 def address_from_public_key(public_key, network_version=None):
@@ -24,8 +24,7 @@ def address_from_public_key(public_key, network_version=None):
         raise Exception("Invalid public key")  # TODO: better exception
 
     if not network_version:
-        config = Config()
-        network_version = config["network"]["pubKeyHash"]
+        network_version = config.network["pubKeyHash"]
 
     ripemd160 = hashlib.new("ripemd160", unhexlify(public_key.encode()))
     payload = write_bit8(network_version) + ripemd160.digest()

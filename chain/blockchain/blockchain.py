@@ -10,9 +10,9 @@ from chain.blockchain.constants import (
     BLOCK_REJECTED,
 )
 from chain.blockchain.utils import is_block_chained
+from chain.common.config import config
 from chain.common.exceptions import PeerNotFoundException
 from chain.common.plugins import load_plugin
-from chain.config import Config
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
 from chain.crypto.utils import is_block_exception
@@ -35,7 +35,6 @@ class Blockchain(object):
 
     def start(self):
         # TODO: change prints to loggers
-        config = Config()
         print("Starting the blockchain")
 
         apply_genesis_round = False
@@ -45,8 +44,8 @@ class Blockchain(object):
             # If block is not found in the db, insert a genesis block
             if not block:
                 print("No block found in the database")
-                block = Block.from_dict(config["genesis_block"])
-                if block.payload_hash != config["network"]["nethash"]:
+                block = Block.from_dict(config.genesis_block)
+                if block.payload_hash != config.network["nethash"]:
                     print(
                         "FATAL: The genesis block payload hash is different from "
                         "the configured nethash"
@@ -278,7 +277,6 @@ class Blockchain(object):
 
     def is_synced(self, last_block):
         current_time = time.get_time()
-        config = Config()
         blocktime = config.get_milestone(last_block.height)["blocktime"]
         return (current_time - last_block.timestamp) < (3 * blocktime)
 
@@ -445,7 +443,6 @@ class Blockchain(object):
         return self._handle_accepted_block(block)
 
     def consume_queue(self):
-        config = Config()
         while True:
             serialized_block = self.process_queue.pop_block()
             if serialized_block:

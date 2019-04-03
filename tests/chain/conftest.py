@@ -1,6 +1,6 @@
 import pytest
 
-from chain.config import Config
+from chain.common.config import config
 from chain.crypto.objects.block import Block as CryptoBlock
 from chain.p2p_service.server import create_app
 from chain.plugins.database.migrate import migrate
@@ -16,8 +16,7 @@ def _create_genesis_block():
     Transaction.delete().execute()
     Block.delete().execute()
 
-    config = Config()
-    block = CryptoBlock.from_dict(config["genesis_block"])
+    block = CryptoBlock.from_dict(config.genesis_block)
 
     db_block = Block.from_crypto(block)
     db_block.save(force_insert=True)
