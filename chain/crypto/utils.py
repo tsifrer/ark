@@ -34,3 +34,10 @@ def calculate_round(height):
     current_round = math.floor((height - 1) / max_delegates) + 1
     next_round = math.floor(height / max_delegates) + 1
     return current_round, next_round, max_delegates
+
+
+def is_new_round(height):
+    """Checks if height is at the start of new round
+    """
+    max_delegates = config.get_milestone(height)["activeDelegates"]
+    return height % max_delegates == 1

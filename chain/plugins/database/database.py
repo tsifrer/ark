@@ -328,12 +328,15 @@ class Database(object):
         blocks = Block.select().where(Block.height.in_(heights))
         return [CryptoBlock.from_object(block) for block in blocks]
 
+    def delete_round(self, round_to_delete):
+        Round.delete().where(Round.round == round_to_delete)
+
     def revert_block(self, block):
         current_round, next_round, max_delegates = calculate_round(block.height)
         if next_round == current_round + 1 and block.height > max_delegates:
             # const delegates = await this.calcPreviousActiveDelegates(round);
             # this.forgingDelegates = await this.getActiveDelegates(height, delegates);
-            Round.delete().where(Round.round == next_round)
+            self.delete_round(next_round)
 
         self.wallets.revert_block(block)
 

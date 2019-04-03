@@ -52,5 +52,5 @@ huey-logs:
 	docker-compose logs --tail 50 -f chain-huey
 
 docs:
-	cd docs && rm -r _build && make html
+	cd docs && rm -r _build && CHAIN_CONFIG_FOLDER=../ark/devnet make html
 	@echo "\033[95m\n\nBuild successful! View the docs homepage at docs/_build/html/index.html.\n\033[0m"

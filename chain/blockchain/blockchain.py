@@ -15,26 +15,25 @@ from chain.common.exceptions import PeerNotFoundException
 from chain.common.plugins import load_plugin
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
-from chain.crypto.utils import is_block_exception
+from chain.crypto.utils import calculate_round, is_block_exception, is_new_round
 
 
 class Blockchain(object):
-    """Blockchain class
-
-        TODO: add docs
+    """Blockchain class holds everything for running a successfull relay worker.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # load_plugins(self)
         self.database = load_plugin("chain.plugins.database")
+        self.process_queue = load_plugin("chain.plugins.process_queue")
         self.peers = load_plugin("chain.plugins.peers")
         self.peers.setup()
-        self.process_queue = load_plugin("chain.plugins.process_queue")
 
     def start(self):
-        # TODO: change prints to loggers
+        """Starts the blockchain. Depending of the state of the blockchain it will
+        decide what needs to be done in order to correctly start syncing.
+        """
         print("Starting the blockchain")
 
         apply_genesis_round = False
@@ -57,8 +56,6 @@ class Blockchain(object):
                     self.database.save_block(block)
                     apply_genesis_round = True
 
-            # If database did not just restore database integrity, verify the blockchain
-            # if not self.database.restored_database_integrity:
             print("Verifying database integrity")
             is_valid = False
             errors = None
@@ -87,21 +84,6 @@ class Blockchain(object):
                 )
 
             print("Verified database integrity")
-            # else:
-            #     print(
-            #         'Skipping database integrity check after successful database '
-            #         'recovery'
-            #     )
-
-            # TODO: figure this  out
-            # // only genesis block? special case of first round needs to be dealt with
-            # if (block.data.height === 1) {
-            #     await blockchain.database.deleteRound(1);
-            # }
-
-            # TODO: Watafak
-            # stateStorage.setLastBlock(block);
-            # stateStorage.lastDownloadedBlock = block;
 
             # if (stateStorage.networkStart) {
             #     await blockchain.database.buildWallets(block.data.height);
@@ -112,41 +94,25 @@ class Blockchain(object):
             #     return blockchain.dispatch("STARTED");
             # }
 
-            # if (process.env.NODE_ENV === "test") {
-            #     logger.verbose("TEST SUITE DETECTED! SYNCING WALLETS AND STARTING
-            # IMMEDIATELY. :bangbang:");
-
-            #     stateStorage.setLastBlock(new Block(config.get("genesisBlock")));
-            #     await blockchain.database.buildWallets(block.data.height);
-
-            #     return blockchain.dispatch("STARTED");
-            # }
-
             print("Last block in database: {}".format(block.height))
-            # TODO: whatever the comment below means
-            # removing blocks up to the last round to compute active delegate list
-            # later if needed
-            # active_delegates = self.database.get_active_delegates(block.height)
-            # if not active_delegates:
-            #     # TODO: rollback_current_round doesn't do anything ATM
-            #     self.rollback_current_round()
 
-            # TODO: Rebuild SPV stuff
-
-            # TODO: the rest of the stuff
+            # if the node is shutdown between round, the round has already been applied
+            # so we delete it to start a new, fresh round
+            if is_new_round(block.height + 1):
+                current_round, _, _ = calculate_round(block.height + 1)
+                print(
+                    "Start of new round detected {}. Removing it in order to correctly "
+                    "start the chain with new round."
+                )
+                self.database.delete_round(current_round)
 
             # Rebuild wallets
             self.database.wallets.build()
 
-            # delegate_wallets = self.database.wallets.load_active_delegate_wallets(562)
-
-            # for wallet in delegate_wallets:
-            #     print(wallet.public_key, wallet.username, wallet.vote_balance)
-
             if apply_genesis_round:
                 self.database.apply_round(block.height)
 
-            self.start_syncing()
+            self.sync_chain()
 
             print("Blockhain is syced!")
 
@@ -160,32 +126,16 @@ class Blockchain(object):
 
             self.consume_queue()
         except Exception as e:
-            raise e  # TODO:
-            # TODO: log exception
             self.stop()
+            # TODO: log exception
+            raise e  # TODO:
 
-    def start_syncing(self):
-        start = datetime.now()
-        print("STARTED", start)
-        while True:
-            last_block = self.database.get_last_block()
-            if not self.is_synced(last_block):
-                try:
-                    self.sync_blocks(last_block)
-                except PeerNotFoundException as e:
-                    print(str(e))
-                    print(
-                        "Waiting for 1 second before continuing to give peers time to "
-                        "populate"
-                    )
-                    sleep(1)
-            else:
-                break
-            print("Time taken", datetime.now() - start)
+    def sync_blocks_from_random_peer(self, last_block):
+        """Fetches blocks after the last_block.height from random peer and processes
+        them
 
-        print("Done syncing", datetime.now() - start)
-
-    def sync_blocks(self, last_block):
+        :param Block last_block: Last crypto Block object that is in the database
+        """
         print()
         print()
         print("Fetching blocks from height {}".format(last_block.height))
@@ -228,15 +178,38 @@ class Blockchain(object):
         else:
             print("No new block found on this peer")
 
+    def sync_chain(self):
+        """Syncs the chain up to the latest height by fetching the blocks from random
+        peers.
+        """
+        start = datetime.now()
+        print("Started synching", start)
+        while True:
+            last_block = self.database.get_last_block()
+            if not self.is_synced(last_block):
+                try:
+                    self.sync_blocks_from_random_peer(last_block)
+                except PeerNotFoundException as e:
+                    print(str(e))
+                    print(
+                        "Waiting for 1 second before continuing to give peers time to "
+                        "populate"
+                    )
+                    sleep(1)
+            else:
+                break
+            print("Time taken", datetime.now() - start)
+        print("Done syncing", datetime.now() - start)
+
     def stop(self):
         print("Stopping blockchain")
 
-    def fork_block(self, block):
+    def recover_from_fork(self):
+        """Recover from fork. Reverts a random number of blocks.
+        """
         print("Starting fork recovery")
-
         # Revert a random number of blocks. Somewhere between 4 and 102
         n_blocks = randint(4, 102)
-
         self.revert_blocks(n_blocks)
         # TODO:
         # stateStorage.numberOfBlocksToRollback = null;
@@ -247,6 +220,10 @@ class Blockchain(object):
         # await blockchain.p2p.refreshPeersAfterFork();
 
     def revert_blocks(self, n_blocks):
+        """Reverts last N blocks
+
+        :param int n_blocks: number of blocks to revert
+        """
         block = self.database.get_last_block()
         print(
             "Reverting {} blocks. Reverting to height {}".format(
@@ -270,6 +247,10 @@ class Blockchain(object):
         self.process_queue.clear()
 
     def is_synced(self, last_block):
+        """Checks if blockchain is synced to at least second to last height
+
+        :param Block last_block: last block that is in the database
+        """
         current_time = time.get_time()
         blocktime = config.get_milestone(last_block.height)["blocktime"]
         return (current_time - last_block.timestamp) < (3 * blocktime)
@@ -384,7 +365,7 @@ class Blockchain(object):
                         break
 
                 if is_active_delegate:
-                    self.fork_block(block)
+                    self.recover_from_fork()
                 return BLOCK_REJECTED
 
             print(
@@ -462,5 +443,5 @@ class Blockchain(object):
             last_block = self.database.get_last_block()
             if not self.is_synced(last_block):
                 print("Force syncing with the network as we got out of sync")
-                self.start_syncing()
+                self.sync_chain()
                 print("Done force syncing")
