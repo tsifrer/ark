@@ -35,7 +35,7 @@ migrate:
 
 database:
 	docker-compose up -d chain-db
-	sleep 3s
+	@docker-compose exec chain-db bash -c "echo -n 'Waiting for chain-db to be ready: '; while true ; do if ! psql -l -U $${POSTGRES_DB_USER:-postgres} >/dev/null 2>&1 ; then echo -n '.' ; sleep 0.2 ; else echo ' Done.' ; break ; fi ; done"
 
 start:
 	make database
