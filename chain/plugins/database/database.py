@@ -9,6 +9,7 @@ from chain.crypto.objects.transaction import Transaction as CryptoTransaction
 from chain.crypto.utils import calculate_round
 
 from .models.block import Block
+from .models.pool_transaction import PoolTransaction
 from .models.round import Round
 from .models.transaction import Transaction
 from .wallet_manager import WalletManager
@@ -39,6 +40,7 @@ class Database(object):
         Block._meta.database = self.db
         Transaction._meta.database = self.db
         Round._meta.database = self.db
+        PoolTransaction._meta.database = self.db
 
         self._active_delegates = []
 

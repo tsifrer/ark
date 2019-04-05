@@ -495,3 +495,17 @@ class Transaction(CryptoObject):
             value = getattr(self, field.name)
             data[field.attr] = field.to_json_value(value)
         return data
+
+    def expires_at(self, max_transaction_age):
+        """Derives transaction expiration time in number of seconds since the genesis
+        block.
+
+        :param int max_transaction_age: maximum age of a transaction in seconds
+        :returns int: expiration time in seconds or None if transaction does not expire
+        """
+        if self.expiration > 0:
+            return self.expiration
+
+        if self.type != TRANSACTION_TYPE_TIMELOCK_TRANSFER:
+            return self.timestamp + max_transaction_age
+        return None

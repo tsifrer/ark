@@ -40,6 +40,7 @@ class Wallet(object):
     ]
 
     def __init__(self, data):
+        super().__init__()
         for field, default in self.fields:
             setattr(self, field, data.get(field, default))
 

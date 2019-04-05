@@ -1,6 +1,5 @@
 from peewee import (
     BigIntegerField,
-    BlobField,
     CharField,
     ForeignKeyField,
     IntegerField,
@@ -12,18 +11,7 @@ from peewee import (
 from playhouse.postgres_ext import JSONField
 
 from .block import Block
-
-
-class BytesField(BlobField):
-    """BlobField adapted to our needs
-    Default BlobField returns memoryview when getting data from the db. We always want
-    bytes.
-    """
-
-    def adapt(self, value):
-        if value and isinstance(value, memoryview):
-            return value.tobytes()
-        return value
+from .fields import BytesField
 
 
 class Transaction(Model):

@@ -38,6 +38,9 @@ class Config(dict, metaclass=SingletonMeta):
         with open(os.path.join(folder, "peers.json")) as f:
             self.peers = json.loads(f.read())
 
+        # TODO: put this in config file
+        self.pool = {"max_transaction_bytes": 1047876}
+
         #     /**
         #  * The list of IPs can access the remote/internal API.
         #  *
