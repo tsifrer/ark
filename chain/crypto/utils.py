@@ -12,7 +12,16 @@ def verify_hash(message, signature, public_key):
         raise TypeError("public_key must be bytes")
 
     pub_key = PublicKey(public_key)
-    is_verified = pub_key.verify(signature, message)
+    try:
+        is_verified = pub_key.verify(signature, message)
+    except ValueError as e:
+        print(str(e))
+        print(
+            "Signature that could not be parsed {}, message: {}".format(
+                signature, message
+            )
+        )
+        return False
     return is_verified
 
 
