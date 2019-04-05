@@ -9,6 +9,8 @@ from peewee import (
     fn,
 )
 
+from playhouse.postgres_ext import JSONField
+
 from .block import Block
 
 
@@ -37,6 +39,7 @@ class Transaction(Model):
     amount = BigIntegerField()
     fee = BigIntegerField()
     serialized = BytesField()
+    asset = JSONField(null=True)
 
     class Meta:
         table_name = "transactions"
@@ -62,6 +65,8 @@ class Transaction(Model):
         model.vendor_field_hex = transaction.vendor_field_hex
         model.amount = transaction.amount
         model.fee = transaction.fee
+        model.asset = transaction.asset
+        # TODO: probably obsolete
         serialized = transaction.serialize()
         model.serialized = serialized
         return model

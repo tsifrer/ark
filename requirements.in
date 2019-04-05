@@ -11,6 +11,7 @@ flake8-import-order
 flask
 gevent
 gunicorn
+hiredis
 huey
 peewee
 peewee-migrate

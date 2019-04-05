@@ -7,7 +7,7 @@ remove-pyc:
 	find . -name "*.pyc" -delete
 
 create-migrations:
-	cd chain/plugins/database; python create_migrations.py
+	CHAIN_CONFIG_FOLDER=ark/devnet python -m chain.plugins.database.create_migrations
 
 lint:
 	flake8 .
@@ -19,7 +19,7 @@ black-check:
 	black --check .
 
 profile:
-	python -m cProfile -o spongebob.prof spongebob.py
+	CHAIN_CONFIG_FOLDER=ark/devnet python -m cProfile -o spongebob.prof spongebob.py
 
 snakeviz:
 	snakeviz spongebob.prof

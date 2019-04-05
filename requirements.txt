@@ -31,6 +31,7 @@ flask==1.0.2
 gevent==1.4.0
 greenlet==0.4.15          # via gevent
 gunicorn==19.9.0
+hiredis==1.0.0
 huey==2.0.0
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx

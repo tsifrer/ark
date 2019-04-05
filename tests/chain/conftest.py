@@ -1,4 +1,8 @@
+import os
+
 import pytest
+
+from redis import Redis
 
 from chain.common.config import config
 from chain.crypto.objects.block import Block as CryptoBlock
@@ -19,11 +23,13 @@ from tests.chain.fixtures import (  # noqa
 )
 
 
-def _create_genesis_block():
+def _clear_db():
     Round.delete().execute()
     Transaction.delete().execute()
     Block.delete().execute()
 
+def _create_genesis_block():
+    _clear_db()
     block = CryptoBlock.from_dict(config.genesis_block)
 
     db_block = Block.from_crypto(block)
@@ -64,11 +70,33 @@ def _create_genesis_block():
     #     )
 
 
+@pytest.fixture
+def redis():
+    print('Flush redis')
+    redis = Redis(
+        host=os.environ.get("REDIS_HOST", "localhost"),
+        port=os.environ.get("REDIS_PORT", 6379),
+        db=os.environ.get("REDIS_DB", 0),
+    )
+    redis.flushall()
+    return redis
+
+
+@pytest.fixture(scope="session")
+def migrated():
+    print('Migrate')
+    migrate()
+
+
+@pytest.fixture
+def empty_db(migrated):
+    print('Clear')
+    _clear_db()
+
+
 @pytest.fixture(scope="session")
 def db():
     print("executed db")
-    migrate()
-
     _create_genesis_block()
 
 

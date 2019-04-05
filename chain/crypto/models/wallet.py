@@ -1,3 +1,4 @@
+import json
 from binascii import unhexlify
 
 from chain.common.config import config
@@ -13,10 +14,15 @@ from chain.crypto.constants import (
 from chain.crypto.utils import verify_hash
 
 
-# TODO: there might be a better place for this. Maybe not though. Who knows.
+# NOTE: This acts like a model, and it's data is stored in redis
+
 class Wallet(object):
     # TODO: make this mapping better
     # field name, default
+    _redis = None
+    _key = 'wallets:address:{}'
+    _username_key = 'wallets:username:{}'
+
     fields = [
         ("address", None),
         ("public_key", None),
@@ -35,6 +41,36 @@ class Wallet(object):
     def __init__(self, data):
         for field, default in self.fields:
             setattr(self, field, data.get(field, default))
+
+    # @classmethod
+    # def exists(cls, address):
+    #     key = cls._key.format(address)
+    #     return cls._redis.exists(key)
+
+    @classmethod
+    def get(cls, address):
+        key = cls._key.format(address)
+        data = cls._redis.get(key)
+        if data is None:
+            return None
+        return cls(json.loads(data))
+
+    @property
+    def key(self):
+        return self._key.format(self.address)
+
+    @property
+    def username_key(self):
+        return self._username_key.format(self.username.lower())
+
+    def save(self):
+        self._redis.set(self.key, self.to_json())
+
+    def to_json(self):
+        data = {}
+        for field, _ in self.fields:
+            data[field] = getattr(self, field)
+        return json.dumps(data)
 
     def _verify_transaction_signatures(self, transaction, public_key):
         for signature in transaction.signatures:

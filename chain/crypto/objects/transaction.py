@@ -16,6 +16,7 @@ from binary.unsigned_integer import (
 
 from chain.common.config import config
 from chain.crypto.address import address_from_public_key
+from chain.crypto.bytebuffer import ByteBuffer
 from chain.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
     TRANSACTION_TYPE_DELEGATE_RESIGNATION,
@@ -240,121 +241,104 @@ class Transaction(CryptoObject):
 
         return hexlify(bytes_data)
 
-    def _deserialize_type(self, bytes_data):
+    def _deserialize_type(self, buff):
         # TODO: test this extensively
         if self.type == TRANSACTION_TYPE_TRANSFER:
-            self.amount = read_bit64(bytes_data)
-            self.expiration = read_bit32(bytes_data, offset=8)
-            self.recipient_id = b58encode_check(bytes_data[12 : 21 + 12]).decode(
-                "utf-8"
-            )
-            return bytes_data[33:]
+            self.amount = buff.pop_uint64()
+            self.expiration = buff.pop_uint32()
+            self.recipient_id = b58encode_check(buff.pop_bytes(21)).decode("utf-8")
 
         elif self.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
             self.asset["signature"] = {
-                "publicKey": hexlify(bytes_data[:33]).decode("utf-8")
+                "publicKey": hexlify(buff.pop_bytes(33)).decode("utf-8")
             }
-            return bytes_data[33:]
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
-            username_length = read_bit8(bytes_data) // 2
-            username_end = username_length + 1
+            username_length = buff.pop_uint8() // 2
             self.asset["delegate"] = {
-                "username": bytes_data[1:username_end].decode("utf-8")
+                "username": buff.pop_bytes(username_length).decode("utf-8")
             }
-            return bytes_data[username_end:]
 
         elif self.type == TRANSACTION_TYPE_VOTE:
-            vote_length = read_bit8(bytes_data)
+            vote_length = buff.pop_uint8()
             self.asset["votes"] = []
 
-            start = 1
             for _ in range(vote_length):
-                vote = hexlify(bytes_data[start : 34 + start]).decode("utf-8")
+                vote = hexlify(buff.pop_bytes(34)).decode("utf-8")
                 operator = "+" if vote[1] == "1" else "-"
                 self.asset["votes"].append("{}{}".format(operator, vote[2:]))
-                start += 34
-            return bytes_data[start:]
 
         elif self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
             self.asset["multisignature"] = {
                 "keysgroup": [],
-                "min": read_bit8(bytes_data),
-                "lifetime": read_bit8(bytes_data, offset=2),
+                "min": buff.pop_uint8(),
             }
-            keys_num = read_bit8(bytes_data, offset=1)
-            start = 3
+
+            keys_num = buff.pop_uint8()
+            self.asset["multisignature"]["lifetime"] = buff.pop_uint8()
+
             for _ in range(keys_num):
-                key = hexlify(bytes_data[start : 33 + start]).decode("utf-8")
+                key = hexlify(buff.pop_bytes(33)).decode("utf-8")
                 self.asset["multisignature"]["keysgroup"].append(key)
-                start += 33
-            return bytes_data[start:]
 
         elif self.type == TRANSACTION_TYPE_IPFS:
-            dag_length = read_bit8(bytes_data)
+            dag_length = buff.pop_uint8()
             self.asset["ipfs"] = {
-                "dag": hexlify(bytes_data[1:dag_length]).decode("utf-8")
+                "dag": hexlify(buff.pop_bytes(dag_length)).decode("utf-8")
             }
-            return bytes_data[dag_length:]
 
         elif self.type == TRANSACTION_TYPE_TIMELOCK_TRANSFER:
-            self.amount = read_bit64(bytes_data)
-            self.timelock_type = read_bit8(bytes_data, offset=8)
-            self.timelock = read_bit64(bytes_data, offset=9)
-            self.recipient_id = b58encode_check(bytes_data[17 : 21 + 17])
-            return bytes_data[38:]
+            self.amount = buff.pop_uint64()
+            self.timelock_type = buff.pop_uint8()
+            self.timelock = buff.pop_uint64()
+            self.recipient_id = b58encode_check(buff.pop_bytes(21))
 
         elif self.type == TRANSACTION_TYPE_MULTI_PAYMENT:
             self.asset["payments"] = []
-            total = read_bit32(bytes_data)
-            offset = 4
+            total = buff.pop_uint32()
             amount = 0
             for _ in total:
-                payment_amount = read_bit64(bytes_data, offset=offset)
+                payment_amount = buff.pop_uint64()
                 self.asset["payments"].append(
                     {
                         "amount": payment_amount,
-                        "recipientId": b58encode_check(
-                            bytes_data[offset + 8 : 21 + offset + 8]
-                        ),
+                        "recipientId": b58encode_check(buff.pop_bytes(21)),
                     }
                 )
                 amount += payment_amount
-                offset += 8 + 21
-
             self.amount = payment_amount
-            return bytes_data[offset:]
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_RESIGNATION:
             pass
         else:
             raise Exception("Transaction type is invalid")  # TODO: better exception
 
-    def _deserialize_signature(self, bytes_data):
+    def _deserialize_signature(self, buff):
         # Signature
-        if len(bytes_data) > 0:
-            signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-            self.signature = hexlify(bytes_data[:signature_length]).decode("utf-8")
-            bytes_data = bytes_data[signature_length:]
+        if len(buff) > 0:
+            signature_length = int(hexlify(buff.read_bytes(1, offset=1)), 16) + 2
+            self.signature = hexlify(buff.pop_bytes(signature_length)).decode("utf-8")
 
         # Second signature
-        if len(bytes_data) > 0:
-            is_multi_sig = read_bit8(bytes_data) == 255
+        if len(buff) > 0:
+            is_multi_sig = buff.read_uint8() == 255
             if is_multi_sig:
                 # Multiple signatures
                 self.signatures = []
-                bytes_data = bytes_data[1:]
-                while bytes_data:
-                    multi_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
-                    self.signatures.append(
-                        hexlify(bytes_data[:multi_signature_length]).decode("utf-8")
+                while len(buff) > 0:
+                    multi_signature_length = (
+                        int(hexlify(buff.read_bytes(1, offset=1)), 16) + 2
                     )
-                    bytes_data = bytes_data[multi_signature_length:]
+                    self.signatures.append(
+                        hexlify(buff.pop_bytes(multi_signature_length)).decode("utf-8")
+                    )
             else:
                 # Second signature
-                second_signature_length = int(hexlify(bytes_data[1:2]), 16) + 2
+                second_signature_length = (
+                    int(hexlify(buff.read_bytes(1, offset=1)), 16) + 2
+                )
                 self.second_signature = hexlify(
-                    bytes_data[:second_signature_length]
+                    buff.pop_bytes(second_signature_length)
                 ).decode("utf-8")
 
     def _apply_v1_compatibility(self):
@@ -380,24 +364,21 @@ class Transaction(CryptoObject):
             self.vendor_field = unhexlify(self.vendor_field_hex).decode("utf-8")
 
     def deserialize(self, serialized_hex):
-        bytes_data = unhexlify(serialized_hex)
-
-        self.version = read_bit8(bytes_data, offset=1)
-        self.network = read_bit8(bytes_data, offset=2)
-        self.type = read_bit8(bytes_data, offset=3)
-        self.timestamp = read_bit32(bytes_data, offset=4)
-        self.sender_public_key = hexlify(bytes_data[8 : 33 + 8]).decode("utf-8")
-        self.fee = read_bit64(bytes_data, offset=41)
+        buff = ByteBuffer(unhexlify(serialized_hex))
+        buff.pop_bytes(1)  # skip 0xFF marker
+        self.version = buff.pop_uint8()
+        self.network = buff.pop_uint8()
+        self.type = buff.pop_uint8()
+        self.timestamp = buff.pop_uint32()
+        self.sender_public_key = hexlify(buff.pop_bytes(33)).decode("utf-8")
+        self.fee = buff.pop_uint64()
         if Transaction.can_have_vendor_field(self.type):
-            vendor_length = read_bit8(bytes_data, offset=49)
+            vendor_length = buff.pop_uint8()
             if vendor_length > 0:
-                self.vendor_field_hex = hexlify(bytes_data[50 : vendor_length + 50])
+                self.vendor_field_hex = hexlify(buff.pop_bytes(vendor_length))
 
-            remaining_bytes = bytes_data[49 + 1 + vendor_length :]
-        else:
-            remaining_bytes = bytes_data[49 + 1 :]
-        signature_bytes = self._deserialize_type(remaining_bytes)
-        self._deserialize_signature(signature_bytes)
+        self._deserialize_type(buff)
+        self._deserialize_signature(buff)
 
     def get_bytes(self, skip_signature=False, skip_second_signature=False):
         """

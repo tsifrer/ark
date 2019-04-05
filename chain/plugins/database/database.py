@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from hashlib import sha256
 
-from peewee import PostgresqlDatabase
+from playhouse.postgres_ext import PostgresqlExtDatabase
 
 from chain.crypto.objects.block import Block as CryptoBlock
 from chain.crypto.objects.transaction import Transaction as CryptoTransaction
@@ -24,7 +24,7 @@ class Database(object):
 
     def __init__(self):
         super().__init__()
-        self.db = PostgresqlDatabase(
+        self.db = PostgresqlExtDatabase(
             database=os.environ.get("POSTGRES_DB_NAME", "postgres"),
             user=os.environ.get("POSTGRES_DB_USER", "postgres"),
             host=os.environ.get("POSTGRES_DB_HOST", "127.0.0.1"),
@@ -49,7 +49,7 @@ class Database(object):
     def wallets(self):
         # TODO: fix this somehow to not be broken in p2p_service
         if not self._wallets:
-            self._wallets = WalletManager(self.db)
+            self._wallets = WalletManager()
         return self._wallets
 
     def get_last_block(self):

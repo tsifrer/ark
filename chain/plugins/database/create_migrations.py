@@ -13,10 +13,10 @@ from chain.common.plugins import load_plugin
 def create_migrations(name):
 
     database = load_plugin("chain.plugins.database")
-    router = Router(database.db)
+    router = Router(database.db, migrate_dir='chain/plugins/database/migrations')
 
     # Create migration
-    router.create(name, auto="models")
+    router.create(name, auto="chain.plugins.database.models")
 
 
 if __name__ == "__main__":
