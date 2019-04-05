@@ -22,7 +22,7 @@
         }
     ],
     "sources": ["https://raw.githubusercontent.com/ArkEcosystem/peers/master/devnet.json"],
-    "request_timeout": 3,
+    "request_timeout": 3.5,
     "verification_timeout": 3.5,
     "blacklist": [],
     "whitelist": [],

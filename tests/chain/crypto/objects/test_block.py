@@ -149,6 +149,7 @@ def test_from_dict_correctly_sets_data(dummy_block):
         assert transaction.fee == expected["fee"]
         assert transaction.amount == expected["amount"]
         assert transaction.asset == expected["asset"]
+        assert transaction.vendor_field == expected["vendorField"]
 
 
 def test_from_dict_raises_exception_for_wrong_type(dummy_block):

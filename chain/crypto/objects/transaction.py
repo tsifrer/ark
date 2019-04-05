@@ -6,9 +6,6 @@ from base58 import b58decode_check, b58encode_check
 
 from binary.hex import write_high
 from binary.unsigned_integer import (
-    read_bit32,
-    read_bit64,
-    read_bit8,
     write_bit32,
     write_bit64,
     write_bit8,
@@ -126,12 +123,14 @@ class Transaction(CryptoObject):
         bytes_data = bytes()
         if Transaction.can_have_vendor_field(self.type):
             if self.vendor_field:
-                bytes_data += write_bit8(len(self.vendor_field))
-                bytes_data += self.vendor_field.encode("utf-8")
+                data = self.vendor_field.encode("utf-8")
+                bytes_data += write_bit8(len(data))
+                bytes_data += data
                 return bytes_data
             elif self.vendor_field_hex:
-                bytes_data += write_bit8(len(self.vendor_field_hex) / 2)
-                bytes_data += self.vendor_field_hex.encode("utf-8")
+                data = self.vendor_field_hex.encode("utf-8")
+                bytes_data += write_bit8(len(data) / 2)
+                bytes_data += data
                 return bytes_data
 
         bytes_data += write_bit8(0x00)
@@ -415,7 +414,6 @@ class Transaction(CryptoObject):
         elif self.vendor_field:
             bytes_data += self.vendor_field.encode("utf-8")
             num_of_zeroes = 64 - len(self.vendor_field.encode("utf-8"))
-            # self.vendor_field = unhexlify(self.vendor_field_hex).decode('utf-8')
 
             if num_of_zeroes > 0:
                 bytes_data += pack("{}x".format(num_of_zeroes))

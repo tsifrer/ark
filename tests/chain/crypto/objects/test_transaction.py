@@ -153,3 +153,55 @@ def test_verify_correctly_verifies_the_transaction():
     }
     transaction = Transaction.from_dict(data)
     assert transaction.verify() is True
+
+
+def test_serialization_of_special_characters_works_correctly():
+    data = {
+        "version": 1,
+        "network": 30,
+        "type": 0,
+        "timestamp": 51502773,
+        "senderPublicKey": "02d832db873622ebdd50e3e79a851d25172d7c66123015d77700f85a3599547f47",
+        "fee": "1000000",
+        "amount": "1",
+        "expiration": 0,
+        "recipientId": "D9a4Y1qokJxTDEJcfzqW2io1bykdaoW5mp",
+        "vendorFieldHex": (
+            "e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e2"
+            "8a81e28a81e28a81e28a81"
+        ),
+        "id": "01729633cc9d970b610401ceb63c232fe65da3cbe635c5f65b10f32a7fedef37",
+        "signature": (
+            "3044022053f1c24d19dddb937c93f9f8c526b06a49ef0dc246ab2b04675130bc0ddd07ca02"
+            "201c91f0ec1e8c53498aaeaa8f11565f4dbb79c12be756c8e7f6625104212a217b"
+        ),
+    }
+    expected = (
+        b"ff011e00b5de110302d832db873622ebdd50e3e79a851d25172d7c66123015d77700f85a35995"
+        b"47f4740420f000000000030e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81"
+        b"e28a81e28a81e28a81e28a81e28a81e28a81e28a810100000000000000000000001e30993aaa8"
+        b"d686cf1a840c75ed2dec0411c43799e3044022053f1c24d19dddb937c93f9f8c526b06a49ef0d"
+        b"c246ab2b04675130bc0ddd07ca02201c91f0ec1e8c53498aaeaa8f11565f4dbb79c12be756c8e"
+        b"7f6625104212a217b"
+    )
+
+    transaction = Transaction.from_dict(data)
+    transaction.vendor_field == "⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁"
+    assert transaction.serialize() == expected
+
+
+def test_deserialization_of_special_characters_works_correctly():
+    serialized = (
+        b"ff011e00b5de110302d832db873622ebdd50e3e79a851d25172d7c66123015d77700f85a35995"
+        b"47f4740420f000000000030e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81"
+        b"e28a81e28a81e28a81e28a81e28a81e28a81e28a810100000000000000000000001e30993aaa8"
+        b"d686cf1a840c75ed2dec0411c43799e3044022053f1c24d19dddb937c93f9f8c526b06a49ef0d"
+        b"c246ab2b04675130bc0ddd07ca02201c91f0ec1e8c53498aaeaa8f11565f4dbb79c12be756c8e"
+        b"7f6625104212a217b"
+    )
+    transaction = Transaction.from_serialized(serialized)
+    assert transaction.vendor_field == "⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁"
+    assert transaction.vendor_field_hex == (
+        b"e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a8"
+        b"1e28a81e28a81e28a81"
+    )

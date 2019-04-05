@@ -7,6 +7,7 @@ from redis import Redis
 from chain.common.config import config
 from chain.crypto.objects.block import Block as CryptoBlock
 from chain.p2p_service.server import create_app
+from chain.plugins.database.database import Database
 from chain.plugins.database.migrate import migrate
 from chain.plugins.database.models.block import Block
 from chain.plugins.database.models.round import Round
@@ -85,6 +86,7 @@ def redis():
 @pytest.fixture(scope="session")
 def migrated():
     print('Migrate')
+    Database()
     migrate()
 
 
@@ -95,8 +97,9 @@ def empty_db(migrated):
 
 
 @pytest.fixture(scope="session")
-def db():
+def db(migrated):
     print("executed db")
+    _clear_db()
     _create_genesis_block()
 
 
