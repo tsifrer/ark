@@ -54,15 +54,11 @@ class WalletManager(object):
             .where(Transaction.type == TRANSACTION_TYPE_TRANSFER)
             .group_by(Transaction.recipient_id)
         )
-        # mapping = {}
         for transaction in transactions:
             # TODO: make this nicer. It feels like a hack to do it this way
             wallet = self.find_by_address(transaction.recipient_id)
             wallet.balance = int(transaction.amount)
             wallet.save()
-            # mapping[wallet.key] = wallet.to_json()
-        # if mapping:
-            # self.redis.mset(mapping)
 
     def _build_block_rewards(self):
         """Load and apply block rewards to wallets.
@@ -72,14 +68,10 @@ class WalletManager(object):
             fn.SUM(Block.reward + Block.total_fee).alias("reward"),
         ).group_by(Block.generator_public_key)
 
-        # mapping = {}
         for block in blocks:
             wallet = self.find_by_public_key(block.generator_public_key)
             wallet.balance += int(block.reward)
             wallet.save()
-            # mapping[wallet.key] = wallet.to_json()
-        # if mapping:
-            # self.redis.mset(mapping)
 
     # def _build_last_forged_blocks(self):
     #     """Load and apply last forged blocks to wallets.
@@ -112,7 +104,6 @@ class WalletManager(object):
             fn.SUM(Transaction.fee).alias("fee"),
         ).group_by(Transaction.sender_public_key)
 
-        # mapping = {}
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             wallet.balance -= int(transaction.amount)
@@ -125,24 +116,17 @@ class WalletManager(object):
                     )
                 )
             wallet.save()
-        #     mapping[wallet.key] = wallet.to_json()
-        # if mapping:
-        #     self.redis.mset(mapping)
 
     def _build_second_signatures(self):
         transactions = Transaction.select(
             Transaction.sender_public_key, Transaction.asset
         ).where(Transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE)
-        # mapping = {}
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             wallet.sender_public_key = transaction.asset["signature"][
                 "publicKey"
             ]
             wallet.save()
-        #     mapping[wallet.key] = wallet.to_json()
-        # if mapping:
-        #     self.redis.mset(mapping)
 
     def _build_votes(self):
         # TODO: try to optimize this query. We only need the last vote that happened
@@ -158,7 +142,6 @@ class WalletManager(object):
         # can go away
         already_processed_wallets = set()
         voters = []
-        # mapping = {}
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if wallet.address not in already_processed_wallets:
@@ -171,36 +154,24 @@ class WalletManager(object):
                     voters.append(wallet.address)
                 already_processed_wallets.add(wallet.address)
                 wallet.save()
-        #         mapping[wallet.key] = wallet.to_json()
-        # if mapping:
-        #     self.redis.mset(mapping)
 
         # Calculate vote balances
-        # delegate_mapping = {}
         for voter_address in voters:
             voter = self.find_by_address(voter_address)
             delegate = self.find_by_public_key(voter.vote)
             delegate.vote_balance += voter.balance
             delegate.save()
-        #     delegate_mapping[delegate.key] = wallet.to_json()
-        # if delegate_mapping:
-        #     self.redis.mset(delegate_mapping)
 
     def _build_delegates(self):
         transactions = Transaction.select(
             Transaction.sender_public_key, Transaction.asset
         ).where(Transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION)
 
-        # mapping = {}
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             wallet.username = transaction.asset["delegate"]["username"]
-            self.redis.set(wallet.username_key, wallet.address)
-            # self._username_map[wallet.username.lower()] = wallet.address
             wallet.save()
-            # mapping[wallet.key] = wallet.to_json()
-        # if mapping:
-            # self.redis.mset(mapping)
+            self.redis.set(wallet.username_key, wallet.address)
 
         # Calculate forged blocks
         forged_blocks = Block.select(
@@ -209,16 +180,12 @@ class WalletManager(object):
             fn.SUM(Block.reward).alias("reward"),
             fn.COUNT(Block.total_amount).alias("total_produced"),
         ).group_by(Block.generator_public_key)
-        # forged_mapping = {}
         for block in forged_blocks:
             wallet = self.find_by_public_key(block.generator_public_key)
             wallet.forged_fees += int(block.total_fee)
             wallet.forged_rewards += int(block.reward)
             wallet.produced_blocks += int(block.total_produced)
             wallet.save()
-        #     forged_mapping[wallet.key] = wallet.to_json()
-        # if forged_mapping:
-        #     self.redis.mset(forged_mapping)
 
         # TODO: this part
         # Calculate missed blocks
@@ -240,15 +207,11 @@ class WalletManager(object):
             .where(Transaction.type == TRANSACTION_TYPE_MULTI_SIGNATURE)
             .order_by((Transaction.timestamp + Transaction.sequence).desc())
         )
-        # mapping = {}
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if not wallet.multisignature:
                 wallet.multisignature = transaction.asset["multisignature"]
                 wallet.save()
-        #         mapping[wallet.key] = wallet.to_json()
-        # if mapping:
-        #     self.redis.mset(mapping)
 
     def build(self):
         # Execution order of functions below is very important!
@@ -322,7 +285,7 @@ class WalletManager(object):
         """Checks if a given publick_key is a registered delegate
         """
         wallet = self.find_by_public_key(public_key)
-        return self.delegate_exists(wallet.username_key)
+        return self.delegate_exists(wallet.username)
         # is_delegate = self._username_map.get(wallet.username)
         # return True if is_delegate else False
 
@@ -413,6 +376,7 @@ class WalletManager(object):
         # If transaction is a delegate registration, add sender wallet to the
         # _username_map
         if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
+            print('Registering delegate')
             self.redis.set(sender.username_key, sender.address)
             # self._username_map[sender.username] = sender.address
 

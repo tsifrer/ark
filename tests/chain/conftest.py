@@ -96,10 +96,10 @@ def empty_db(migrated):
     _clear_db()
 
 
-@pytest.fixture(scope="session")
-def db(migrated):
-    print("executed db")
+@pytest.fixture
+def db(empty_db):
     _clear_db()
+    print('Creating genesis block')
     _create_genesis_block()
 
 

@@ -42,11 +42,6 @@ class Wallet(object):
         for field, default in self.fields:
             setattr(self, field, data.get(field, default))
 
-    # @classmethod
-    # def exists(cls, address):
-    #     key = cls._key.format(address)
-    #     return cls._redis.exists(key)
-
     @classmethod
     def get(cls, address):
         key = cls._key.format(address)

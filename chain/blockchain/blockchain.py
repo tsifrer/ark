@@ -168,6 +168,7 @@ class Blockchain(object):
                             "Block {} was {}. Skipping all other blocks in this "
                             "batch".format(block.id, status)
                         )
+                        raise
             else:
                 # TODO: Think about banning the peer at this point as it's most
                 # likely that it's a bad peer
