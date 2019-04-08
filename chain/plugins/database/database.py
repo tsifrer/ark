@@ -298,6 +298,8 @@ class Database(object):
 
         transactions_map = defaultdict(list)
         for trans in transactions:
+            # TODO: implement from_object on transaction and use that, instead of
+            # creating it from serialized data.
             transactions_map[trans.block_id].append(
                 CryptoTransaction.from_serialized(trans.serialized)
             )
