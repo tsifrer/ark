@@ -17,7 +17,6 @@ from chain.crypto.constants import (
     TRANSACTION_TYPE_VOTE,
 )
 from chain.crypto.models.wallet import Wallet
-from chain.crypto.objects.transaction import Transaction as CryptoTransaction
 from chain.crypto.utils import calculate_round, is_transaction_exception
 
 from .models.block import Block
@@ -39,6 +38,14 @@ class WalletManager(object):
         )
 
         Wallet._redis = self.redis
+
+        # Clear wallets from redis
+        keys = self.redis.keys(Wallet._key.format("*"))
+        if keys:
+            self.redis.delete(*keys)
+        username_keys = self.redis.keys(Wallet._username_key.format("*"))
+        if username_keys:
+            self.redis.delete(*username_keys)
 
         self._genesis_addresses = set()
         for transaction in config.genesis_block["transactions"]:
@@ -123,9 +130,7 @@ class WalletManager(object):
         ).where(Transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE)
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
-            wallet.sender_public_key = transaction.asset["signature"][
-                "publicKey"
-            ]
+            wallet.sender_public_key = transaction.asset["signature"]["publicKey"]
             wallet.save()
 
     def _build_votes(self):
@@ -248,15 +253,11 @@ class WalletManager(object):
         self._build_multi_signatures()
         print(datetime.now() - start)
 
-
-        print(self.redis.get('wallets.address:None'))
-        print(self.redis.get('wallets.address:none'))
-
         # TODO: Verify that no wallet has negative balance!
 
     def find_by_address(self, address):
         if not isinstance(address, str):
-            raise ValueError('address must be str')
+            raise ValueError("address must be str")
         assert isinstance(address, str)
         wallet = Wallet.get(address)
         if wallet:
@@ -276,18 +277,22 @@ class WalletManager(object):
 
     def exists(self, public_key):
         address = address_from_public_key(public_key)
-        return self.redis.exists(Wallet._key.format(address))
+        if self.redis.exists(Wallet._key.format(address)) == 1:
+            return True
+        return False
 
     def delegate_exists(self, username):
-        return self.redis.exists(Wallet._username_key.format(username.lower()))
+        if not username:
+            return False
+        if self.redis.exists(Wallet._username_key.format(username.lower())) == 1:
+            return True
+        return False
 
     def is_delegate(self, public_key):
         """Checks if a given publick_key is a registered delegate
         """
         wallet = self.find_by_public_key(public_key)
         return self.delegate_exists(wallet.username)
-        # is_delegate = self._username_map.get(wallet.username)
-        # return True if is_delegate else False
 
     def _update_vote_balances(self, sender, recipient, transaction, revert=False):
         # TODO: refactor this to make more sense
@@ -318,7 +323,7 @@ class WalletManager(object):
                 delegate.save()
 
             # Update vote balance of recipient's delegate
-            if recipient.vote:
+            if recipient and recipient.vote:
                 delegate = self.find_by_public_key(recipient.vote)
                 if revert:
                     delegate.vote_balance -= transaction.amount
@@ -376,14 +381,16 @@ class WalletManager(object):
         # If transaction is a delegate registration, add sender wallet to the
         # _username_map
         if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
-            print('Registering delegate')
+            print("Registering delegate")
             self.redis.set(sender.username_key, sender.address)
-            # self._username_map[sender.username] = sender.address
 
-        recipient = self.find_by_address(transaction.recipient_id)
-        if transaction.type == TRANSACTION_TYPE_TRANSFER:
-            recipient.apply_transaction_to_recipient(transaction)
-            recipient.save()
+        recipient = None
+        if transaction.recipient_id:
+            recipient = self.find_by_address(transaction.recipient_id)
+
+            if transaction.type == TRANSACTION_TYPE_TRANSFER:
+                recipient.apply_transaction_to_recipient(transaction)
+                recipient.save()
 
         self._update_vote_balances(sender, recipient, transaction)
 
@@ -397,8 +404,6 @@ class WalletManager(object):
                     block.generator_public_key
                 )
             )
-
-        delegate = self.find_by_public_key(block.generator_public_key)
 
         # TODO: Wrap the code below in try except and do a reverse action
         # Be careful to do it correctly as the Ark Core code doesn't do it correctly
@@ -417,6 +422,7 @@ class WalletManager(object):
                 self.revert_transaction(transaction)
             raise e
 
+        delegate = self.find_by_public_key(block.generator_public_key)
         delegate.apply_block(block)
         delegate.save()
         # If delegate votes for somewone, we need to update vote balance for the
@@ -461,7 +467,6 @@ class WalletManager(object):
 
     def revert_transaction(self, transaction):
         sender = self.find_by_public_key(transaction.sender_public_key)
-
         sender.revert_transaction_for_sender(transaction)
         sender.save()
 
@@ -472,7 +477,6 @@ class WalletManager(object):
                     transaction.asset["delegate"]["username"].lower()
                 )
             )
-            # del self._username_map[transaction.asset["delegate"]["username"]]
 
         recipient = self.find_by_address(transaction.recipient_id)
         if transaction.type == TRANSACTION_TYPE_TRANSFER:

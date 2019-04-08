@@ -29,6 +29,7 @@ def _clear_db():
     Transaction.delete().execute()
     Block.delete().execute()
 
+
 def _create_genesis_block():
     _clear_db()
     block = CryptoBlock.from_dict(config.genesis_block)
@@ -73,7 +74,7 @@ def _create_genesis_block():
 
 @pytest.fixture
 def redis():
-    print('Flush redis')
+    print("Flush redis")
     redis = Redis(
         host=os.environ.get("REDIS_HOST", "localhost"),
         port=os.environ.get("REDIS_PORT", 6379),
@@ -85,21 +86,21 @@ def redis():
 
 @pytest.fixture(scope="session")
 def migrated():
-    print('Migrate')
+    print("Migrate")
     Database()
     migrate()
 
 
 @pytest.fixture
 def empty_db(migrated):
-    print('Clear')
+    print("Clear")
     _clear_db()
 
 
 @pytest.fixture
 def db(empty_db):
     _clear_db()
-    print('Creating genesis block')
+    print("Creating genesis block")
     _create_genesis_block()
 
 

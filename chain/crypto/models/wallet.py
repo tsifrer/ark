@@ -16,12 +16,13 @@ from chain.crypto.utils import verify_hash
 
 # NOTE: This acts like a model, and it's data is stored in redis
 
+
 class Wallet(object):
     # TODO: make this mapping better
     # field name, default
     _redis = None
-    _key = 'wallets:address:{}'
-    _username_key = 'wallets:username:{}'
+    _key = "wallets:address:{}"
+    _username_key = "wallets:username:{}"
 
     fields = [
         ("address", None),

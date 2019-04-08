@@ -1,5 +1,5 @@
-import random
 import os
+import random
 from hashlib import sha256
 
 from factory import Factory, LazyAttribute, Sequence
@@ -18,7 +18,9 @@ class PeeWeeModelFactory(Factory):
 
 class BlockFactory(PeeWeeModelFactory):
     # id = "7176646138626297930"
-    id = LazyAttribute(lambda _: ''.join([str(random.randint(0, 9)) for num in range(19)]))
+    id = LazyAttribute(
+        lambda _: "".join([str(random.randint(0, 9)) for num in range(19)])
+    )
     version = 0
     timestamp = Sequence(lambda n: 24760440 + n * 8)
     height = Sequence(lambda n: 2243161 + n)
@@ -41,7 +43,7 @@ class BlockFactory(PeeWeeModelFactory):
 
 
 class TransactionFactory(PeeWeeModelFactory):
-    
+
     id = LazyAttribute(lambda _: sha256(os.urandom(32)).hexdigest())
     version = 1
     sequence = 0
@@ -53,19 +55,6 @@ class TransactionFactory(PeeWeeModelFactory):
     amount = 1337
     fee = 1000
     serialized = b""
-
-    # 'id': 'a379c51bd27e6f35be1d297f12e90f94c0eb56fc7588cd15f480969513afd125',
-    # 'version': 1,
-    # 'block_id': '6942490254020282224',
-    # 'sequence': 87,
-    # 'timestamp': 51174114,
-    # 'sender_public_key': '0377450c35e9925d933e4825ef3544f680d39db18264959b08eb9927e0a7c9eaf4',
-    # 'recipient_id': 'D9a4Y1qokJxTDEJcfzqW2io1bykdaoW5mp',
-    # 'type': 0,
-    # 'vendor_field_hex': b'4861707079205370616d6d696e6720233939392f34303030',
-    # 'amount': 1,
-    # 'fee': 1000,
-    # # 'serialized': b'ff011e00e2da0c030377450c35e9925d933e4825ef3544f680d39db18264959b08eb9927e0a7c9eaf4e803000000000000184861707079205370616d6d696e6720233939392f343030300100000000000000000000001e30993aaa8d686cf1a840c75ed2dec0411c43799e304402200a51af93d83a669992cd7836a847d9cec127bc6c94b5cb0ae53d31cff3c66ba4022070e12f6e911ade366c4b7b0b6d9660cae4ccea20620cd6a8002e28cbd1344059'
 
     class Meta:
         model = Transaction

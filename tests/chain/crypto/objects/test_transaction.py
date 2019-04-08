@@ -161,7 +161,9 @@ def test_serialization_of_special_characters_works_correctly():
         "network": 30,
         "type": 0,
         "timestamp": 51502773,
-        "senderPublicKey": "02d832db873622ebdd50e3e79a851d25172d7c66123015d77700f85a3599547f47",
+        "senderPublicKey": (
+            "02d832db873622ebdd50e3e79a851d25172d7c66123015d77700f85a3599547f47"
+        ),
         "fee": "1000000",
         "amount": "1",
         "expiration": 0,

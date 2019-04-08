@@ -5,11 +5,7 @@ from struct import pack
 from base58 import b58decode_check, b58encode_check
 
 from binary.hex import write_high
-from binary.unsigned_integer import (
-    write_bit32,
-    write_bit64,
-    write_bit8,
-)
+from binary.unsigned_integer import write_bit32, write_bit64, write_bit8
 
 from chain.common.config import config
 from chain.crypto.address import address_from_public_key
@@ -268,10 +264,7 @@ class Transaction(CryptoObject):
                 self.asset["votes"].append("{}{}".format(operator, vote[2:]))
 
         elif self.type == TRANSACTION_TYPE_MULTI_SIGNATURE:
-            self.asset["multisignature"] = {
-                "keysgroup": [],
-                "min": buff.pop_uint8(),
-            }
+            self.asset["multisignature"] = {"keysgroup": [], "min": buff.pop_uint8()}
 
             keys_num = buff.pop_uint8()
             self.asset["multisignature"]["lifetime"] = buff.pop_uint8()

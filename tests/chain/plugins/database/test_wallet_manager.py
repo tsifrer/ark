@@ -4,11 +4,11 @@ import pytest
 
 from chain.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
-    TRANSACTION_TYPE_MULTI_SIGNATURE,
-    TRANSACTION_TYPE_SECOND_SIGNATURE,
     TRANSACTION_TYPE_TRANSFER,
     TRANSACTION_TYPE_VOTE,
 )
+from chain.crypto.models.wallet import Wallet
+from chain.crypto.objects.transaction import Transaction
 from chain.plugins.database.wallet_manager import WalletManager
 
 from tests.chain.factories import BlockFactory, TransactionFactory
@@ -214,28 +214,36 @@ def test_build_sent_transactions(empty_db, redis):
         type=TRANSACTION_TYPE_TRANSFER,
         amount=5000,
         fee=1000,
-        sender_public_key="03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
     )
     TransactionFactory(
         block_id=block.id,
         type=TRANSACTION_TYPE_TRANSFER,
         amount=2000,
         fee=4500,
-        sender_public_key="020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+        sender_public_key=(
+            "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+        ),
     )
     TransactionFactory(
         block_id=block.id,
         type=TRANSACTION_TYPE_TRANSFER,
         amount=13000,
         fee=1300,
-        sender_public_key="03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
     )
     TransactionFactory(
         block_id=block.id,
         type=TRANSACTION_TYPE_DELEGATE_REGISTRATION,
         amount=13000,
         fee=3000,
-        sender_public_key="020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+        sender_public_key=(
+            "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+        ),
     )
 
     manager = WalletManager()
@@ -284,3 +292,314 @@ def test_build_sent_transactions(empty_db, redis):
         "forged_fees": 0,
         "forged_rewards": 0,
     }
+
+
+def test_exists_returns_false_if_does_not_exist(redis):
+    public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    manager = WalletManager()
+    assert manager.exists(public_key) is False
+
+
+def test_exists_returns_true_if_exists(redis):
+    manager = WalletManager()
+    public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+
+    redis.set("wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof", "")
+    assert manager.exists(public_key) is True
+
+
+def test_delegate_exists_returns_false_if_does_not_exist(redis):
+    public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    manager = WalletManager()
+    assert manager.delegate_exists(public_key) is False
+
+
+def test_delegate_exists_returns_true_if_exists(redis):
+    manager = WalletManager()
+
+    redis.set("wallets:username:test", "")
+    assert manager.delegate_exists("test") is True
+
+
+def test_is_delegate_returns_false_if_not_a_delegate(redis):
+    public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    manager = WalletManager()
+
+    redis.set("wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof", json.dumps({}))
+    assert manager.is_delegate(public_key) is False
+
+
+def test_is_delegate_returns_true_if_is_delegate(redis):
+    public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    manager = WalletManager()
+
+    redis.set(
+        "wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+        json.dumps({"username": "test"}),
+    )
+    redis.set("wallets:username:test", "")
+    assert manager.is_delegate(public_key) is True
+
+
+def test_update_vote_balances_correctly_for_transaction_type_vote_plus(redis):
+    manager = WalletManager()
+
+    transaction = Transaction()
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.type = TRANSACTION_TYPE_VOTE
+    transaction.asset = {
+        "votes": ["+03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"]
+    }
+
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        json.dumps(
+            {"address": "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW", "vote_balance": 10000000}
+        ),
+    )
+
+    sender = Wallet(
+        {"address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof", "balance": 1337000}
+    )
+
+    manager._update_vote_balances(sender, None, transaction)
+
+    delegate = json.loads(
+        redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW")
+    )
+    assert delegate["vote_balance"] == 11337000
+
+
+def test_update_vote_balances_correctly_for_transaction_type_vote_plus_revert(redis):
+    manager = WalletManager()
+
+    transaction = Transaction()
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.type = TRANSACTION_TYPE_VOTE
+    transaction.asset = {
+        "votes": ["+03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"]
+    }
+
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        json.dumps(
+            {"address": "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW", "vote_balance": 10000000}
+        ),
+    )
+
+    sender = Wallet(
+        {"address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof", "balance": 1337000}
+    )
+
+    manager._update_vote_balances(sender, None, transaction, revert=True)
+
+    delegate = json.loads(
+        redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW")
+    )
+    assert delegate["vote_balance"] == 8673000
+
+
+def test_update_vote_balances_correctly_for_transaction_type_vote_minus(redis):
+    manager = WalletManager()
+
+    transaction = Transaction()
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.type = TRANSACTION_TYPE_VOTE
+    transaction.asset = {
+        "votes": ["-03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"]
+    }
+
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        json.dumps(
+            {"address": "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW", "vote_balance": 10000000}
+        ),
+    )
+
+    sender = Wallet(
+        {"address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof", "balance": 1337000}
+    )
+
+    manager._update_vote_balances(sender, None, transaction)
+
+    delegate = json.loads(
+        redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW")
+    )
+    assert delegate["vote_balance"] == 8653000
+
+
+def test_update_vote_balances_correctly_for_transaction_type_vote_minus_revert(redis):
+    manager = WalletManager()
+
+    transaction = Transaction()
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.type = TRANSACTION_TYPE_VOTE
+    transaction.asset = {
+        "votes": ["-03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"]
+    }
+
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        json.dumps(
+            {"address": "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW", "vote_balance": 10000000}
+        ),
+    )
+
+    sender = Wallet(
+        {"address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof", "balance": 1337000}
+    )
+
+    manager._update_vote_balances(sender, None, transaction, revert=True)
+
+    delegate = json.loads(
+        redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW")
+    )
+    assert delegate["vote_balance"] == 11337000
+
+
+def test_update_vote_balances_correctly_for_transaction(redis):
+    manager = WalletManager()
+
+    transaction = Transaction()
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.type = TRANSACTION_TYPE_TRANSFER
+
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        json.dumps(
+            {
+                "address": "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+                "public_key": (
+                    "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+                ),
+                "vote_balance": 10000000,
+            }
+        ),
+    )
+    redis.set(
+        "wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM",
+        json.dumps(
+            {
+                "address": "AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM",
+                "public_key": (
+                    "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f"
+                ),
+                "vote_balance": 2000000,
+            }
+        ),
+    )
+
+    sender = Wallet(
+        {
+            "address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+            "public_key": (
+                "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+            ),
+            "balance": 1337000,
+            "vote": (
+                "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+            ),
+        }
+    )
+
+    recipient = Wallet(
+        {
+            "address": "ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe",
+            "public_key": (
+                "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+            ),
+            "balance": 66000,
+            "vote": (
+                "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f"
+            ),
+        }
+    )
+
+    manager._update_vote_balances(sender, recipient, transaction)
+
+    delegate1 = json.loads(
+        redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW")
+    )
+    assert delegate1["vote_balance"] == 9560000
+
+    delegate2 = json.loads(
+        redis.get("wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM")
+    )
+    assert delegate2["vote_balance"] == 2430000
+
+
+def test_update_vote_balances_correctly_for_transaction_revert(redis):
+    manager = WalletManager()
+
+    transaction = Transaction()
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.type = TRANSACTION_TYPE_TRANSFER
+
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        json.dumps(
+            {
+                "address": "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+                "public_key": (
+                    "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+                ),
+                "vote_balance": 10000000,
+            }
+        ),
+    )
+    redis.set(
+        "wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM",
+        json.dumps(
+            {
+                "address": "AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM",
+                "public_key": (
+                    "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f"
+                ),
+                "vote_balance": 2000000,
+            }
+        ),
+    )
+
+    sender = Wallet(
+        {
+            "address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+            "public_key": (
+                "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+            ),
+            "balance": 1337000,
+            "vote": (
+                "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+            ),
+        }
+    )
+
+    recipient = Wallet(
+        {
+            "address": "ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe",
+            "public_key": (
+                "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+            ),
+            "balance": 66000,
+            "vote": (
+                "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f"
+            ),
+        }
+    )
+
+    manager._update_vote_balances(sender, recipient, transaction, revert=True)
+
+    delegate1 = json.loads(
+        redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW")
+    )
+    assert delegate1["vote_balance"] == 10440000
+
+    delegate2 = json.loads(
+        redis.get("wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM")
+    )
+    assert delegate2["vote_balance"] == 1570000
