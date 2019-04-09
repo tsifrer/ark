@@ -23,8 +23,9 @@ from .models.block import Block
 from .models.transaction import Transaction
 from chain.crypto.utils import is_transaction_exception
 
+
 class PoolWalletManager(object):
-    wallet_key = 'pool_wallet:{}'
+    wallet_key = "pool_wallet:{}"
 
     def __init__(self):
         super().__init__()
@@ -92,38 +93,21 @@ class PoolWalletManager(object):
         # The check is performed against the database wallet manager and not pool
         # wallet manager
         if self.database.wallets.exists(transaction.sender_public_key):
-            db_wallet = self.database.wallets.find_by_public_key(transaction.sender_public_key)
+            db_wallet = self.database.wallets.find_by_public_key(
+                transaction.sender_public_key
+            )
             if db_wallet.balance == 0:
                 return False
-        
-        sender = self.find_by_public_key(transaction.sender_public_key)
 
-
-        is_transaction_exception
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+        if is_transaction_exception(transaction):
+            print(
+                "Transaction forcibly applied because it has been added as an "
+                "exception".format(transaction.id)
+            )
+            return True
+        else:
+            sender = self.find_by_public_key(transaction.sender_public_key)
 
     # def is_delegate(self, public_key):
     #     """Checks if a given publick_key is a registered delegate

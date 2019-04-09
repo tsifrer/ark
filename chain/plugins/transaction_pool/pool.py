@@ -110,9 +110,6 @@ class Pool(object):
         )
         return query.exists()
 
-
-
-
     def _validate_transaction_by_type(self, transaction, all_transactions):
         vote_and_signature = [TRANSACTION_TYPE_VOTE, TRANSACTION_TYPE_SECOND_SIGNATURE]
         if transaction.type in vote_and_signature:
@@ -133,7 +130,6 @@ class Pool(object):
                 return False, error
             else:
                 return True, None
-
 
         elif transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             if self._sender_has_transactions_of_type(transaction):
@@ -176,11 +172,10 @@ class Pool(object):
                 return False, error
 
             return True, None
-        else:
-            return False, error
-
-
-
+        error = "Invalidating transaction of unsupported type {}".format(
+            transaction.type
+        )
+        return False, error
 
     def _validate_transaction(self, transaction, all_transactions):
         self._purge_expired()
@@ -198,7 +193,9 @@ class Pool(object):
             )
             return False, error
 
-        is_valid, errors = self._validate_transaction_by_type(transaction, all_transactions)
+        is_valid, errors = self._validate_transaction_by_type(
+            transaction, all_transactions
+        )
         return is_valid, errors
 
     def process_transactions(self, transactions_data):
@@ -236,3 +233,13 @@ class Pool(object):
                 )
             elif self.has_exceeded_max_transactions(transaction.sender_public_key):
                 excess.append(transaction.id)
+            else:
+                is_valid, validation_errors = self._validate_transaction(transaction, transactions)
+
+                if is_valid:
+                    if transaction.verify():
+
+
+
+                else:
+                    errors.extend(validation_errors)
