@@ -39,7 +39,11 @@ class Config(dict, metaclass=SingletonMeta):
             self.peers = json.loads(f.read())
 
         # TODO: put this in config file
-        self.pool = {"max_transaction_bytes": 1047876}
+        self.pool = {
+            "max_transaction_characters": 1047876,
+            "allowed_senders": [],  # allowed sender public keys
+            "max_transactions_per_sender": 300,
+        }
 
         #     /**
         #  * The list of IPs can access the remote/internal API.
