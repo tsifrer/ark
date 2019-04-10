@@ -14,7 +14,7 @@ from chain.crypto.objects.base import (
     ListField,
     StrField,
 )
-from chain.crypto.objects.transaction import Transaction
+from chain.crypto.objects.transactions import from_dict, BaseTransaction
 from chain.crypto.utils import verify_hash
 
 
@@ -115,7 +115,7 @@ class Block(CryptoObject):
         if cls.transactions and isinstance(cls.transactions, list):
             transactions = []
             for transaction_data in cls.transactions:
-                transactions.append(Transaction.from_dict(transaction_data))
+                transactions.append(from_dict(transaction_data))
             cls.transactions = transactions
         cls._construct_common()
         return cls
@@ -146,8 +146,8 @@ class Block(CryptoObject):
 
         if cls.transactions:
             for _ in cls.transactions:
-                if not isinstance(cls.transaction, Transaction):
-                    raise TypeError("Transactions must be a {}".format(Transaction))
+                if not isinstance(cls.transaction, BaseTransaction):
+                    raise TypeError("Transactions must be a {}".format(BaseTransaction))
         cls._construct_common()
         return cls
 

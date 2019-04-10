@@ -7,7 +7,7 @@ from redis import Redis
 from chain.common.config import config
 from chain.common.plugins import load_plugin
 from chain.crypto import time
-from chain.crypto.objects.transaction import Transaction as CryptoTransaction
+from chain.crypto.objects.transactions import from_dict
 from chain.plugins.database.models.pool_transaction import PoolTransaction
 from chain.crypto import slots, time
 from chain.crypto.constants import (
@@ -218,7 +218,7 @@ class Pool(object):
                 )
                 continue
 
-            transactions.append(CryptoTransaction.from_dict(transaction_data))
+            transactions.append(from_dict(transaction_data))
 
         for transaction in transactions:
             if self.transaction_exists(transaction.id):

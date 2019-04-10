@@ -32,7 +32,8 @@ def add_peer(ip, port, chain_version, nethash, os):
     # try:
     try:
         peer.verify_peer()
-    except Exception:  # TODO: Be more specific
+    except Exception as e:  # TODO: Be more specific
+        print('Suspended peer because {}'.format(str(e)))
         peer_manager.suspend_peer(peer)
     else:
         print(

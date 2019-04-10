@@ -130,7 +130,7 @@ class WalletManager(object):
         ).where(Transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE)
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
-            wallet.sender_public_key = transaction.asset["signature"]["publicKey"]
+            wallet.second_public_key = transaction.asset["signature"]["publicKey"]
             wallet.save()
 
     def _build_votes(self):
@@ -352,11 +352,6 @@ class WalletManager(object):
                     transaction.id, transaction.asset["votes"][0][1:]
                 )
             )
-        elif transaction.type == TRANSACTION_TYPE_SECOND_SIGNATURE:
-            # TODO: no idea why we need to do this. It seems like a flaw, as if
-            # there was something in here, the serialized transaction will not match
-            # with the newly serialized one.
-            transaction.recipient_id = None
 
         sender = self.find_by_public_key(transaction.sender_public_key)
         # Handle transaction exceptions and verify that we can apply the transaction
@@ -367,15 +362,14 @@ class WalletManager(object):
                 "exception.".format(self.id)
             )
         else:
-            can_apply, errors = sender.can_apply(transaction, block)
-            if not can_apply:
-                print(
-                    "Can't apply transaction {} from sender due to {}".format(
-                        transaction.id, sender.address, errors
+            if not transaction.can_be_applied_to_wallet(sender, self, block):
+                raise Exception(
+                    "Can't apply transaction {} from sender {}".format(
+                        transaction.id, sender.address
                     )
                 )
 
-        sender.apply_transaction_to_sender(transaction)
+        transaction.apply_to_sender_wallet(sender)
         sender.save()
 
         # If transaction is a delegate registration, add sender wallet to the
@@ -389,7 +383,7 @@ class WalletManager(object):
             recipient = self.find_by_address(transaction.recipient_id)
 
             if transaction.type == TRANSACTION_TYPE_TRANSFER:
-                recipient.apply_transaction_to_recipient(transaction)
+                transaction.apply_to_recipient_wallet(recipient)
                 recipient.save()
 
         self._update_vote_balances(sender, recipient, transaction)
@@ -467,7 +461,7 @@ class WalletManager(object):
 
     def revert_transaction(self, transaction):
         sender = self.find_by_public_key(transaction.sender_public_key)
-        sender.revert_transaction_for_sender(transaction)
+        transaction.revert_for_sender_wallet(sender)
         sender.save()
 
         # Removing the wallet from the delegates index
@@ -480,7 +474,7 @@ class WalletManager(object):
 
         recipient = self.find_by_address(transaction.recipient_id)
         if transaction.type == TRANSACTION_TYPE_TRANSFER:
-            recipient.revert_transaction_for_recipient(transaction)
+            transaction.revert_fo_recipient_wallet(recipient)
             recipient.save()
 
         self._update_vote_balances(sender, recipient, transaction, revert=True)

@@ -5,7 +5,7 @@ from hashlib import sha256
 from playhouse.postgres_ext import PostgresqlExtDatabase
 
 from chain.crypto.objects.block import Block as CryptoBlock
-from chain.crypto.objects.transaction import Transaction as CryptoTransaction
+from chain.crypto.objects.transactions import from_serialized
 from chain.crypto.utils import calculate_round
 
 from .models.block import Block
@@ -303,7 +303,7 @@ class Database(object):
             # TODO: implement from_object on transaction and use that, instead of
             # creating it from serialized data.
             transactions_map[trans.block_id].append(
-                CryptoTransaction.from_serialized(trans.serialized)
+                from_serialized(trans.serialized)
             )
 
         crypto_blocks = []

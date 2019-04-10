@@ -16,7 +16,6 @@ from chain.crypto.constants import (
     TRANSACTION_TYPE_VOTE,
 )
 from chain.crypto.models.wallet import Wallet
-from chain.crypto.objects.transaction import Transaction as CryptoTransaction
 from chain.crypto.utils import calculate_round, is_transaction_exception
 
 from .models.block import Block

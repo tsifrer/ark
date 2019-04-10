@@ -107,14 +107,6 @@ class BytesField(Field):
 
 
 class CryptoObjectMeta(type):
-    @staticmethod
-    def _compile_fields(field_map, serializer_cls):
-        fields = []
-        for name, field in field_map.items():
-            field.name = name
-            fields.append(field)
-        return fields
-
     def __call__(cls, *args, **kwargs):
         obj = super().__call__(*args, **kwargs)
         # Set fields on object and set default values
@@ -123,14 +115,20 @@ class CryptoObjectMeta(type):
         return obj
 
     def __new__(cls, name, bases, attrs):
+        # Take all the Fields from the attributes and parent classes.
         fields = {}
-        # Take all the Fields from the attributes.
+        for base in bases:
+            if isinstance(base, CryptoObjectMeta):
+                for parent_field in base._fields:
+                    fields[parent_field.name] = parent_field
+
         for attr_name, field in attrs.items():
             if isinstance(field, Field):
+                field.name = attr_name
                 fields[attr_name] = field
 
         real_cls = super().__new__(cls, name, bases, attrs)
-        real_cls._fields = cls._compile_fields(fields, real_cls)
+        real_cls._fields = list(fields.values())
         return real_cls
 
 

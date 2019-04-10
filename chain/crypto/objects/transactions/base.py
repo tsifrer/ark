@@ -34,7 +34,7 @@ from chain.crypto.objects.base import (
 from chain.crypto.utils import is_transaction_exception, verify_hash
 
 
-class Transaction(CryptoObject):
+class BaseTransaction(CryptoObject):
     version = IntField(attr="version", required=False, default=None)
     network = IntField(attr="network", required=False, default=None)
     type = IntField(attr="type", required=True, default=None)
@@ -117,7 +117,7 @@ class Transaction(CryptoObject):
         """Serialize vendor field of the transaction
         """
         bytes_data = bytes()
-        if Transaction.can_have_vendor_field(self.type):
+        if BaseTransaction.can_have_vendor_field(self.type):
             if self.vendor_field:
                 data = self.vendor_field.encode("utf-8")
                 bytes_data += write_bit8(len(data))
@@ -364,7 +364,7 @@ class Transaction(CryptoObject):
         self.timestamp = buff.pop_uint32()
         self.sender_public_key = hexlify(buff.pop_bytes(33)).decode("utf-8")
         self.fee = buff.pop_uint64()
-        if Transaction.can_have_vendor_field(self.type):
+        if BaseTransaction.can_have_vendor_field(self.type):
             vendor_length = buff.pop_uint8()
             if vendor_length > 0:
                 self.vendor_field_hex = hexlify(buff.pop_bytes(vendor_length))
@@ -509,3 +509,86 @@ class Transaction(CryptoObject):
         if self.type != TRANSACTION_TYPE_TIMELOCK_TRANSFER:
             return self.timestamp + max_transaction_age
         return None
+
+    def can_be_applied_to_wallet(self, wallet, wallet_manager, block):
+        if wallet.multisignature:
+            print("Multi signatures are currently not supported")
+            return False
+
+        balance = wallet.balance - self.amount - self.fee
+        if balance < 0:
+            print("Insufficient balance in the wallet")
+            return False
+
+        if self.sender_public_key != wallet.public_key:
+            print("Sender public key does not match the wallet")
+            return False
+
+        if wallet.second_public_key:
+            if not self.verify_second_signature(wallet.second_public_key):
+                print("Failed to verify second-signature")
+                return False
+        elif self.second_signature or self.sign_signature:
+            milestone = config.get_milestone(block.height)
+            # Accept invalid second signature fields prior the applied patch
+            if not milestone["ignoreInvalidSecondSignatureField"]:
+                print("Wallet does not allow second signatures")
+                return False
+
+        return True
+
+    def apply_to_sender_wallet(self, wallet):
+        address = address_from_public_key(self.sender_public_key)
+        incorrect_wallet = (
+            self.sender_public_key != wallet.public_key and address != wallet.address
+        )
+        if incorrect_wallet:
+            raise Exception(
+                "Incorrect wallet. Wallet with address {} ({}) does not match with "
+                "transaction address {} ({})".format(
+                    wallet.address, wallet.public_key, address, self.sender_public_key
+                )
+            )
+
+        total = self.amount + self.fee
+        wallet.balance -= total
+
+    def apply_to_recipient_wallet(self, wallet):
+        if self.recipient_id != wallet.address:
+            raise Exception(
+                "Incorrect wallet. Wallet with address {} does not match"
+                "with transaction recipient address {}".format(
+                    wallet.address, self.recipient_id
+                )
+            )
+
+        wallet.balance += self.amount
+
+    def revert_for_sender_wallet(self, wallet):
+        address = address_from_public_key(self.sender_public_key)
+        incorrect_wallet = (
+            self.sender_public_key != wallet.public_key and address != wallet.address
+        )
+        if incorrect_wallet:
+            raise Exception(
+                "Incorrect wallet. Wallet with address {} ({}) does not match with "
+                "transaction address {} ({})".format(
+                    wallet.address, wallet.public_key, address, self.sender_public_key
+                )
+            )
+        total = self.amount + self.fee
+        wallet.balance += total
+
+    def revert_for_recipient_wallet(self, wallet):
+        if self.recipient_id != wallet.address:
+            raise Exception(
+                "Incorrect wallet. Wallet with address {} does not match"
+                "with transaction recipient address {}".format(
+                    wallet.address, self.recipient_id
+                )
+            )
+        wallet.balance -= self.amount
+
+    def can_enter_transaction_pool(self, pool):
+        print("Transaction with type {} is not supported".format(self.type))
+        return False
