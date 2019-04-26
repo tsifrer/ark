@@ -1,6 +1,6 @@
 from binascii import hexlify
 
-from chain.crypto.objects.transaction import Transaction
+from chain.crypto.objects.transactions.base import BaseTransaction
 
 # TODO: MOARD TESTS!!!
 # TODO: Test specific transaction types
@@ -9,7 +9,7 @@ from chain.crypto.objects.transaction import Transaction
 def test_serialize_correctly_serializes_transaction(
     dummy_transaction, dummy_transaction_hash
 ):
-    transaction = Transaction.from_dict(dummy_transaction)
+    transaction = BaseTransaction.from_dict(dummy_transaction)
     serialized = transaction.serialize()
     assert serialized == dummy_transaction_hash
 
@@ -32,7 +32,7 @@ def test_get_bytes_returns_correct_data():
         "id": "13987348420913138422",
     }
 
-    transaction = Transaction.from_dict(data)
+    transaction = BaseTransaction.from_dict(data)
     bytes_data = transaction.get_bytes()
     assert isinstance(bytes_data, bytes)
     assert len(bytes_data) == 202
@@ -47,7 +47,7 @@ def test_get_bytes_returns_correct_data():
 
 
 def test_from_serialized_correctly_deserializes_full_data(dummy_transaction_hash):
-    transaction = Transaction.from_serialized(dummy_transaction_hash)
+    transaction = BaseTransaction.from_serialized(dummy_transaction_hash)
 
     assert transaction.version == 1
     assert transaction.network == 30
@@ -93,7 +93,7 @@ def test_from_serialized_correctly_deserializes_full_data(dummy_transaction_hash
 
 
 def test_from_dict_correctly_sets_data(dummy_transaction):
-    transaction = Transaction.from_dict(dummy_transaction)
+    transaction = BaseTransaction.from_dict(dummy_transaction)
     assert transaction.version is None
     assert transaction.network is None
     assert transaction.type == 0
@@ -111,7 +111,7 @@ def test_from_dict_correctly_sets_data(dummy_transaction):
     assert transaction.vendor_field_hex is None
     assert (
         transaction.id
-        == "1e5f0d734413f665cb5a859068cff1bccedcda9cc6df7e586ef61ba8fd74ef5d"
+        == "170543154a3b79459cbaa529f9f62b6f1342682799eb549dbf09fcca2d1f9c11"
     )
     assert transaction.signature == (
         "304402204f12469157b19edd06ba25fcad3d4a5ef5b057c23f9e02de4641e6f8eef0553e022010"
@@ -151,7 +151,7 @@ def test_verify_correctly_verifies_the_transaction():
         "id": "35904cf41b4df8f2e45d1aac366eca8fce25118d19b94333502cc66973adc815",
         "blockId": "10172429794310518146",
     }
-    transaction = Transaction.from_dict(data)
+    transaction = BaseTransaction.from_dict(data)
     assert transaction.verify() is True
 
 
@@ -187,7 +187,7 @@ def test_serialization_of_special_characters_works_correctly():
         b"7f6625104212a217b"
     )
 
-    transaction = Transaction.from_dict(data)
+    transaction = BaseTransaction.from_dict(data)
     transaction.vendor_field == "⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁"
     assert transaction.serialize() == expected
 
@@ -201,7 +201,7 @@ def test_deserialization_of_special_characters_works_correctly():
         b"c246ab2b04675130bc0ddd07ca02201c91f0ec1e8c53498aaeaa8f11565f4dbb79c12be756c8e"
         b"7f6625104212a217b"
     )
-    transaction = Transaction.from_serialized(serialized)
+    transaction = BaseTransaction.from_serialized(serialized)
     assert transaction.vendor_field == "⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁"
     assert transaction.vendor_field_hex == (
         b"e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a8"

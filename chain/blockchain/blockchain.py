@@ -29,6 +29,7 @@ class Blockchain(object):
         self.process_queue = load_plugin("chain.plugins.process_queue")
         self.peers = load_plugin("chain.plugins.peers")
         self.peers.setup()
+        self.transaction_pool = load_plugin("chain.plugins.transaction_pool")
 
     def start(self):
         """Starts the blockchain. Depending of the state of the blockchain it will
@@ -108,6 +109,7 @@ class Blockchain(object):
 
             # Rebuild wallets
             self.database.wallets.build()
+            self.transaction_pool.build_wallets()
 
             if apply_genesis_round:
                 self.database.apply_round(block.height)
@@ -272,8 +274,8 @@ class Blockchain(object):
         print("====== Handle apply block ======")
         self.database.apply_block(block)
 
-        # TODO: a bunch of stuff regarding forked blocks, doing stuff to
-        # transaction pool, reseting a wakeup, setting last block etc etc.
+        self.transaction_pool.accept_chained_block(block)
+
         return BLOCK_ACCEPTED
 
     def _validate_generator(self, block):

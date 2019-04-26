@@ -43,6 +43,26 @@ class Config(dict, metaclass=SingletonMeta):
             "max_transaction_characters": 1047876,
             "allowed_senders": [],  # allowed sender public keys
             "max_transactions_per_sender": 300,
+            "max_transactions_in_pool": 100000,
+            "max_transaction_age": 21600,
+            "dynamic_fees": {
+                "enabled": True,
+                "min_fee_pool": 1000,
+                "min_fee_broadcast": 1000,
+                # TODO: Put this addon_for_type setting to each transaction so new
+                # transactions can be easily added without changing this config
+                "addon_bytes_for_type": {
+                    "0": 100,  # transfer
+                    "1": 250,  # second signature
+                    "2": 400000,  # delegate registration
+                    "3": 100,  # vote
+                    "4": 500,  # multi signature
+                    "5": 250,  # ipfs
+                    "6": 500,  # timelock transfer
+                    "7": 500,  # multi payment
+                    "8": 400000,  # delegate resignation
+                },
+            },
         }
 
         #     /**

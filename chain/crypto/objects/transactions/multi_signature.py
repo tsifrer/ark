@@ -1,10 +1,11 @@
-from .base import BaseTransaction
-from chain.crypto.utils import verify_hash
 from binascii import unhexlify
+
+from chain.crypto.utils import verify_hash
+
+from .base import BaseTransaction
 
 
 class MultiSignatureTransaction(BaseTransaction):
-
     def _verify_transaction_signatures(self, public_key):
         for signature in self.signatures:
             transaction_bytes = self.get_bytes(
@@ -20,10 +21,7 @@ class MultiSignatureTransaction(BaseTransaction):
 
     def _verify_signatures(self):
         multisignature = self.asset["multisignature"]
-        if (
-            not self.signatures
-            or len(self.signatures) < multisignature["min"]
-        ):
+        if not self.signatures or len(self.signatures) < multisignature["min"]:
             return False
 
         keysgroup = []
@@ -42,7 +40,7 @@ class MultiSignatureTransaction(BaseTransaction):
                     return True
         return False
 
-    def can_be_applied_to_wallet(self, wallet, wallet_manager, block):
+    def can_be_applied_to_wallet(self, wallet, wallet_manager, block_height):
         if wallet.multisignature:
             print("Multisignature is already registered for this wallet")
             return False
@@ -61,7 +59,7 @@ class MultiSignatureTransaction(BaseTransaction):
             print("Failed to verify multi-signatures")
             return False
 
-        return super().can_be_applied_to_wallet(wallet, wallet_manager, block)
+        return super().can_be_applied_to_wallet(wallet, wallet_manager, block_height)
 
     def apply_to_sender_wallet(self, wallet):
         super().apply_to_sender_wallet(wallet)

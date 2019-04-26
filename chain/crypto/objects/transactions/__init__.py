@@ -65,3 +65,12 @@ def from_dict(data):
             "Couldn't find transaction {} in mapping".format(data.get("type"))
         )
     return transaction_cls.from_dict(data)
+
+
+def from_object(data):
+    transaction_cls = TRANSACTION_TYPE_MAPPING.get(data.get("type"))
+    if not transaction_cls:
+        raise Exception(
+            "Couldn't find transaction {} in mapping".format(data.get("type"))
+        )
+    return transaction_cls.from_object(data)

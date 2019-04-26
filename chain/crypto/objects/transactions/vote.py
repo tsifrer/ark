@@ -2,7 +2,7 @@ from .base import BaseTransaction
 
 
 class VoteTransaction(BaseTransaction):
-    def can_be_applied_to_wallet(self, wallet, wallet_manager, block):
+    def can_be_applied_to_wallet(self, wallet, wallet_manager, block_height):
         vote = self.asset["votes"][0]
         if vote.startswith("+"):
             if wallet.vote:
@@ -20,7 +20,7 @@ class VoteTransaction(BaseTransaction):
             print("Only delegates can be voted for")
             return False
 
-        return super().can_be_applied_to_wallet(wallet, wallet_manager, block)
+        return super().can_be_applied_to_wallet(wallet, wallet_manager, block_height)
 
     def apply_to_sender_wallet(self, wallet):
         super().apply_to_sender_wallet(wallet)
@@ -38,5 +38,10 @@ class VoteTransaction(BaseTransaction):
         else:
             wallet.vote = vote[1:]
 
-    def can_enter_transaction_pool(self, pool):
-        raise NotImplementedError
+    def validate_for_transaction_pool(self, pool, transactions):
+        if pool.sender_has_transactions_of_type(self):
+            return (
+                "Sender {} already has a transaction of type {} in the "
+                "pool".format(self.sender_public_key, self.type)
+            )
+        return None

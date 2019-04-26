@@ -1,13 +1,27 @@
+import json
 import os
 import random
 from hashlib import sha256
 
 from factory import Factory, LazyAttribute, Sequence
 
+from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import TRANSACTION_TYPE_TRANSFER
+from chain.crypto.models.wallet import Wallet
 from chain.plugins.database.models.block import Block
 from chain.plugins.database.models.round import Round
 from chain.plugins.database.models.transaction import Transaction
+
+
+class RedisModelFactory(object):
+    def _set_attributes(self, wallet):
+        for field, _ in wallet.fields:
+            setattr(self, field, getattr(wallet, field))
+
+    def refresh_from_redis(self):
+        data = self.redis.get(self.key)
+        wallet = Wallet(json.loads(data))
+        self._set_attributes(wallet)
 
 
 class PeeWeeModelFactory(Factory):
@@ -63,3 +77,22 @@ class TransactionFactory(PeeWeeModelFactory):
 class RoundFactory(PeeWeeModelFactory):
     class Meta:
         model = Round
+
+
+class WalletRedisFactory(RedisModelFactory):
+    def __init__(self, redis, **kwargs):
+
+        if "address" not in kwargs and "public_key" not in kwargs:
+            raise ValueError("address or public_key are required")
+
+        address = kwargs.get("address")
+        if not address:
+            address = address_from_public_key(kwargs["public_key"])
+            kwargs["address"] = address
+
+        self.key = "wallets:address:{}".format(address)
+        self.redis = redis
+
+        wallet = Wallet(kwargs)
+        redis.set(self.key, wallet.to_json())
+        self._set_attributes(wallet)

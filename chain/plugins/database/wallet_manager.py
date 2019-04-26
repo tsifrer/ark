@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime
 
@@ -29,6 +30,9 @@ def get_memory_precent():
 
 
 class WalletManager(object):
+    _key = "wallets:address:{}"
+    _username_key = "wallets:username:{}"
+
     def __init__(self):
         super().__init__()
         self.redis = Redis(
@@ -37,19 +41,25 @@ class WalletManager(object):
             db=os.environ.get("REDIS_DB", 0),
         )
 
-        Wallet._redis = self.redis
-
-        # Clear wallets from redis
-        keys = self.redis.keys(Wallet._key.format("*"))
-        if keys:
-            self.redis.delete(*keys)
-        username_keys = self.redis.keys(Wallet._username_key.format("*"))
-        if username_keys:
-            self.redis.delete(*username_keys)
-
         self._genesis_addresses = set()
         for transaction in config.genesis_block["transactions"]:
             self._genesis_addresses.add(transaction["senderId"])
+
+    def key_for_address(self, address):
+        return self._key.format(address)
+
+    def key_for_username(self, username):
+        return self._username_key.format(username.lower())
+
+    def save_wallet(self, wallet):
+        self.redis.set(self.key_for_address(wallet.address), wallet.to_json())
+
+    def _get_wallet_by_address(self, address):
+        key = self.key_for_address(address)
+        data = self.redis.get(key)
+        if data is None:
+            return None
+        return Wallet(json.loads(data))
 
     def _build_received_transactions(self):
         """Load and apply received transactions to wallets.
@@ -65,7 +75,7 @@ class WalletManager(object):
             # TODO: make this nicer. It feels like a hack to do it this way
             wallet = self.find_by_address(transaction.recipient_id)
             wallet.balance = int(transaction.amount)
-            wallet.save()
+            self.save_wallet(wallet)
 
     def _build_block_rewards(self):
         """Load and apply block rewards to wallets.
@@ -78,7 +88,7 @@ class WalletManager(object):
         for block in blocks:
             wallet = self.find_by_public_key(block.generator_public_key)
             wallet.balance += int(block.reward)
-            wallet.save()
+            self.save_wallet(wallet)
 
     # def _build_last_forged_blocks(self):
     #     """Load and apply last forged blocks to wallets.
@@ -122,7 +132,7 @@ class WalletManager(object):
                         wallet.address, wallet.balance
                     )
                 )
-            wallet.save()
+            self.save_wallet(wallet)
 
     def _build_second_signatures(self):
         transactions = Transaction.select(
@@ -131,7 +141,7 @@ class WalletManager(object):
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             wallet.second_public_key = transaction.asset["signature"]["publicKey"]
-            wallet.save()
+            self.save_wallet(wallet)
 
     def _build_votes(self):
         # TODO: try to optimize this query. We only need the last vote that happened
@@ -156,16 +166,16 @@ class WalletManager(object):
                 # None
                 if vote.startswith("+"):
                     wallet.vote = vote[1:]
+                    self.save_wallet(wallet)
                     voters.append(wallet.address)
                 already_processed_wallets.add(wallet.address)
-                wallet.save()
 
         # Calculate vote balances
         for voter_address in voters:
             voter = self.find_by_address(voter_address)
             delegate = self.find_by_public_key(voter.vote)
             delegate.vote_balance += voter.balance
-            delegate.save()
+            self.save_wallet(delegate)
 
     def _build_delegates(self):
         transactions = Transaction.select(
@@ -175,8 +185,8 @@ class WalletManager(object):
         for transaction in transactions:
             wallet = self.find_by_public_key(transaction.sender_public_key)
             wallet.username = transaction.asset["delegate"]["username"]
-            wallet.save()
-            self.redis.set(wallet.username_key, wallet.address)
+            self.save_wallet(wallet)
+            self.redis.set(self.key_for_username(wallet.username), wallet.address)
 
         # Calculate forged blocks
         forged_blocks = Block.select(
@@ -190,7 +200,7 @@ class WalletManager(object):
             wallet.forged_fees += int(block.total_fee)
             wallet.forged_rewards += int(block.reward)
             wallet.produced_blocks += int(block.total_produced)
-            wallet.save()
+            self.save_wallet(wallet)
 
         # TODO: this part
         # Calculate missed blocks
@@ -216,9 +226,17 @@ class WalletManager(object):
             wallet = self.find_by_public_key(transaction.sender_public_key)
             if not wallet.multisignature:
                 wallet.multisignature = transaction.asset["multisignature"]
-                wallet.save()
+                self.save_wallet(wallet)
 
     def build(self):
+        print("Clearing existing wallets from redis")
+        keys = self.redis.keys(self._key.format("*"))
+        if keys:
+            self.redis.delete(*keys)
+        username_keys = self.redis.keys(self.key_for_username("*"))
+        if username_keys:
+            self.redis.delete(*username_keys)
+
         # Execution order of functions below is very important!
         start = datetime.now()
         print("Memory percent:", get_memory_precent())
@@ -259,7 +277,7 @@ class WalletManager(object):
         if not isinstance(address, str):
             raise ValueError("address must be str")
         assert isinstance(address, str)
-        wallet = Wallet.get(address)
+        wallet = self._get_wallet_by_address(address)
         if wallet:
             return wallet
         return Wallet({"address": address})
@@ -269,7 +287,7 @@ class WalletManager(object):
         wallet = self.find_by_address(address)
         if wallet.public_key is None:
             wallet.public_key = public_key
-            wallet.save()
+            self.save_wallet(wallet)
         return wallet
 
     def is_genesis_address(self, address):
@@ -277,14 +295,15 @@ class WalletManager(object):
 
     def exists(self, public_key):
         address = address_from_public_key(public_key)
-        if self.redis.exists(Wallet._key.format(address)) == 1:
+        if self.redis.exists(self.key_for_address(address)) == 1:
             return True
         return False
 
     def delegate_exists(self, username):
         if not username:
             return False
-        if self.redis.exists(Wallet._username_key.format(username.lower())) == 1:
+
+        if self.redis.exists(self.key_for_username(username)) == 1:
             return True
         return False
 
@@ -309,7 +328,7 @@ class WalletManager(object):
                     delegate.vote_balance += sender.balance
                 else:
                     delegate.vote_balance -= sender.balance + transaction.fee
-            delegate.save()
+            self.save_wallet(delegate)
 
         else:
             # Update vote balance of the sender's delegate
@@ -320,7 +339,7 @@ class WalletManager(object):
                     delegate.vote_balance += total
                 else:
                     delegate.vote_balance -= total
-                delegate.save()
+                self.save_wallet(delegate)
 
             # Update vote balance of recipient's delegate
             if recipient and recipient.vote:
@@ -329,7 +348,7 @@ class WalletManager(object):
                     delegate.vote_balance -= transaction.amount
                 else:
                     delegate.vote_balance += transaction.amount
-                delegate.save()
+                self.save_wallet(delegate)
 
     def apply_transaction(self, transaction, block):
         if (
@@ -356,13 +375,13 @@ class WalletManager(object):
         sender = self.find_by_public_key(transaction.sender_public_key)
         # Handle transaction exceptions and verify that we can apply the transaction
         # to the sender
-        if is_transaction_exception(transaction):
+        if is_transaction_exception(transaction.id):
             print(
                 "Transaction {} forcibly applied because it has been added as an "
                 "exception.".format(self.id)
             )
         else:
-            if not transaction.can_be_applied_to_wallet(sender, self, block):
+            if not transaction.can_be_applied_to_wallet(sender, self, block.height):
                 raise Exception(
                     "Can't apply transaction {} from sender {}".format(
                         transaction.id, sender.address
@@ -370,13 +389,13 @@ class WalletManager(object):
                 )
 
         transaction.apply_to_sender_wallet(sender)
-        sender.save()
+        self.save_wallet(sender)
 
         # If transaction is a delegate registration, add sender wallet to the
         # _username_map
         if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             print("Registering delegate")
-            self.redis.set(sender.username_key, sender.address)
+            self.redis.set(self.key_for_username(sender.username), sender.address)
 
         recipient = None
         if transaction.recipient_id:
@@ -384,7 +403,7 @@ class WalletManager(object):
 
             if transaction.type == TRANSACTION_TYPE_TRANSFER:
                 transaction.apply_to_recipient_wallet(recipient)
-                recipient.save()
+                self.save_wallet(recipient)
 
         self._update_vote_balances(sender, recipient, transaction)
 
@@ -418,13 +437,13 @@ class WalletManager(object):
 
         delegate = self.find_by_public_key(block.generator_public_key)
         delegate.apply_block(block)
-        delegate.save()
+        self.save_wallet(delegate)
         # If delegate votes for somewone, we need to update vote balance for the
         # voted delegate
         if delegate.vote:
             voted_delegate = self.find_by_public_key(delegate.vote)
             voted_delegate.vote_balance += block.reward + block.total_fee
-            voted_delegate.save()
+            self.save_wallet(voted_delegate)
 
     def load_active_delegate_wallets(self, height):
         current_round, _, max_delegates = calculate_round(height)
@@ -434,7 +453,7 @@ class WalletManager(object):
 
         delegate_wallets = []
 
-        keys = self.redis.keys(Wallet._username_key.format("*"))
+        keys = self.redis.keys(self.key_for_username("*"))
         addresses = self.redis.mget(keys)
         for address in addresses:
             wallet = self.find_by_address(address.decode())
@@ -462,20 +481,18 @@ class WalletManager(object):
     def revert_transaction(self, transaction):
         sender = self.find_by_public_key(transaction.sender_public_key)
         transaction.revert_for_sender_wallet(sender)
-        sender.save()
+        self.save_wallet(sender)
 
         # Removing the wallet from the delegates index
         if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
             self.redis.delete(
-                Wallet._username_key.format(
-                    transaction.asset["delegate"]["username"].lower()
-                )
+                self.key_for_username(transaction.asset["delegate"]["username"])
             )
 
         recipient = self.find_by_address(transaction.recipient_id)
         if transaction.type == TRANSACTION_TYPE_TRANSFER:
             transaction.revert_fo_recipient_wallet(recipient)
-            recipient.save()
+            self.save_wallet(recipient)
 
         self._update_vote_balances(sender, recipient, transaction, revert=True)
 
@@ -487,11 +504,11 @@ class WalletManager(object):
             self.revert_transaction(transaction)
 
         delegate.revert_block()
-        delegate.save()
+        self.save_wallet(delegate)
 
         # If delegate votes for somewone, we need to update vote balance for the
         # voted delegate
         if delegate.vote:
             voted_delegate = self.find_by_public_key(delegate.vote)
             voted_delegate.vote_balance -= block.reward + block.total_fee
-            voted_delegate.save()
+            self.save_wallet(voted_delegate)

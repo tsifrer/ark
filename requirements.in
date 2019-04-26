@@ -17,8 +17,9 @@ peewee
 peewee-migrate
 pip-tools
 psutil
-psycopg2
+psycopg2-binary
 pytest
+pytest-mock
 python-dateutil
 redis
 requests

@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask.views import MethodView
 
+from chain.common.plugins import load_plugin
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
 from chain.plugins.peers.tasks import add_peer
@@ -116,8 +117,26 @@ class TransactionView(MethodView):
         return jsonify(data), 200
 
     def post(self):
-        raise P2PException("Transaction pool not available", status_code=404)
-        # TODO: implement the rest of this function with transaction pool an stuffz
+        data = request.get_json()
+        print("Posted data to transactions endpoint:")
+        print(data)
+        transactions_data = data.get("transactions")
+        transaction_pool = load_plugin("chain.plugins.transaction_pool")
+        result = transaction_pool.process_transactions(transactions_data)
+        print(result)
+        if len(result["invalid"]) > 0:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "There was an error with one or more transactions",
+                        "error": "There was an error with one or more transactions",
+                    }
+                ),
+                400,
+            )
+
+        return jsonify({"success": True, "transactionIds": result["accepted"]}), 200
 
 
 class BlockCommonView(MethodView):

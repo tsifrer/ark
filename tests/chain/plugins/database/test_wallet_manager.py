@@ -4,33 +4,64 @@ import pytest
 
 from chain.crypto.constants import (
     TRANSACTION_TYPE_DELEGATE_REGISTRATION,
+    TRANSACTION_TYPE_MULTI_SIGNATURE,
+    TRANSACTION_TYPE_SECOND_SIGNATURE,
     TRANSACTION_TYPE_TRANSFER,
     TRANSACTION_TYPE_VOTE,
 )
 from chain.crypto.models.wallet import Wallet
-from chain.crypto.objects.transaction import Transaction
+from chain.crypto.objects.transactions import TransferTransaction, VoteTransaction
 from chain.plugins.database.wallet_manager import WalletManager
 
 from tests.chain.factories import BlockFactory, TransactionFactory
 
 
-def test_find_by_address_correctly_fetches_the_wallet(redis):
+def test_key_for_address():
+    manager = WalletManager()
+    key = manager.key_for_address("spongebob")
+    assert key == "wallets:address:spongebob"
+
+
+def test_key_for_username():
+    manager = WalletManager()
+    key = manager.key_for_username("spongebob")
+    assert key == "wallets:username:spongebob"
+
+
+def test_save_wallet_saves_wallet_to_redis(redis):
+    manager = WalletManager()
+    wallet = Wallet({"address": "spongebob", "username": "squarepants"})
+    manager.save_wallet(wallet)
+
+    keys = redis.keys("*")
+    assert keys == [b"wallets:address:spongebob"]
+
+
+def test_find_by_address_returns_a_new_wallet_if_does_not_exist(redis):
     address = "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
-    key = "wallets:address:{}".format(address).encode()
 
     manager = WalletManager()
     wallet = manager.find_by_address(address)
 
+    assert wallet.address == address
+    assert wallet.public_key is None
+
     keys = redis.keys("*")
     assert keys == []
 
-    wallet.balance = 12345
-    wallet.save()
-    keys = redis.keys("*")
-    assert keys == [key]
+
+def test_find_by_address_returns_existing_wallet(redis):
+    address = "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
+    key = "wallets:address:{}".format(address).encode()
+    manager = WalletManager()
+
+    redis.set(key, Wallet({"address": address, "username": "spongebob"}).to_json())
 
     wallet = manager.find_by_address(address)
-    assert wallet.balance == 12345
+
+    assert wallet.address == address
+    assert wallet.username == "spongebob"
+
     keys = redis.keys("*")
     assert keys == [key]
 
@@ -43,25 +74,60 @@ def test_find_by_address_raises_value_error_if_address_is_not_str(redis):
         manager.find_by_address(address)
 
 
-def test_find_by_public_key_correctly_fetches_the_wallet(redis):
-    key = b"wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
+def test_find_by_public_key_returns_a_new_wallet_if_does_not_exist(redis):
+    address = "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
+    key = "wallets:address:{}".format(address).encode()
     public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+
     manager = WalletManager()
     wallet = manager.find_by_public_key(public_key)
 
-    keys = redis.keys("*")
-    assert keys == [key]
+    assert wallet.address == address
     assert wallet.public_key == public_key
 
-    wallet.balance = 12345
-    wallet.save()
+    # find_by_public_key saves the wallet as it adds public_key to it
     keys = redis.keys("*")
     assert keys == [key]
 
+
+def test_find_by_public_key_returns_existing_wallet(redis):
+    address = "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
+    public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    key = "wallets:address:{}".format(address).encode()
+    manager = WalletManager()
+
+    redis.set(key, Wallet({"address": address, "public_key": public_key}).to_json())
+
     wallet = manager.find_by_public_key(public_key)
-    assert wallet.balance == 12345
+
+    assert wallet.address == address
+    assert wallet.public_key == public_key
+
     keys = redis.keys("*")
     assert keys == [key]
+
+
+def test_get_wallet_by_address_returns_non_if_wallet_not_in_redis():
+    manager = WalletManager()
+    wallet = manager._get_wallet_by_address("spongebob")
+    assert wallet is None
+
+
+def test_get_wallet_by_address_returns_correct_wallet(redis):
+    manager = WalletManager()
+
+    redis.set(
+        "wallets:address:spongebob",
+        Wallet({"address": "spongebob", "username": "squarepants"}).to_json(),
+    )
+    redis.set(
+        "wallets:address:patrick",
+        Wallet({"address": "patrick", "username": "star"}).to_json(),
+    )
+
+    wallet = manager._get_wallet_by_address("spongebob")
+    assert wallet.address == "spongebob"
+    assert wallet.username == "squarepants"
 
 
 def test_build_received_transactions(empty_db, redis):
@@ -294,6 +360,283 @@ def test_build_sent_transactions(empty_db, redis):
     }
 
 
+def test_build_second_signatures(empty_db, redis):
+    block = BlockFactory()
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_SECOND_SIGNATURE,
+        asset={
+            "signature": {
+                "publicKey": (
+                    "120f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a334"
+                )
+            }
+        },
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_TRANSFER,
+        amount=13000,
+        fee=3000,
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    manager = WalletManager()
+    manager._build_second_signatures()
+
+    data = json.loads(redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"))
+
+    assert data["address"] == "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"
+    assert (
+        data["public_key"]
+        == "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+    )
+    assert (
+        data["second_public_key"]
+        == "120f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a334"
+    )
+
+
+def test_build_votes(empty_db, redis):
+    manager = WalletManager()
+    block = BlockFactory()
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_VOTE,
+        asset={
+            "votes": [
+                "+03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+            ]
+        },
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        Wallet(
+            {
+                "address": "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+                "public_key": (
+                    "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+                ),
+                "username": "spongebob",
+                "vote_balance": 1,
+                "balance": 4,
+            }
+        ).to_json(),
+    )
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_VOTE,
+        asset={
+            "votes": [
+                "+022eedf9f1cdae0cfaae635fe415b6a8f1912bc89bc3880ec41135d62cbbebd3d3"
+            ]
+        },
+        sender_public_key=(
+            "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+        ),
+        timestamp=1234,
+        sequence=1,
+    )
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_VOTE,
+        asset={
+            "votes": [
+                "+022eedf9f1cdae0cfaae635fe415b6a8f1912bc89bc3880ec41135d62cbbebd3d3"
+            ]
+        },
+        sender_public_key=(
+            "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+        ),
+        timestamp=1234,
+        sequence=2,
+    )
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_VOTE,
+        asset={
+            "votes": [
+                "+03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+            ]
+        },
+        sender_public_key=(
+            "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+        ),
+        timestamp=1234,
+        sequence=0,
+    )
+    redis.set(
+        "wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+        Wallet(
+            {
+                "address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+                "public_key": (
+                    "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+                ),
+                "balance": 1000,
+            }
+        ).to_json(),
+    )
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_VOTE,
+        asset={
+            "votes": [
+                "-03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+            ]
+        },
+        sender_public_key=(
+            "022eedf9f1cdae0cfaae635fe415b6a8f1912bc89bc3880ec41135d62cbbebd3d3"
+        ),
+    )
+    redis.set(
+        "wallets:address:AcHFimRcEinGcJ1gBD3QAXKcFe8ZwNBkN7",
+        Wallet(
+            {
+                "address": "AcHFimRcEinGcJ1gBD3QAXKcFe8ZwNBkN7",
+                "public_key": (
+                    "022eedf9f1cdae0cfaae635fe415b6a8f1912bc89bc3880ec41135d62cbbebd3d3"
+                ),
+                "balance": 1337,
+            }
+        ).to_json(),
+    )
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_TRANSFER,
+        amount=13000,
+        fee=3000,
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    manager._build_votes()
+
+    data_1 = json.loads(redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"))
+    assert data_1["address"] == "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"
+    assert (
+        data_1["vote"]
+        == "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+    )
+    assert data_1["vote_balance"] == 1005
+    assert data_1["balance"] == 4
+
+    data_2 = json.loads(redis.get("wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"))
+    assert data_2["address"] == "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
+    assert (
+        data_2["vote"]
+        == "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+    )
+    assert data_2["balance"] == 1000
+
+    data_3 = json.loads(redis.get("wallets:address:AcHFimRcEinGcJ1gBD3QAXKcFe8ZwNBkN7"))
+    assert data_3["address"] == "AcHFimRcEinGcJ1gBD3QAXKcFe8ZwNBkN7"
+    assert data_3["vote"] is None
+    assert data_3["balance"] == 1337
+
+
+def test_build_delegate(empty_db, redis):
+    manager = WalletManager()
+    block = BlockFactory(
+        total_fee=10,
+        reward=2,
+        total_amount=12,
+        generator_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    BlockFactory(
+        total_fee=333,
+        reward=666,
+        total_amount=999,
+        generator_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_DELEGATE_REGISTRATION,
+        asset={"delegate": {"username": "spongebob"}},
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_TRANSFER,
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    manager._build_delegates()
+
+    data = json.loads(redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"))
+    assert data["address"] == "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"
+    assert data["username"] == "spongebob"
+    assert data["forged_fees"] == 343
+    assert data["forged_rewards"] == 668
+    assert data["produced_blocks"] == 2
+
+
+def test_build_multi_signatures(empty_db, redis):
+    manager = WalletManager()
+    block = BlockFactory()
+    multisig = {
+        "multisignature": {
+            "min": 2,
+            "lifetime": 72,
+            "keysgroup": [
+                "034a7aca6841cfbdc688f09d55345f21c7ffbd1844693fa68d607fc94f729cbbea",
+                "02fd6743ddfdc7c5bac24145e449c2e4f2d569b5297dd7bf088c3bc219f582a2f0",
+            ],
+        }
+    }
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_MULTI_SIGNATURE,
+        asset=multisig,
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    TransactionFactory(
+        block_id=block.id,
+        type=TRANSACTION_TYPE_TRANSFER,
+        sender_public_key=(
+            "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+        ),
+    )
+
+    manager._build_multi_signatures()
+
+    data = json.loads(redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"))
+    assert data["address"] == "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"
+    assert (
+        data["public_key"]
+        == "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+    )
+    assert data["multisignature"] == multisig["multisignature"]
+
+
 def test_exists_returns_false_if_does_not_exist(redis):
     public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
     manager = WalletManager()
@@ -344,7 +687,7 @@ def test_is_delegate_returns_true_if_is_delegate(redis):
 def test_update_vote_balances_correctly_for_transaction_type_vote_plus(redis):
     manager = WalletManager()
 
-    transaction = Transaction()
+    transaction = VoteTransaction()
     transaction.fee = 10000
     transaction.amount = 430000
     transaction.type = TRANSACTION_TYPE_VOTE
@@ -374,7 +717,7 @@ def test_update_vote_balances_correctly_for_transaction_type_vote_plus(redis):
 def test_update_vote_balances_correctly_for_transaction_type_vote_plus_revert(redis):
     manager = WalletManager()
 
-    transaction = Transaction()
+    transaction = VoteTransaction()
     transaction.fee = 10000
     transaction.amount = 430000
     transaction.type = TRANSACTION_TYPE_VOTE
@@ -404,7 +747,7 @@ def test_update_vote_balances_correctly_for_transaction_type_vote_plus_revert(re
 def test_update_vote_balances_correctly_for_transaction_type_vote_minus(redis):
     manager = WalletManager()
 
-    transaction = Transaction()
+    transaction = VoteTransaction()
     transaction.fee = 10000
     transaction.amount = 430000
     transaction.type = TRANSACTION_TYPE_VOTE
@@ -434,7 +777,7 @@ def test_update_vote_balances_correctly_for_transaction_type_vote_minus(redis):
 def test_update_vote_balances_correctly_for_transaction_type_vote_minus_revert(redis):
     manager = WalletManager()
 
-    transaction = Transaction()
+    transaction = VoteTransaction()
     transaction.fee = 10000
     transaction.amount = 430000
     transaction.type = TRANSACTION_TYPE_VOTE
@@ -464,7 +807,7 @@ def test_update_vote_balances_correctly_for_transaction_type_vote_minus_revert(r
 def test_update_vote_balances_correctly_for_transaction(redis):
     manager = WalletManager()
 
-    transaction = Transaction()
+    transaction = TransferTransaction()
     transaction.fee = 10000
     transaction.amount = 430000
     transaction.type = TRANSACTION_TYPE_TRANSFER
@@ -536,7 +879,7 @@ def test_update_vote_balances_correctly_for_transaction(redis):
 def test_update_vote_balances_correctly_for_transaction_revert(redis):
     manager = WalletManager()
 
-    transaction = Transaction()
+    transaction = TransferTransaction()
     transaction.fee = 10000
     transaction.amount = 430000
     transaction.type = TRANSACTION_TYPE_TRANSFER

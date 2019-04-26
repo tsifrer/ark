@@ -106,6 +106,30 @@ class BaseTransaction(CryptoObject):
                     setattr(cls, field.name, field.default)
         return cls
 
+    @classmethod
+    def from_object(cls, data):
+        cls = cls()
+        for field in cls._fields:
+            value = getattr(data, field.name, field.default)
+            if value is None and field.required:
+                raise ValueError("Attribute {} is required".format(field.name))
+
+            if (
+                value is not None
+                and field.accepted_types
+                and not isinstance(value, field.accepted_types)
+            ):
+                raise TypeError(
+                    "Attribute {} ({}) must be of type {}".format(
+                        field.name, type(value), field.accepted_types
+                    )
+                )
+
+            value = field.to_value(value)
+            setattr(cls, field.name, value)
+        cls._construct_common()
+        return cls
+
     @staticmethod
     def can_have_vendor_field(transaction_type):
         return transaction_type in [
@@ -393,7 +417,9 @@ class BaseTransaction(CryptoObject):
             or self.type == TRANSACTION_TYPE_MULTI_SIGNATURE
         )
 
-        if not self.recipient_id or (is_transaction_exception(self) or is_broken_type):
+        if not self.recipient_id or (
+            is_transaction_exception(self.id) or is_broken_type
+        ):
             bytes_data += pack("21x")
         else:
             # bytes_data += write_high(hexlify(b58decode_check(self.recipient_id)))
@@ -405,12 +431,11 @@ class BaseTransaction(CryptoObject):
             if num_of_zeroes > 0:
                 bytes_data += pack("{}x".format(num_of_zeroes))
         elif self.vendor_field:
-            bytes_data += self.vendor_field.encode("utf-8")
-            num_of_zeroes = 64 - len(self.vendor_field.encode("utf-8"))
-
+            encoded_vendor_field = self.vendor_field.encode("utf-8")
+            bytes_data += encoded_vendor_field
+            num_of_zeroes = 64 - len(encoded_vendor_field)
             if num_of_zeroes > 0:
                 bytes_data += pack("{}x".format(num_of_zeroes))
-            bytes_data += pack("{}x".format(num_of_zeroes))
         else:
             bytes_data += pack("64x")
 
@@ -496,21 +521,21 @@ class BaseTransaction(CryptoObject):
             data[field.attr] = field.to_json_value(value)
         return data
 
-    def expires_at(self, max_transaction_age):
+    def calculate_expires_at(self, max_transaction_age):
         """Derives transaction expiration time in number of seconds since the genesis
         block.
 
         :param int max_transaction_age: maximum age of a transaction in seconds
         :returns int: expiration time in seconds or None if transaction does not expire
         """
-        if self.expiration > 0:
+        if self.expiration and self.expiration > 0:
             return self.expiration
 
         if self.type != TRANSACTION_TYPE_TIMELOCK_TRANSFER:
             return self.timestamp + max_transaction_age
         return None
 
-    def can_be_applied_to_wallet(self, wallet, wallet_manager, block):
+    def can_be_applied_to_wallet(self, wallet, wallet_manager, block_height):
         if wallet.multisignature:
             print("Multi signatures are currently not supported")
             return False
@@ -529,7 +554,7 @@ class BaseTransaction(CryptoObject):
                 print("Failed to verify second-signature")
                 return False
         elif self.second_signature or self.sign_signature:
-            milestone = config.get_milestone(block.height)
+            milestone = config.get_milestone(block_height)
             # Accept invalid second signature fields prior the applied patch
             if not milestone["ignoreInvalidSecondSignatureField"]:
                 print("Wallet does not allow second signatures")
@@ -589,6 +614,13 @@ class BaseTransaction(CryptoObject):
             )
         wallet.balance -= self.amount
 
-    def can_enter_transaction_pool(self, pool):
-        print("Transaction with type {} is not supported".format(self.type))
-        return False
+    def validate_for_transaction_pool(self, pool, transactions):
+        """Custom validation for each transaction type before it's accepted to
+        transaction pool
+
+        :param (Pool) pool: current Pool object
+        :param (list) transactions: List of Transactions in the current batch to process
+
+        :returns: None if validation passed, error message (str) instead
+        """
+        return "Transaction with type {} is not supported".format(self.type)

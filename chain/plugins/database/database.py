@@ -21,8 +21,6 @@ class Database(object):
     restored_database_integrity = False
     forging_delegates = []
 
-    _wallets = None
-
     def __init__(self):
         super().__init__()
         self.db = PostgresqlExtDatabase(
@@ -34,7 +32,6 @@ class Database(object):
             autorollback=True,
         )
 
-        # database.set_allow_sync(False)
         # TODO: figure this out (try with creating a base class and only assigning
         # _meta.database to that base class)
         Block._meta.database = self.db
@@ -44,15 +41,10 @@ class Database(object):
 
         self._active_delegates = []
 
+        self.wallets = WalletManager()
+
     def close(self):
         self.db.close()
-
-    @property
-    def wallets(self):
-        # TODO: fix this somehow to not be broken in p2p_service
-        if not self._wallets:
-            self._wallets = WalletManager()
-        return self._wallets
 
     def get_last_block(self):
         """Get the last block
@@ -289,6 +281,9 @@ class Database(object):
         )
         return [transaction.id for transaction in transactions]
 
+    def transaction_is_forged(self, transaction_id):
+        return Transaction.select().where(Transaction.id == transaction_id).exists()
+
     def _convert_blocks_to_crypto_and_load_transactions(self, blocks):
         block_ids = [block.id for block in blocks]
 
@@ -302,9 +297,7 @@ class Database(object):
         for trans in transactions:
             # TODO: implement from_object on transaction and use that, instead of
             # creating it from serialized data.
-            transactions_map[trans.block_id].append(
-                from_serialized(trans.serialized)
-            )
+            transactions_map[trans.block_id].append(from_serialized(trans.serialized))
 
         crypto_blocks = []
         for block in blocks:

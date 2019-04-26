@@ -1,17 +1,6 @@
 import json
-from binascii import unhexlify
 
-from chain.common.config import config
 from chain.crypto.address import address_from_public_key
-from chain.crypto.constants import (
-    TRANSACTION_TYPE_DELEGATE_REGISTRATION,
-    TRANSACTION_TYPE_DELEGATE_RESIGNATION,
-    TRANSACTION_TYPE_MULTI_PAYMENT,
-    TRANSACTION_TYPE_MULTI_SIGNATURE,
-    TRANSACTION_TYPE_SECOND_SIGNATURE,
-    TRANSACTION_TYPE_VOTE,
-)
-from chain.crypto.utils import verify_hash
 
 
 # NOTE: This acts like a model, and it's data is stored in redis
@@ -20,10 +9,6 @@ from chain.crypto.utils import verify_hash
 class Wallet(object):
     # TODO: make this mapping better
     # field name, default
-    _redis = None
-    _key = "wallets:address:{}"
-    _username_key = "wallets:username:{}"
-
     fields = [
         ("address", None),
         ("public_key", None),
@@ -43,25 +28,6 @@ class Wallet(object):
         super().__init__()
         for field, default in self.fields:
             setattr(self, field, data.get(field, default))
-
-    @classmethod
-    def get(cls, address):
-        key = cls._key.format(address)
-        data = cls._redis.get(key)
-        if data is None:
-            return None
-        return cls(json.loads(data))
-
-    @property
-    def key(self):
-        return self._key.format(self.address)
-
-    @property
-    def username_key(self):
-        return self._username_key.format(self.username.lower())
-
-    def save(self):
-        self._redis.set(self.key, self.to_json())
 
     def to_json(self):
         data = {}
@@ -99,3 +65,11 @@ class Wallet(object):
                     block.id, self.public_key
                 )
             )
+
+    def can_be_purged(self):
+        return (
+            self.balance == 0
+            and not self.second_public_key
+            and not self.multisignature
+            and not self.username
+        )

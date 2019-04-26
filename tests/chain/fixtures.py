@@ -1,7 +1,8 @@
 import pytest
 
+from chain.crypto.constants import TRANSACTION_TYPE_TRANSFER
 from chain.crypto.objects.block import Block
-from chain.crypto.objects.transaction import Transaction
+from chain.crypto.objects.transactions import TransferTransaction
 
 
 @pytest.fixture
@@ -322,7 +323,7 @@ def dummy_block(dummy_transaction):
 
 @pytest.fixture
 def crypto_transaction():
-    transaction = Transaction()
+    transaction = TransferTransaction()
     transaction.version = 1
     transaction.network = 30
     transaction.type = 0
@@ -390,10 +391,10 @@ def crypto_block(crypto_transaction):
 
     block.transactions.append(crypto_transaction)
 
-    transaction2 = Transaction()
+    transaction2 = TransferTransaction()
     transaction2.version = 1
     transaction2.network = 30
-    transaction2.type = 0
+    transaction2.type = TRANSACTION_TYPE_TRANSFER
     transaction2.timestamp = 24760416
     transaction2.sender_public_key = (
         "0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0"
@@ -429,10 +430,10 @@ def crypto_block(crypto_transaction):
     transaction2.payments = None
     block.transactions.append(transaction2)
 
-    transaction3 = Transaction()
+    transaction3 = TransferTransaction()
     transaction3.version = 1
     transaction3.network = 30
-    transaction3.type = 0
+    transaction3.type = TRANSACTION_TYPE_TRANSFER
     transaction3.timestamp = 24760420
     transaction3.sender_public_key = (
         "0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0"
@@ -468,10 +469,10 @@ def crypto_block(crypto_transaction):
     transaction3.payments = None
     block.transactions.append(transaction3)
 
-    transaction4 = Transaction()
+    transaction4 = TransferTransaction()
     transaction4.version = 1
     transaction4.network = 30
-    transaction4.type = 0
+    transaction4.type = TRANSACTION_TYPE_TRANSFER
     transaction4.timestamp = 24760417
     transaction4.sender_public_key = (
         "0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0"
@@ -507,10 +508,10 @@ def crypto_block(crypto_transaction):
     transaction4.payments = None
     block.transactions.append(transaction4)
 
-    transaction5 = Transaction()
+    transaction5 = TransferTransaction()
     transaction5.version = 1
     transaction5.network = 30
-    transaction5.type = 0
+    transaction5.type = TRANSACTION_TYPE_TRANSFER
     transaction5.timestamp = 24760418
     transaction5.sender_public_key = (
         "0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0"
@@ -546,7 +547,7 @@ def crypto_block(crypto_transaction):
     transaction5.payments = None
     block.transactions.append(transaction5)
 
-    transaction6 = Transaction()
+    transaction6 = TransferTransaction()
     transaction6.version = 1
     transaction6.network = 30
     transaction6.type = 0
@@ -556,7 +557,7 @@ def crypto_block(crypto_transaction):
     )
     transaction6.fee = 10000000
     transaction6.amount = 555760
-    transaction6.expiration = 0
+    transaction6.expiration = TRANSACTION_TYPE_TRANSFER
     transaction6.recipient_id = "D5LiYGXL5keycWuTF6AFFwSRc6Mt4uEHMu"
     transaction6.asset = {}
     transaction6.vendor_field = "Goose Voter - True Block Weight"
@@ -585,10 +586,10 @@ def crypto_block(crypto_transaction):
     transaction6.payments = None
     block.transactions.append(transaction6)
 
-    transaction7 = Transaction()
+    transaction7 = TransferTransaction()
     transaction7.version = 1
     transaction7.network = 30
-    transaction7.type = 0
+    transaction7.type = TRANSACTION_TYPE_TRANSFER
     transaction7.timestamp = 24760416
     transaction7.sender_public_key = (
         "0265c1f6b8c1966a90f3fed7bc32fd4f42238ab4938fdb2a4e7ddd01ae8b58b4c0"

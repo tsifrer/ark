@@ -14,7 +14,11 @@ from chain.crypto.objects.base import (
     ListField,
     StrField,
 )
-from chain.crypto.objects.transactions import from_dict, BaseTransaction
+from chain.crypto.objects.transactions import (
+    BaseTransaction,
+    from_dict,
+    from_serialized,
+)
 from chain.crypto.utils import verify_hash
 
 
@@ -230,7 +234,7 @@ class Block(CryptoObject):
         self.transactions = []
         for trans_len in transaction_lenghts:
             serialized_hex = hexlify(buff.pop_bytes(trans_len))
-            self.transactions.append(Transaction.from_serialized(serialized_hex))
+            self.transactions.append(from_serialized(serialized_hex))
 
     def _deserialize_previous_block(self, buff):
         """
