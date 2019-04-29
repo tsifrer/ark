@@ -10,6 +10,7 @@ from chain.crypto.constants import (
     TRANSACTION_TYPE_VOTE,
 )
 from chain.crypto.models.wallet import Wallet
+from chain.crypto.objects.block import Block
 from chain.crypto.objects.transactions import TransferTransaction, VoteTransaction
 from chain.plugins.database.wallet_manager import WalletManager
 
@@ -946,3 +947,420 @@ def test_update_vote_balances_correctly_for_transaction_revert(redis):
         redis.get("wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM")
     )
     assert delegate2["vote_balance"] == 1570000
+
+
+def test_apply_transaction_raises_if_delegate_already_exists_for_delegate_reg(redis):
+    """
+    Should raise exception if delegate already exists
+    """
+    manager = WalletManager()
+
+    block = Block()
+    transaction = TransferTransaction()
+    transaction.type = TRANSACTION_TYPE_DELEGATE_REGISTRATION
+    transaction.id = "hehe"
+    transaction.asset["delegate"] = {"username": "harambe"}
+
+    manager = WalletManager()
+
+    redis.set("wallets:username:harambe", "")
+
+    with pytest.raises(Exception) as excinfo:
+        manager.apply_transaction(transaction, block)
+
+    assert "Can't apply transaction hehe: delegate name harambe already taken" == str(
+        excinfo.value
+    )
+
+
+def test_apply_transaction_raises_if_voted_delegate_doesnt_exist():
+    """
+    Should raise exception if delegate already exists
+    """
+    manager = WalletManager()
+    public_key = "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    block = Block()
+    transaction = TransferTransaction()
+    transaction.type = TRANSACTION_TYPE_VOTE
+    transaction.id = "hehe"
+    transaction.asset["votes"] = ["+{}".format(public_key)]
+
+    with pytest.raises(Exception) as excinfo:
+        manager.apply_transaction(transaction, block)
+
+    assert "Can't apply transaction hehe: delegate {} does not exist".format(
+        public_key
+    ) == str(excinfo.value)
+
+
+def test_apply_transaction_transfer(redis, mocker):
+    manager = WalletManager()
+
+    balances_mock = mocker.patch(
+        "chain.plugins.database.wallet_manager.WalletManager._update_vote_balances"
+    )
+
+    block = Block()
+    transaction = TransferTransaction()
+    transaction.type = TRANSACTION_TYPE_TRANSFER
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.id = "hehe"
+    transaction.sender_public_key = (
+        "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    )
+    transaction.recipient_id = "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"
+
+    redis.set(
+        "wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+        Wallet(
+            {
+                "address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+                "public_key": (
+                    "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+                ),
+                "balance": 1000000,
+            }
+        ).to_json(),
+    )
+
+    manager.apply_transaction(transaction, block)
+
+    # updated sender wallet is saved back to redis
+    sender = Wallet(
+        json.loads(redis.get("wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"))
+    )
+    assert sender.balance == 560000
+
+    # updated recipient wallet is saved back to redis
+    recipient = Wallet(
+        json.loads(redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"))
+    )
+    assert recipient.balance == 430000
+
+    balances_mock.assert_called_once()
+
+
+def test_apply_transaction_raises_if_cant_be_applied_to_sender_wallet(redis, mocker):
+    manager = WalletManager()
+
+    block = Block()
+    transaction = TransferTransaction()
+    transaction.type = TRANSACTION_TYPE_TRANSFER
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.id = "hehe"
+    transaction.sender_public_key = (
+        "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    )
+    transaction.recipient_id = "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"
+
+    redis.set(
+        "wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+        Wallet(
+            {
+                "address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+                "public_key": (
+                    "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+                ),
+                "balance": 5,
+            }
+        ).to_json(),
+    )
+    with pytest.raises(Exception) as excinfo:
+        manager.apply_transaction(transaction, block)
+
+    assert (
+        "Can't apply transaction hehe from sender AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
+        == str(excinfo.value)
+    )
+
+
+def test_apply_transaction_force_apply_skips_can_be_applied_check(redis, mocker):
+    manager = WalletManager()
+
+    balances_mock = mocker.patch(
+        "chain.plugins.database.wallet_manager.WalletManager._update_vote_balances"
+    )
+
+    mocker.patch(
+        "chain.plugins.database.wallet_manager.is_transaction_exception",
+        return_value=True,
+    )
+
+    block = Block()
+    transaction = TransferTransaction()
+    transaction.type = TRANSACTION_TYPE_TRANSFER
+    transaction.fee = 10000
+    transaction.amount = 430000
+    transaction.id = "hehe"
+    transaction.sender_public_key = (
+        "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+    )
+    transaction.recipient_id = "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"
+
+    redis.set(
+        "wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+        Wallet(
+            {
+                "address": "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+                "public_key": (
+                    "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+                ),
+                "balance": 0,
+            }
+        ).to_json(),
+    )
+
+    manager.apply_transaction(transaction, block)
+
+    # updated sender wallet is saved back to redis
+    sender = Wallet(
+        json.loads(redis.get("wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"))
+    )
+    assert sender.balance == -440000
+
+    # updated recipient wallet is saved back to redis
+    recipient = Wallet(
+        json.loads(redis.get("wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW"))
+    )
+    assert recipient.balance == 430000
+
+    balances_mock.assert_called_once()
+
+
+def test_apply_block(redis, mocker):
+    manager = WalletManager()
+
+    apply_transaction_mock = mocker.patch(
+        "chain.plugins.database.wallet_manager.WalletManager.apply_transaction"
+    )
+    transaction_1 = TransferTransaction()
+    transaction_2 = TransferTransaction()
+
+    block = Block()
+    block.height = 1337
+    block.reward = 2
+    block.transactions = [transaction_1, transaction_2]
+    block.generator_public_key = (
+        "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+    )
+
+    redis.set(
+        "wallets:address:ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe",
+        Wallet(
+            {
+                "address": "ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe",
+                "public_key": (
+                    "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+                ),
+                "balance": 0,
+            }
+        ).to_json(),
+    )
+
+    manager.apply_block(block)
+
+    assert apply_transaction_mock.call_count == 2
+    delegate = Wallet(
+        json.loads(redis.get("wallets:address:ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe"))
+    )
+    assert delegate.balance == 2
+
+
+def test_apply_block_updates_vote_balance_of_voted_delegate(redis, mocker):
+    manager = WalletManager()
+
+    apply_transaction_mock = mocker.patch(
+        "chain.plugins.database.wallet_manager.WalletManager.apply_transaction"
+    )
+    transaction_1 = TransferTransaction()
+    transaction_2 = TransferTransaction()
+
+    block = Block()
+    block.height = 1337
+    block.reward = 2
+    block.transactions = [transaction_1, transaction_2]
+    block.generator_public_key = (
+        "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+    )
+
+    redis.set(
+        "wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM",
+        json.dumps(
+            {
+                "address": "AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM",
+                "public_key": (
+                    "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f"
+                ),
+                "vote_balance": 2000000,
+            }
+        ),
+    )
+
+    redis.set(
+        "wallets:address:ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe",
+        Wallet(
+            {
+                "address": "ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe",
+                "public_key": (
+                    "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+                ),
+                "balance": 0,
+                "vote": (
+                    "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f"
+                ),
+            }
+        ).to_json(),
+    )
+
+    manager.apply_block(block)
+
+    assert apply_transaction_mock.call_count == 2
+    delegate = Wallet(
+        json.loads(redis.get("wallets:address:ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe"))
+    )
+    assert delegate.balance == 2
+
+    vote_wallet = Wallet(
+        json.loads(redis.get("wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM"))
+    )
+    assert vote_wallet.vote_balance == 2000002
+
+
+def test_apply_block_raises_if_not_genesis_and_no_delegate(redis):
+    manager = WalletManager()
+
+    transaction_1 = TransferTransaction()
+    transaction_2 = TransferTransaction()
+
+    block = Block()
+    block.height = 1337
+    block.reward = 2
+    block.transactions = [transaction_1, transaction_2]
+    block.generator_public_key = (
+        "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+    )
+
+    with pytest.raises(Exception) as excinfo:
+        manager.apply_block(block)
+
+    assert (
+        "Could not find a delegate with public key: "
+        "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+    ) == str(excinfo.value)
+
+
+def test_apply_block_correctly_handles_genesis_block(redis, mocker):
+    manager = WalletManager()
+
+    apply_transaction_mock = mocker.patch(
+        "chain.plugins.database.wallet_manager.WalletManager.apply_transaction"
+    )
+    transaction_1 = TransferTransaction()
+    transaction_2 = TransferTransaction()
+
+    block = Block()
+    block.height = 1
+    block.reward = 2
+    block.transactions = [transaction_1, transaction_2]
+    block.generator_public_key = (
+        "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+    )
+    manager.apply_block(block)
+
+    assert apply_transaction_mock.call_count == 2
+    delegate = Wallet(
+        json.loads(redis.get("wallets:address:ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe"))
+    )
+    assert delegate.balance == 2
+
+
+def test_load_active_delegate_wallets(redis, mocker):
+    mocker.patch(
+        "chain.plugins.database.wallet_manager.config.get_milestone",
+        return_value={"activeDelegates": 3},
+    )
+
+    manager = WalletManager()
+
+    redis.set(
+        "wallets:address:AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW",
+        json.dumps(
+            {
+                "public_key": (
+                    "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2"
+                ),
+                "vote_balance": 5,
+            }
+        ),
+    )
+    redis.set("wallets:username:harambe", "AZYnpgXS3x43nxqhT4q29sZScRwZeNKLpW")
+
+    redis.set(
+        "wallets:address:AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM",
+        json.dumps(
+            {
+                "public_key": (
+                    "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f"
+                ),
+                "vote_balance": 5,
+            }
+        ),
+    )
+    redis.set("wallets:username:spongebob", "AWoysqF1xm1LXYLQvmRDpfVNKzzaLVwPVM")
+
+    redis.set(
+        "wallets:address:AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof",
+        json.dumps(
+            {
+                "public_key": (
+                    "020f5df4d2bc736d12ce43af5b1663885a893fade7ee5e62b3cc59315a63e6a325"
+                ),
+                "vote_balance": 1,
+            }
+        ),
+    )
+    redis.set("wallets:username:patrick", "AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof")
+
+    redis.set(
+        "wallets:address:ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe",
+        json.dumps(
+            {
+                "public_key": (
+                    "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
+                ),
+                "vote_balance": 3,
+            }
+        ),
+    )
+    redis.set("wallets:username:squidward", "ASt5oBHKDW8AeJe2Ybc1RucMLS7mRCiuRe")
+
+    wallets = manager.load_active_delegate_wallets(10)
+
+    public_keys = [wallet.public_key for wallet in wallets]
+
+    assert len(public_keys) == 3
+    assert public_keys == [
+        "0316b3dc139c1a35927ecbdcb8d8b628ad06bd4f1869fe3ad0e23c8106678a460f",
+        "03b12f99375c3b0e4f5f5c7ea74e723f0b84a6f169b47d9105ed2a179f30c82df2",
+        "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a",
+    ]
+
+
+def test_load_active_delegate_wallets_raises_for_wrong_height():
+    manager = WalletManager()
+
+    with pytest.raises(Exception) as excinfo:
+        manager.load_active_delegate_wallets(1337)
+
+    assert "Trying to build delegates outside of round change" == str(excinfo.value)
+
+
+def test_load_active_delegate_wallets_raises_for_not_enough_delegates():
+    manager = WalletManager()
+
+    with pytest.raises(Exception) as excinfo:
+        manager.load_active_delegate_wallets(103)
+
+    assert "Expected to find 51 delegates but only found 0." == str(excinfo.value)

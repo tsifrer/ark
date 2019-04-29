@@ -62,3 +62,16 @@ class DelegateRegistrationTransaction(BaseTransaction):
             )
 
         return None
+
+    def apply(self, sender, recipient, wallet_manager):
+        """Add sender wallet to the _username_map
+
+        :param (Wallet) sender: sender Wallet object
+        :param (Wallet) recipient: recipient Wallet object or None if recipient is not
+                                   set
+        :param (WalletManager) wallet_manager: Wallet manager object
+        """
+        print("Registering delegate")
+        wallet_manager.redis.set(
+            wallet_manager.key_for_username(sender.username), sender.address
+        )

@@ -18,7 +18,7 @@ from chain.crypto.constants import (
     TRANSACTION_TYPE_VOTE,
 )
 from chain.crypto.models.wallet import Wallet
-from chain.crypto.utils import calculate_round, is_transaction_exception
+from chain.crypto.utils import is_transaction_exception
 
 from .models.block import Block
 from .models.transaction import Transaction
@@ -202,20 +202,6 @@ class WalletManager(object):
             wallet.produced_blocks += int(block.total_produced)
             self.save_wallet(wallet)
 
-        # TODO: this part
-        # Calculate missed blocks
-        # TODO: what does this comment mean and why is it NOT RELIABLE??????
-        # // NOTE: This is highly NOT reliable, however the number of missed blocks
-        # // is NOT used for the consensus
-        # const delegates = await this.query.manyOrNone(queries.spv.delegatesRanks);
-        # delegates.forEach((delegate, i) => {
-        #     const wallet = this.walletManager.findByPublicKey(delegate.publicKey);
-        #     wallet.missedBlocks = +delegate.missedBlocks;
-        #     // TODO: unknown property 'rate' being access on Wallet class
-        #     (wallet as any).rate = i + 1;
-        #     this.walletManager.reindex(wallet);
-        # });
-
     def _build_multi_signatures(self):
         transactions = (
             Transaction.select(Transaction.sender_public_key, Transaction.asset)
@@ -378,7 +364,7 @@ class WalletManager(object):
         if is_transaction_exception(transaction.id):
             print(
                 "Transaction {} forcibly applied because it has been added as an "
-                "exception.".format(self.id)
+                "exception.".format(transaction.id)
             )
         else:
             if not transaction.can_be_applied_to_wallet(sender, self, block.height):
@@ -391,19 +377,11 @@ class WalletManager(object):
         transaction.apply_to_sender_wallet(sender)
         self.save_wallet(sender)
 
-        # If transaction is a delegate registration, add sender wallet to the
-        # _username_map
-        if transaction.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
-            print("Registering delegate")
-            self.redis.set(self.key_for_username(sender.username), sender.address)
-
         recipient = None
         if transaction.recipient_id:
             recipient = self.find_by_address(transaction.recipient_id)
 
-            if transaction.type == TRANSACTION_TYPE_TRANSFER:
-                transaction.apply_to_recipient_wallet(recipient)
-                self.save_wallet(recipient)
+        transaction.apply(sender, recipient, self)
 
         self._update_vote_balances(sender, recipient, transaction)
 
@@ -446,7 +424,7 @@ class WalletManager(object):
             self.save_wallet(voted_delegate)
 
     def load_active_delegate_wallets(self, height):
-        current_round, _, max_delegates = calculate_round(height)
+        max_delegates = config.get_milestone(height)["activeDelegates"]
         if height > 1 and height % max_delegates != 1:
             # TODO: exception
             raise Exception("Trying to build delegates outside of round change")
@@ -503,7 +481,7 @@ class WalletManager(object):
         for transaction in reversed(block.transactions):
             self.revert_transaction(transaction)
 
-        delegate.revert_block()
+        delegate.revert_block(block)
         self.save_wallet(delegate)
 
         # If delegate votes for somewone, we need to update vote balance for the

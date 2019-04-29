@@ -50,7 +50,8 @@ def redis():
         db=os.environ.get("REDIS_DB", 0),
     )
     redis.flushall()
-    return redis
+    yield redis
+    redis.flushall()
 
 
 @pytest.fixture(scope="session")

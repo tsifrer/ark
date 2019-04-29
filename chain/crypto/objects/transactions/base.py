@@ -624,3 +624,13 @@ class BaseTransaction(CryptoObject):
         :returns: None if validation passed, error message (str) instead
         """
         return "Transaction with type {} is not supported".format(self.type)
+
+    def apply(self, sender, recipient, wallet_manager):
+        """Custom apply functionality for each transaction type
+
+        :param (Wallet) sender: sender Wallet object
+        :param (Wallet) recipient: recipient Wallet object or None if recipient is not
+                                   set
+        :param (WalletManager) wallet_manager: Wallet manager object
+        """
+        pass
