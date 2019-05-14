@@ -59,6 +59,7 @@ class BaseTransaction(CryptoObject):
     ipfs_hash = BytesField(attr="ipfsHash", required=False, default=None)
     payments = Field(attr="payments", required=False)
 
+    # TODO: test
     def _construct_common(self):
         self._apply_v1_compatibility()
         self.id = self.get_id()
@@ -148,8 +149,8 @@ class BaseTransaction(CryptoObject):
                 bytes_data += data
                 return bytes_data
             elif self.vendor_field_hex:
-                data = self.vendor_field_hex.encode("utf-8")
-                bytes_data += write_bit8(len(data) / 2)
+                data = self.vendor_field_hex
+                bytes_data += write_bit8(len(data) // 2)
                 bytes_data += data
                 return bytes_data
 
@@ -197,7 +198,7 @@ class BaseTransaction(CryptoObject):
             bytes_data += write_bit8(self.asset["multisignature"]["min"])
             bytes_data += write_bit8(len(self.asset["multisignature"]["keysgroup"]))
             bytes_data += write_bit8(self.asset["multisignature"]["lifetime"])
-            bytes_data += unhexlify("".join(keysgroup))
+            bytes_data += unhexlify("".join(keysgroup).encode("utf-8"))
 
         elif self.type == TRANSACTION_TYPE_IPFS:
             bytes_data += write_bit8(len(self.asset["ipfs"]["dag"]) // 2)
@@ -207,13 +208,13 @@ class BaseTransaction(CryptoObject):
             bytes_data += write_bit64(self.amount)
             bytes_data += write_bit8(self.timelock_type)
             bytes_data += write_bit64(self.timelock)
-            bytes_data += hexlify(b58decode_check(self.recipient_id))
+            bytes_data += b58decode_check(self.recipient_id)
 
         elif self.type == TRANSACTION_TYPE_MULTI_PAYMENT:
             bytes_data += write_bit32(len(self.asset["payments"]))
             for payment in self.asset["payments"]:
                 bytes_data += write_bit64(payment["amount"])
-                bytes_data += hexlify(b58decode_check(payment["recipientId"]))
+                bytes_data += b58decode_check(payment["recipientId"])
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_RESIGNATION:
             pass
@@ -228,15 +229,16 @@ class BaseTransaction(CryptoObject):
         if self.signature:
             bytes_data += unhexlify(self.signature)
 
-        if self.second_signature:
-            bytes_data += unhexlify(self.second_signature)
-        elif self.sign_signature:
-            bytes_data += unhexlify(self.sign_signature)
+            if self.second_signature:
+                bytes_data += unhexlify(self.second_signature)
+            elif self.sign_signature:
+                bytes_data += unhexlify(self.sign_signature)
 
-        if self.signatures:
-            # add 0xff separator to signal start of multi-signature transactions
-            bytes_data += write_bit8(0xFF)
-            bytes_data += unhexlify("".join(self.signatures))
+            if self.signatures:
+                # add 0xff separator to signal start of multi-signature transactions
+                bytes_data += write_bit8(0xFF)
+                bytes_data += unhexlify("".join(self.signatures))
+
         return bytes_data
 
     def serialize(self):
@@ -245,9 +247,7 @@ class BaseTransaction(CryptoObject):
         bytes_data = bytes()  # bytes() or bytes(512)?
         bytes_data += write_bit8(0xFF)  # fill, to distinguish between v1 and v2
         bytes_data += write_bit8(self.version or 0x01)
-        bytes_data += write_bit8(
-            self.network or 30
-        )  # TODO:  or network_config['pubKeyHash']
+        bytes_data += write_bit8(self.network or config.network["pubKeyHash"])
         bytes_data += write_bit8(self.type)
         bytes_data += write_bit32(self.timestamp)
         bytes_data += write_high(self.sender_public_key.encode("utf-8"))
@@ -307,22 +307,24 @@ class BaseTransaction(CryptoObject):
             self.amount = buff.pop_uint64()
             self.timelock_type = buff.pop_uint8()
             self.timelock = buff.pop_uint64()
-            self.recipient_id = b58encode_check(buff.pop_bytes(21))
+            self.recipient_id = b58encode_check(buff.pop_bytes(21)).decode("utf-8")
 
         elif self.type == TRANSACTION_TYPE_MULTI_PAYMENT:
             self.asset["payments"] = []
             total = buff.pop_uint32()
             amount = 0
-            for _ in total:
+            for _ in range(total):
                 payment_amount = buff.pop_uint64()
                 self.asset["payments"].append(
                     {
                         "amount": payment_amount,
-                        "recipientId": b58encode_check(buff.pop_bytes(21)),
+                        "recipientId": b58encode_check(buff.pop_bytes(21)).decode(
+                            "utf-8"
+                        ),
                     }
                 )
                 amount += payment_amount
-            self.amount = payment_amount
+            self.amount = amount
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_RESIGNATION:
             pass
@@ -339,6 +341,7 @@ class BaseTransaction(CryptoObject):
         if len(buff) > 0:
             is_multi_sig = buff.read_uint8() == 255
             if is_multi_sig:
+                buff.pop_uint8()
                 # Multiple signatures
                 self.signatures = []
                 while len(buff) > 0:
@@ -412,17 +415,16 @@ class BaseTransaction(CryptoObject):
         # Apply a fix for broken type 1 (second signature) and 4 (multi signature)
         # transactions, which were erroneously calculated with a recipient id,
         # also apply a fix for all other broken transactions
-        is_broken_type = (
-            self.type == TRANSACTION_TYPE_SECOND_SIGNATURE
-            or self.type == TRANSACTION_TYPE_MULTI_SIGNATURE
-        )
+        is_broken_type = self.type in [
+            TRANSACTION_TYPE_SECOND_SIGNATURE,
+            TRANSACTION_TYPE_MULTI_SIGNATURE,
+        ]
 
         if not self.recipient_id or (
             is_transaction_exception(self.id) or is_broken_type
         ):
             bytes_data += pack("21x")
         else:
-            # bytes_data += write_high(hexlify(b58decode_check(self.recipient_id)))
             bytes_data += b58decode_check(self.recipient_id)
 
         if self.vendor_field_hex:
@@ -498,23 +500,34 @@ class BaseTransaction(CryptoObject):
         return is_verified
 
     def get_hash(self):
+        """Generates sha256 hash of bytes.
+
+        :returns (str): transaction hash
+        """
         transaction_bytes = self.get_bytes()
         return sha256(transaction_bytes).hexdigest()
 
     def get_id(self):
-        transaction_id = self.get_hash()
+        """Generates an ID for current transaction from bytes
 
-        exceptions = config.exceptions.get("transactionIdFixTable", {})
+        :returns (str): transaction id
+        """
+        transaction_id = self.get_hash()
 
         # Some transactions in the past might have erroneously calculated IDs
         # so if they are defined as exceptions, override the ID with the one defined
         # in exceptions
+        exceptions = config.exceptions.get("transactionIdFixTable", {})
         if transaction_id in exceptions:
             transaction_id = exceptions[transaction_id]
 
         return transaction_id
 
     def to_json(self):
+        """Convers transaction to dictiionary with camelCase field names
+
+        :returns (dict): dictionary with camelCase field names
+        """
         data = {}
         for field in self._fields:
             value = getattr(self, field.name)
@@ -531,22 +544,30 @@ class BaseTransaction(CryptoObject):
         if self.expiration and self.expiration > 0:
             return self.expiration
 
-        if self.type != TRANSACTION_TYPE_TIMELOCK_TRANSFER:
-            return self.timestamp + max_transaction_age
-        return None
+        if self.type == TRANSACTION_TYPE_TIMELOCK_TRANSFER:
+            return None
+
+        return self.timestamp + max_transaction_age
 
     def can_be_applied_to_wallet(self, wallet, wallet_manager, block_height):
+        """Checks if transaction can be applied to the wallet
+
+        :param (Wallet) wallet: wallet you want to apply the transaction to
+        :param (WalletManager) wallet_manager: wallet manager
+        :param (int) block_height: current block height
+        :returns (bool): True if can be applied, False otherwise
+        """
         if wallet.multisignature:
             print("Multi signatures are currently not supported")
+            return False
+
+        if self.sender_public_key != wallet.public_key:
+            print("Sender public key does not match the wallet")
             return False
 
         balance = wallet.balance - self.amount - self.fee
         if balance < 0:
             print("Insufficient balance in the wallet")
-            return False
-
-        if self.sender_public_key != wallet.public_key:
-            print("Sender public key does not match the wallet")
             return False
 
         if wallet.second_public_key:
@@ -563,6 +584,10 @@ class BaseTransaction(CryptoObject):
         return True
 
     def apply_to_sender_wallet(self, wallet):
+        """Applies transaction to senders wallet.
+
+        :param (Wallet) wallet: senders wallet
+        """
         address = address_from_public_key(self.sender_public_key)
         incorrect_wallet = (
             self.sender_public_key != wallet.public_key and address != wallet.address
@@ -579,6 +604,10 @@ class BaseTransaction(CryptoObject):
         wallet.balance -= total
 
     def apply_to_recipient_wallet(self, wallet):
+        """Applies transaction to recipients wallet
+
+        :param (Wallet) wallet: recipients wallet
+        """
         if self.recipient_id != wallet.address:
             raise Exception(
                 "Incorrect wallet. Wallet with address {} does not match"
@@ -590,6 +619,10 @@ class BaseTransaction(CryptoObject):
         wallet.balance += self.amount
 
     def revert_for_sender_wallet(self, wallet):
+        """Reverts transaction on senders wallet
+
+        :param (Wallet) wallet: senders wallet
+        """
         address = address_from_public_key(self.sender_public_key)
         incorrect_wallet = (
             self.sender_public_key != wallet.public_key and address != wallet.address
@@ -605,6 +638,10 @@ class BaseTransaction(CryptoObject):
         wallet.balance += total
 
     def revert_for_recipient_wallet(self, wallet):
+        """Reverts transaction on recipients wallet
+
+        :param (Wallet) wallet: recipients wallet
+        """
         if self.recipient_id != wallet.address:
             raise Exception(
                 "Incorrect wallet. Wallet with address {} does not match"

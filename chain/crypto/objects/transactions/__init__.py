@@ -49,8 +49,8 @@ def from_serialized(serialized_hex):
 
     transaction_cls = TRANSACTION_TYPE_MAPPING.get(transaction_type)
     if not transaction_cls:
-        raise Exception(
-            "Couldn't find transaction {} in mapping".format(transaction_type)
+        raise ValueError(
+            "Couldn't find transaction type {} in mapping".format(transaction_type)
         )
     return transaction_cls.from_serialized(serialized_hex)
 
@@ -61,16 +61,16 @@ def from_dict(data):
 
     transaction_cls = TRANSACTION_TYPE_MAPPING.get(data.get("type"))
     if not transaction_cls:
-        raise Exception(
-            "Couldn't find transaction {} in mapping".format(data.get("type"))
+        raise ValueError(
+            "Couldn't find transaction type {} in mapping".format(data.get("type"))
         )
     return transaction_cls.from_dict(data)
 
 
 def from_object(data):
-    transaction_cls = TRANSACTION_TYPE_MAPPING.get(data.get("type"))
+    transaction_cls = TRANSACTION_TYPE_MAPPING.get(data.type)
     if not transaction_cls:
-        raise Exception(
-            "Couldn't find transaction {} in mapping".format(data.get("type"))
+        raise ValueError(
+            "Couldn't find transaction type {} in mapping".format(data.type)
         )
     return transaction_cls.from_object(data)

@@ -17,25 +17,25 @@ def test_sataus_returns_correct_response(p2p_service):
     assert response.json["height"] == 1
     assert response.json["header"] == {
         "blockSignature": (
-            "3045022100b0cbfdfabb77b7d431cb7fdc3acd148032898eb6b0026d4e8f6f08f8e5ca23b5"
-            "022044cfad1c8e0df615b0969c5d1fe4965b2c18e6656becc2d5410c68ed19452770"
+            "304402202fe5de5697fa25d3d3c0cb24617ac02ddfb1c915ee9194a89f8392f948c6076402"
+            "200d07c5244642fe36afa53fb2d048735f1adfa623e8fa4760487e5f72e17d253b"
         ),
         "generatorPublicKey": (
-            "03d04acca0ad922998d258438cc453ce50222b0e761ae9a499ead6a11f3a44b70b"
+            "03b47f6b6719c76bad46a302d9cff7be9b1c2b2a20602a0d880f139b5b8901f068"
         ),
         "height": 1,
-        "id": "4881670189836572019",
-        "idHex": "43bf2d2c67d29573",
-        "numberOfTransactions": 255,
+        "id": "17184958558311101492",
+        "idHex": "ee7d3cc24bf13434",
+        "numberOfTransactions": 153,
         "payloadHash": (
-            "a63b5a3858afbca23edefac885be74d59f1a26985548a4082f4f479e74fcc348"
+            "d9acd04bde4234a81addb8482333b4ac906bed7be5a9970ce8ada428bd083192"
         ),
-        "payloadLength": 55608,
+        "payloadLength": 35960,
         "previousBlock": None,
         "previousBlockHex": None,
         "reward": "0",
         "timestamp": 0,
-        "totalAmount": "153000000000000",
+        "totalAmount": "12500000000000000",
         "totalFee": "0",
         "version": 0,
     }

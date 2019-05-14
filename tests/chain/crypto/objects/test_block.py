@@ -83,7 +83,7 @@ def test_from_serialized_correctly_deserializes_full_data(
     assert block.height == 2243161
     assert block.previous_block_hex == b"2b324b8b33a85802"
     assert block.previous_block == "3112633353705641986"
-    assert block.number_of_transactions == 7
+    assert block.number_of_transactions == 2
     assert block.total_amount == 3890300
     assert block.total_fee == 70000000
     assert block.reward == 200000000
@@ -98,13 +98,13 @@ def test_from_serialized_correctly_deserializes_full_data(
         "3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022"
         "0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29"
     )
-    assert block.id == "7176646138626297930"
-    assert block.id_hex == b"639891a3bb7fd04a"
+    assert block.id == "10977713934532967004"
+    assert block.id_hex == b"9858aca939b17a5c"
     assert block.transactions is not None
-    assert len(block.transactions) == 7
+    assert len(block.transactions) == 2
     for transaction, expected in zip(block.transactions, dummy_block["transactions"]):
         assert transaction.version == 1
-        assert transaction.network == 30
+        assert transaction.network == 23
         assert transaction.type == expected["type"]
         assert transaction.timestamp == expected["timestamp"]
         assert transaction.sender_public_key == expected["senderPublicKey"]
@@ -121,7 +121,7 @@ def test_from_dict_correctly_sets_data(dummy_block):
     assert block.height == 2243161
     assert block.previous_block_hex == b"2b324b8b33a85802"
     assert block.previous_block == "3112633353705641986"
-    assert block.number_of_transactions == 7
+    assert block.number_of_transactions == 2
     assert block.total_amount == 3890300
     assert block.total_fee == 70000000
     assert block.reward == 200000000
@@ -136,10 +136,10 @@ def test_from_dict_correctly_sets_data(dummy_block):
         "3045022100eee6c37b5e592e99811d588532726353592923f347c701d52912e6d583443e40022"
         "0277ffe38ad31e216ba0907c4738fed19b2071246b150c72c0a52bae4477ebe29"
     )
-    assert block.id == "7176646138626297930"
-    assert block.id_hex == b"639891a3bb7fd04a"
+    assert block.id == "10977713934532967004"
+    assert block.id_hex == b"9858aca939b17a5c"
     assert block.transactions is not None
-    assert len(block.transactions) == 7
+    assert len(block.transactions) == 2
     for transaction, expected in zip(block.transactions, dummy_block["transactions"]):
         assert transaction.version is None
         assert transaction.network is None
@@ -157,10 +157,10 @@ def test_from_dict_raises_exception_for_wrong_type(dummy_block):
     data["id"] = float(data["id"])
     with pytest.raises(TypeError) as excinfo:
         Block.from_dict(data)
-    assert (
+    assert str(excinfo.value) == (
         "Attribute id (<class 'float'>) must be of type (<class 'str'>, <class 'bytes'>"
         ")"
-    ) == str(excinfo.value)
+    )
 
 
 def test_from_object_correctly_sets_data():

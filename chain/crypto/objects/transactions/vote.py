@@ -13,7 +13,7 @@ class VoteTransaction(BaseTransaction):
                 print("Wallet hasn't voted yet")
                 return False
             elif wallet.vote != vote[1:]:
-                print("Wallet vote does not match")
+                print("Wallet vote doesn't match")
                 return False
 
         if not wallet_manager.is_delegate(vote[1:]):

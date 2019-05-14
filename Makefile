@@ -3,6 +3,9 @@
 test:
 	POSTGRES_DB_NAME=testark CHAIN_CONFIG_FOLDER="tests/config/" py.test -vv -s -x $(ARGS)
 
+cov-html:
+	POSTGRES_DB_NAME=testark CHAIN_CONFIG_FOLDER="tests/config/" py.test --cov=./chain --cov-report html
+
 remove-pyc:
 	find . -name "*.pyc" -delete
 

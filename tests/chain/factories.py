@@ -5,10 +5,12 @@ from hashlib import sha256
 
 from factory import Factory, LazyAttribute, Sequence
 
+from chain.crypto import time
 from chain.crypto.address import address_from_public_key
 from chain.crypto.constants import TRANSACTION_TYPE_TRANSFER
 from chain.crypto.models.wallet import Wallet
 from chain.plugins.database.models.block import Block
+from chain.plugins.database.models.pool_transaction import PoolTransaction
 from chain.plugins.database.models.round import Round
 from chain.plugins.database.models.transaction import Transaction
 
@@ -96,3 +98,20 @@ class WalletRedisFactory(RedisModelFactory):
         wallet = Wallet(kwargs)
         redis.set(self.key, wallet.to_json())
         self._set_attributes(wallet)
+
+
+class PoolTransactionFactory(PeeWeeModelFactory):
+    id = LazyAttribute(lambda _: sha256(os.urandom(32)).hexdigest())
+    version = 1
+    sequence = 0
+    timestamp = 51174114
+    sender_public_key = (
+        "0377450c35e9925d933e4825ef3544f680d39db18264959b08eb9927e0a7c9eaf4"
+    )
+    type = TRANSACTION_TYPE_TRANSFER
+    amount = 1337
+    fee = 1000
+    expires_at = LazyAttribute(lambda _: time.get_time() + 3600)
+
+    class Meta:
+        model = PoolTransaction

@@ -988,9 +988,9 @@ def test_apply_transaction_raises_if_voted_delegate_doesnt_exist():
     with pytest.raises(Exception) as excinfo:
         manager.apply_transaction(transaction, block)
 
-    assert "Can't apply transaction hehe: delegate {} does not exist".format(
-        public_key
-    ) == str(excinfo.value)
+    assert str(
+        excinfo.value
+    ) == "Can't apply transaction hehe: delegate {} does not exist".format(public_key)
 
 
 def test_apply_transaction_transfer(redis, mocker):
@@ -1070,9 +1070,8 @@ def test_apply_transaction_raises_if_cant_be_applied_to_sender_wallet(redis, moc
     with pytest.raises(Exception) as excinfo:
         manager.apply_transaction(transaction, block)
 
-    assert (
+    assert str(excinfo.value) == (
         "Can't apply transaction hehe from sender AThM5PNSKdU9pu1ydqQnzRWVeNCGr8HKof"
-        == str(excinfo.value)
     )
 
 
@@ -1245,10 +1244,10 @@ def test_apply_block_raises_if_not_genesis_and_no_delegate(redis):
     with pytest.raises(Exception) as excinfo:
         manager.apply_block(block)
 
-    assert (
+    assert str(excinfo.value) == (
         "Could not find a delegate with public key: "
         "0316510c1409d3307d9f205cac58f1a871499c3ffea3878ddbbb48c821cfbc079a"
-    ) == str(excinfo.value)
+    )
 
 
 def test_apply_block_correctly_handles_genesis_block(redis, mocker):
@@ -1354,7 +1353,7 @@ def test_load_active_delegate_wallets_raises_for_wrong_height():
     with pytest.raises(Exception) as excinfo:
         manager.load_active_delegate_wallets(1337)
 
-    assert "Trying to build delegates outside of round change" == str(excinfo.value)
+    assert str(excinfo.value) == "Trying to build delegates outside of round change"
 
 
 def test_load_active_delegate_wallets_raises_for_not_enough_delegates():
@@ -1363,4 +1362,4 @@ def test_load_active_delegate_wallets_raises_for_not_enough_delegates():
     with pytest.raises(Exception) as excinfo:
         manager.load_active_delegate_wallets(103)
 
-    assert "Expected to find 51 delegates but only found 0." == str(excinfo.value)
+    assert str(excinfo.value) == "Expected to find 51 delegates but only found 0."

@@ -26,4 +26,4 @@ requests
 semver
 sphinx
 sphinx_rtd_theme
-transitions
+pytest-cov

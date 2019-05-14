@@ -52,7 +52,7 @@ class MultiSignatureTransaction(BaseTransaction):
             return False
 
         if len(keysgroup) != len(self.signatures):
-            print("Specified key cound toes not equal signature count")
+            print("Specified key count does not equal signature count")
             return False
 
         if not self._verify_signatures():

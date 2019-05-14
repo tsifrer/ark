@@ -1,15 +1,25 @@
-from peewee import IntegerField
+from peewee import BigIntegerField, CharField, IntegerField, Model, SmallIntegerField
+
+from playhouse.postgres_ext import JSONField
+
 
 from chain.common.config import config
 
-from .transaction import Transaction
+from .fields import BytesField
 
 
-class PoolTransaction(Transaction):
-    """
-    NOTE: Inherits all fields from Transaction model
-    """
-
+class PoolTransaction(Model):
+    id = CharField(max_length=64, primary_key=True)
+    version = SmallIntegerField()
+    sequence = SmallIntegerField()
+    timestamp = IntegerField(index=True)
+    sender_public_key = CharField(max_length=66, index=True)
+    recipient_id = CharField(max_length=66, null=True, index=True)
+    type = SmallIntegerField()
+    vendor_field_hex = BytesField(null=True)
+    amount = BigIntegerField()
+    fee = BigIntegerField()
+    asset = JSONField(null=True)
     expires_at = IntegerField(index=True)
 
     class Meta:
@@ -21,7 +31,6 @@ class PoolTransaction(Transaction):
         model = cls()
         model.id = transaction.id
         model.version = transaction.version
-        model.block_id = transaction.block_id
         model.sequence = transaction.sequence
         model.timestamp = transaction.timestamp
         model.sender_public_key = transaction.sender_public_key
@@ -34,7 +43,4 @@ class PoolTransaction(Transaction):
         model.expires_at = transaction.calculate_expires_at(
             config.pool["max_transaction_age"]
         )
-        # TODO: probably obsolete
-        serialized = transaction.serialize()
-        model.serialized = serialized
         return model

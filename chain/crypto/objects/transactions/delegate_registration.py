@@ -26,7 +26,7 @@ class DelegateRegistrationTransaction(BaseTransaction):
         wallet.username = None
 
     def validate_for_transaction_pool(self, pool, transactions):
-        if self.sender_has_transactions_of_type(self):
+        if pool.sender_has_transactions_of_type(self):
             return (
                 "Sender {} already has a transaction of type {} in the "
                 "pool".format(self.sender_public_key, self.type)
@@ -71,7 +71,7 @@ class DelegateRegistrationTransaction(BaseTransaction):
                                    set
         :param (WalletManager) wallet_manager: Wallet manager object
         """
-        print("Registering delegate")
+        print("Registering delegate {}".format(sender.username))
         wallet_manager.redis.set(
             wallet_manager.key_for_username(sender.username), sender.address
         )

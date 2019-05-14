@@ -132,10 +132,10 @@ def test_delete_by_public_key(redis):
 def test_can_apply_to_sender_returns_true_if_everything_ok(redis, crypto_transaction):
     manager = PoolWalletManager()
     chain_wallet = Wallet(
-        {"address": "AMm7u2Kpaf3gY2Y96MovudH2q65WHi8Sqd", "balance": 133700000}
+        {"address": "AS2YSSDbbXBAehfbm1KAEvJMJFdPPT2aRT", "balance": 133700000}
     )
     redis.set(
-        "wallets:address:AMm7u2Kpaf3gY2Y96MovudH2q65WHi8Sqd", chain_wallet.to_json()
+        "wallets:address:AS2YSSDbbXBAehfbm1KAEvJMJFdPPT2aRT", chain_wallet.to_json()
     )
     crypto_transaction.second_signature = None
     crypto_transaction.sign_signature = None

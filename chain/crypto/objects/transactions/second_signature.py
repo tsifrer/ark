@@ -11,7 +11,6 @@ class SecondSignatureTransaction(BaseTransaction):
 
     def apply_to_sender_wallet(self, wallet):
         super().apply_to_sender_wallet(wallet)
-        print("APPLYIN SECOND SIGNATURE", self.asset)
         wallet.second_public_key = self.asset["signature"]["publicKey"]
 
     def revert_for_sender_wallet(self, wallet):

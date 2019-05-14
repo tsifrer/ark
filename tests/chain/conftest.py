@@ -10,17 +10,20 @@ from chain.p2p_service.server import create_app
 from chain.plugins.database.database import Database
 from chain.plugins.database.migrate import migrate
 from chain.plugins.database.models.block import Block
+from chain.plugins.database.models.pool_transaction import PoolTransaction
 from chain.plugins.database.models.round import Round
 from chain.plugins.database.models.transaction import Transaction
 
 from tests.chain.fixtures import (  # noqa
+    crypto_block,
+    crypto_transaction,
+    crypto_transaction_2,
+    dummy_block,
     dummy_block_full_hash,
     dummy_block_hash,
-    dummy_transaction_hash,
     dummy_transaction,
-    dummy_block,
-    crypto_transaction,
-    crypto_block,
+    dummy_transaction_2,
+    dummy_transaction_hash,
 )
 
 
@@ -28,6 +31,7 @@ def _clear_db():
     Round.delete().execute()
     Transaction.delete().execute()
     Block.delete().execute()
+    PoolTransaction.delete().execute()
 
 
 def _create_genesis_block():
@@ -62,6 +66,8 @@ def migrated():
 
 @pytest.fixture
 def empty_db(migrated):
+    _clear_db()
+    yield None
     _clear_db()
 
 
