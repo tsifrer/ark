@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from hashlib import sha256
 
-from playhouse.postgres_ext import PostgresqlExtDatabase
+from playhouse.pool import PooledPostgresqlExtDatabase
 
 from chain.crypto.objects.block import Block as CryptoBlock
 from chain.crypto.objects.transactions import from_serialized
@@ -23,13 +23,15 @@ class Database(object):
 
     def __init__(self):
         super().__init__()
-        self.db = PostgresqlExtDatabase(
+        self.db = PooledPostgresqlExtDatabase(
             database=os.environ.get("POSTGRES_DB_NAME", "postgres"),
             user=os.environ.get("POSTGRES_DB_USER", "postgres"),
             host=os.environ.get("POSTGRES_DB_HOST", "127.0.0.1"),
             port=os.environ.get("POSTGRES_DB_PORT", "5432"),
             # password='password'
             autorollback=True,
+            max_connections=32,
+            stale_timeout=300,  # 5 minutes
         )
 
         # TODO: figure this out (try with creating a base class and only assigning
@@ -220,8 +222,6 @@ class Database(object):
         if not self._active_delegates or (
             self._active_delegates and self._active_delegates[0].round != delegate_round
         ):
-            # if not delegates or len(delegates) == 0:
-            # TODO: Does this return only the first 51 delegates???
             print("Load delegates for round {}".format(delegate_round))
             delegates = list(
                 Round.select()
@@ -229,9 +229,14 @@ class Database(object):
                 .order_by(Round.balance.desc(), Round.public_key.asc())
             )
 
-            # for delegate in delegates:
-            #     wallet = self.wallets.find_by_public_key(delegate.public_key)
-            #     print(delegate.public_key, delegate.balance, wallet.vote_balance)
+            for delegate in delegates:
+                wallet = self.wallets.find_by_public_key(delegate.public_key)
+                print(
+                    delegate.public_key,
+                    delegate.balance,
+                    wallet.vote_balance,
+                    wallet.username,
+                )
 
             if delegates:
                 seed = sha256(str(delegate_round).encode("utf-8")).digest()
@@ -284,32 +289,38 @@ class Database(object):
     def transaction_is_forged(self, transaction_id):
         return Transaction.select().where(Transaction.id == transaction_id).exists()
 
-    def _convert_blocks_to_crypto_and_load_transactions(self, blocks):
-        block_ids = [block.id for block in blocks]
-
-        transactions = (
-            Transaction.select()
-            .where(Transaction.block_id.in_(block_ids))
-            .order_by(Transaction.block_id.asc(), Transaction.sequence.asc())
+    def get_blocks(self, height, limit, serialized, with_transactions=False):
+        blocks = (
+            Block.select()
+            .where(Block.height.between(height, height + limit))
+            .order_by(Block.height.asc())
         )
 
-        transactions_map = defaultdict(list)
-        for trans in transactions:
-            # TODO: implement from_object on transaction and use that, instead of
-            # creating it from serialized data.
-            transactions_map[trans.block_id].append(from_serialized(trans.serialized))
+        if with_transactions:
+            block_ids = [block.id for block in blocks]
+            transactions = (
+                Transaction.select()
+                .where(Transaction.block_id.in_(block_ids))
+                .order_by(Transaction.block_id.asc(), Transaction.sequence.asc())
+            )
 
+            transactions_map = defaultdict(list)
+            for trans in transactions:
+                # TODO: implement from_object on transaction and use that, instead of
+                # creating it from serialized data.
+                if serialized:
+                    transactions_map[trans.block_id].append(trans.serialized)
+                else:
+                    transactions_map[trans.block_id].append(
+                        from_serialized(trans.serialized)
+                    )
         crypto_blocks = []
         for block in blocks:
             crypto_block = CryptoBlock.from_object(block)
-            crypto_block.transactions = transactions_map[block.id]
+            if with_transactions:
+                crypto_block.transactions = transactions_map[block.id]
             crypto_blocks.append(crypto_block)
-
         return crypto_blocks
-
-    def get_blocks(self, height, limit):
-        blocks = Block.select().where(Block.height.between(height, height + limit))
-        return self._convert_blocks_to_crypto_and_load_transactions(blocks)
 
     def get_blocks_by_id(self, block_ids):
         blocks = (
@@ -358,4 +369,4 @@ class Database(object):
 
         round_query = Round.delete().where(Round.round > to_round)
         deleted_rounds = round_query.execute()
-        print("Deleted roudns: {}".format(deleted_rounds))
+        print("Deleted rounds: {}".format(deleted_rounds))

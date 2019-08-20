@@ -119,7 +119,13 @@ class Block(CryptoObject):
         if cls.transactions and isinstance(cls.transactions, list):
             transactions = []
             for transaction_data in cls.transactions:
-                transactions.append(from_dict(transaction_data))
+                converter = from_dict
+                # Transactions can also be serialized, so sonvert from serialized
+                if isinstance(transaction_data, str):
+                    converter = from_serialized
+                    transaction_data = transaction_data.encode("utf-8")
+
+                transactions.append(converter(transaction_data))
             cls.transactions = transactions
         cls._construct_common()
         return cls
@@ -326,7 +332,9 @@ class Block(CryptoObject):
         invalid_transactions = [
             trans for trans in self.transactions if not trans.verify()
         ]
+
         if len(invalid_transactions) > 0:
+            print(invalid_transactions[0].id)
             errors.append("One or more transactions are not verified")
 
         # Check that number of transactions and block.number_of_transactions match

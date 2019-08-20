@@ -1,7 +1,8 @@
 import json
+import uuid
 from ipaddress import ip_address
 
-import requests
+from websocket import create_connection
 
 from chain.common.config import config
 from chain.crypto.objects.block import Block
@@ -9,8 +10,23 @@ from chain.crypto.objects.block import Block
 from .utils import ip_is_blacklisted, ip_is_whitelisted, verify_peer_status
 
 
+class PeerRateLimitExceeded(Exception):
+    pass
+
+
+class PeerErrorResponse(Exception):
+    def __init__(self, message, data):
+        super().__init__(message)
+        self.data = data
+
+
+class PeerConnectionRefused(Exception):
+    def __init__(self, message, exception):
+        super().__init__(message)
+        self.exception = exception
+
+
 class Peer(object):
-    # TODO: Yeah, refactor this
     def __init__(
         self,
         ip,
@@ -53,42 +69,63 @@ class Peer(object):
 
         self.milestone_hash = response.headers.get("milestonehash")
 
-    def _get(self, url, params=None, timeout=None):
-        scheme = "https" if self.port == 443 else "http"
-        full_url = "{}://{}:{}{}".format(scheme, self.ip, self.port, url)
-        print(full_url)
-        print(params)
+    def _fetch(self, event, data=None):
+        url = "ws://{}:{}/socketcluster/".format(self.ip, self.port)
+
+        # TODO: Handle errors and timeouts
         try:
-            response = requests.get(
-                full_url,
-                params=params,
-                headers=self.headers,
-                timeout=timeout or config.peers["request_timeout"],
+            ws = create_connection(url, timeout=5)
+        except ConnectionRefusedError as e:
+            raise PeerConnectionRefused("Connection refused", e)
+
+        handshake_uuid = str(uuid.uuid4())
+        handshake_obj = {
+            "event": "#handshake",
+            "data": {"authToken": None},
+            "cid": handshake_uuid,
+        }
+        ws.send(json.dumps(handshake_obj))
+        handshake = json.loads(ws.recv())
+        if handshake_uuid != handshake["rid"]:
+            raise Exception("Handshake failed: {}".format(json.dumps(handshake)))
+
+        cid = str(uuid.uuid4())
+        payload = {
+            "event": event,
+            "cid": cid,
+            "data": {"headers": {"Content-Type": "application/json"}, "data": data},
+        }
+        ws.send(json.dumps(payload))
+        result = json.loads(ws.recv())
+        if cid != result["rid"]:
+            raise Exception(
+                "Got wrong response from peer: {}".format(json.dumps(result))
             )
-        except requests.exceptions.RequestException as e:
-            print("Request to {} failed because of {}".format(full_url, e))
-            self.latency = -1
-            return {}
+        ws.close()
 
-        self.latency = response.elapsed.total_seconds()
-        # TODO: rewrite _parse_headers to make it more meaningful
-        self._parse_headers(response)
-
-        try:
-            body = response.json()
-        except ValueError:
-            body = {}
+        if not result:
             print(
-                "Request to {} returned HTTP {}. {}".format(
-                    full_url, response.status_code, response.content
+                "Got an empty response ({}) from peer {}:{} ".format(
+                    result, self.ip, self.port
                 )
             )
-        else:
-            if body.get("success"):
-                return body
+            return []
 
-        print("Request to {} failed. Response was {}".format(full_url, body))
-        return {}
+        # TODO: Do something with headers and the rest of response data
+        if "error" in result:
+            if result["error"].get("message") == "Rate limit exceeded":
+                raise PeerRateLimitExceeded("Rate limit exceeded")
+            else:
+                error = result["error"]
+                raise PeerErrorResponse(
+                    "{}: {}".format(error["name"], error["message"])
+                )
+        try:
+            data = result["data"]["data"]
+        except KeyError as e:
+            print(result)
+            raise e
+        return data
 
     def is_valid(self):
         if ip_is_whitelisted(self.ip):
@@ -111,39 +148,36 @@ class Peer(object):
             return False
 
         # TODO: check for valid network version
-
         return True
 
     def is_valid_network(self):
         return self.nethash == config.network["nethash"]
 
     def fetch_common_block_by_ids(self, block_ids):
-        print(block_ids)
-        params = {"ids": ",".join(block_ids)}
-        body = self._get("/peer/blocks/common", params=params)
-        print(body)
-        return body.get("common")
+        payload = {"ids": block_ids}
+        response = self._fetch("p2p.peer.getCommonBlocks", payload)
+        print(response)
+        return response.get("common")
 
     def fetch_blocks_from_height(self, from_height):
-        params = {"lastBlockHeight": from_height}
-        body = self._get("/peer/blocks", params=params)
-        blocks = body.get("blocks", [])
+        payload = {"lastBlockHeight": from_height, "serialized": True}
+        blocks = self._fetch("p2p.peer.getBlocks", payload)
         return [Block.from_dict(block) for block in blocks]
 
     def fetch_peers(self):
         print("Fetching a fresh peer list from {}:{}".format(self.ip, self.port))
-        body = self._get("/peer/list")
-        print(body)
+        response = self._fetch("p2p.peer.getPeers")
+        print(response)
         peers = []
-        for peer in body.get("peers", []):
+        for peer in response:
             if not ip_is_blacklisted(peer["ip"]):
                 peers.append(
                     Peer(
                         ip=peer["ip"],
-                        port=peer["port"],
+                        port=4002,  # peer["port"],
                         chain_version=peer["version"],
-                        nethash=peer["nethash"],
-                        os=peer["os"],
+                        nethash=None,
+                        os=None,
                     )
                 )
         return peers
@@ -182,11 +216,10 @@ class Peer(object):
         if not timeout:
             timeout = config.peers["verification_timeout"]
 
-        body = self._get("/peer/status", timeout=timeout)
-
-        if not body:
+        response = self._fetch("p2p.peer.getStatus")
+        if not response.get("state"):
             raise Exception("Peer not verified")
 
-        self.verification = verify_peer_status(self, body)
+        self.verification = verify_peer_status(self, response["state"])
         if not self.verification:
             raise Exception("Peer not verified")

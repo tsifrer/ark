@@ -73,7 +73,7 @@ class Config(dict, metaclass=SingletonMeta):
         #  * you will need to specify the IP of your forger here.
         #  */
         # remoteAccess: ["127.0.0.1", "::ffff:127.0.0.1"],
-        self.p2p_service = {"remote_access": []}
+        self.p2p = {"remote_access": []}
 
         with open(os.path.join(folder, "milestones.json")) as f:
             milestones = json.loads(f.read())

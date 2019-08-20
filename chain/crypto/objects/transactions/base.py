@@ -273,7 +273,7 @@ class BaseTransaction(CryptoObject):
             }
 
         elif self.type == TRANSACTION_TYPE_DELEGATE_REGISTRATION:
-            username_length = buff.pop_uint8() // 2
+            username_length = buff.pop_uint8()
             self.asset["delegate"] = {
                 "username": buff.pop_bytes(username_length).decode("utf-8")
             }
@@ -332,7 +332,16 @@ class BaseTransaction(CryptoObject):
             raise Exception("Transaction type is invalid")  # TODO: better exception
 
     def _deserialize_signature(self, buff):
+        # if self.version == 1:
+        self._deserialize_ECDSA(buff)
+        # else:
+        #     self._deserialize_schnorr(buff)
+
+    def _deserialize_ECDSA(self, buff):
         # Signature
+
+        # hexlify(buff.pop_bytes(33)).decode("utf-8")
+
         if len(buff) > 0:
             signature_length = int(hexlify(buff.read_bytes(1, offset=1)), 16) + 2
             self.signature = hexlify(buff.pop_bytes(signature_length)).decode("utf-8")
@@ -359,6 +368,9 @@ class BaseTransaction(CryptoObject):
                 self.second_signature = hexlify(
                     buff.pop_bytes(second_signature_length)
                 ).decode("utf-8")
+
+    def _deserialize_schnorr(self, buff):
+        raise NotImplementedError
 
     def _apply_v1_compatibility(self):
         if self.version != 1:
@@ -391,10 +403,12 @@ class BaseTransaction(CryptoObject):
         self.timestamp = buff.pop_uint32()
         self.sender_public_key = hexlify(buff.pop_bytes(33)).decode("utf-8")
         self.fee = buff.pop_uint64()
-        if BaseTransaction.can_have_vendor_field(self.type):
-            vendor_length = buff.pop_uint8()
-            if vendor_length > 0:
+        vendor_length = buff.pop_uint8()
+        if vendor_length > 0:
+            if BaseTransaction.can_have_vendor_field(self.type):
                 self.vendor_field_hex = hexlify(buff.pop_bytes(vendor_length))
+            else:
+                buff.pop_bytes(vendor_length)
 
         self._deserialize_type(buff)
         self._deserialize_signature(buff)

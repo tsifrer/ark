@@ -3,14 +3,20 @@ import random
 
 from redis import Redis
 
+from websocket import WebSocketTimeoutException
+
 from chain.common.config import config
 from chain.common.exceptions import PeerNotFoundException
 from chain.common.plugins import load_plugin
 from chain.common.utils import get_chain_version
+from chain.plugins.peers.peer import (
+    Peer,
+    PeerConnectionRefused,
+    PeerErrorResponse,
+    PeerRateLimitExceeded,
+)
 from chain.plugins.peers.tasks import add_peer
-
-from .peer import Peer
-from .utils import ip_is_whitelisted
+from chain.plugins.peers.utils import ip_is_whitelisted
 
 
 class PeerManager(object):
@@ -30,8 +36,6 @@ class PeerManager(object):
             port=os.environ.get("REDIS_PORT", 6379),
             db=os.environ.get("REDIS_DB", 0),
         )
-
-        # TODO: peer discovery
 
     def setup(self):
         # Clear the peers list in redis
@@ -71,7 +75,6 @@ class PeerManager(object):
 
     def _populate_seed_peers(self):
         peer_list = config.peers["list"]
-        # TODO: put this trough add_peer task
         for peer_obj in peer_list:
             add_peer(
                 ip=peer_obj["ip"],
@@ -90,10 +93,26 @@ class PeerManager(object):
 
     def fetch_blocks(self, from_height):
         # TODO: Missing error handling
-        peer = self.get_random_peer()
-        print("Downloading blocks from height {} via {}".format(from_height, peer.ip))
-        blocks = peer.fetch_blocks_from_height(from_height)
-        return blocks
+        tries = 3
+        while True:
+            peer = self.get_random_peer()
+            print(
+                "Downloading blocks from height {} via {}".format(from_height, peer.ip)
+            )
+            try:
+                return peer.fetch_blocks_from_height(from_height)
+            except (
+                PeerRateLimitExceeded,
+                WebSocketTimeoutException,
+                PeerErrorResponse,
+                PeerConnectionRefused,
+            ) as e:
+                # TODO: suspend peer
+                # self.suspend_peer(peer)
+                print(str(e))
+                tries -= 1
+                if tries == 0:
+                    raise e
 
     def suspend_peer(self, peer):
         if ip_is_whitelisted(peer.ip):

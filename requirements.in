@@ -8,7 +8,6 @@ flake8
 flake8-broken-line
 flake8-bugbear
 flake8-import-order
-flask
 gevent
 gunicorn
 hiredis
@@ -19,6 +18,7 @@ pip-tools
 psutil
 psycopg2-binary
 pytest
+pytest-cov
 pytest-mock
 python-dateutil
 redis
@@ -26,4 +26,5 @@ requests
 semver
 sphinx
 sphinx_rtd_theme
-pytest-cov
+websocket-client
+websockets

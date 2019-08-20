@@ -6,7 +6,6 @@ from redis import Redis
 
 from chain.common.config import config
 from chain.crypto.objects.block import Block as CryptoBlock
-from chain.p2p_service.server import create_app
 from chain.plugins.database.database import Database
 from chain.plugins.database.migrate import migrate
 from chain.plugins.database.models.block import Block
@@ -76,14 +75,3 @@ def db(empty_db):
     _clear_db()
     print("Creating genesis block")
     _create_genesis_block()
-
-
-@pytest.fixture(scope="session")
-def app():
-    return create_app()
-
-
-@pytest.fixture
-def p2p_service(db, app):
-    client = app.test_client()
-    yield client

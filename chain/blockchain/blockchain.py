@@ -163,6 +163,9 @@ class Blockchain(object):
                     if status == BLOCK_ACCEPTED:
                         last_block = block
                     else:
+
+                        raise Exception("Block not accepted")
+
                         # TODO: Think about banning the peer at this point as it's most
                         # likely that it's a bad peer
                         print(block.to_json())

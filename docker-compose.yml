@@ -21,7 +21,7 @@ services:
     image: chain
     volumes:
       - .:/home/app
-    command: python chain/p2p_service/start.py
+    command: python chain/p2p/start.py
     depends_on:
       - chain-db
       - chain-redis
@@ -30,10 +30,11 @@ services:
       PYTHONUNBUFFERED: '1'
       POSTGRES_DB_HOST: 'chain-db'
       REDIS_HOST: 'chain-redis'
-      SERVER_HOST: '0.0.0.0'
+      WS_HOST: '0.0.0.0'
+      WS_PORT: '4002'
       CHAIN_CONFIG_FOLDER: 'ark/devnet/'
     ports:
-      - '4002:8080'
+      - '4002:4002'
 
   chain-huey:
     image: chain
@@ -55,7 +56,7 @@ services:
         - chain-db-volume:/var/lib/postgresql/data
 
   chain-redis:
-    image: redis:5.0.3
+    image: redis:5.0.5
 
 volumes:
   chain-db-volume:

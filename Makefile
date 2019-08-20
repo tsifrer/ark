@@ -45,6 +45,10 @@ start:
 	make migrate
 	docker-compose up -d
 
+restart:
+	docker-compose stop
+	docker-compose up -d
+
 blockchain-logs:
 	docker-compose logs --tail 50 -f blockchain
 

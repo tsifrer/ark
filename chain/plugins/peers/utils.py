@@ -154,7 +154,7 @@ def _verify_peer_blocks(peer, start_height, peer_height):
     return True
 
 
-def verify_peer_status(peer, body):
+def verify_peer_status(peer, state):
     """
     Verify the peer's blockchain (claimed state).
     Confirm that the peer's chain is either:
@@ -192,8 +192,8 @@ def verify_peer_status(peer, body):
     """
     database = load_plugin("chain.plugins.database")
     last_block = database.get_last_block()
-    peer_height = int(body["header"]["height"])
-    peer_id = body["header"]["id"]
+    peer_height = int(state["header"]["height"])
+    peer_id = state["header"]["id"]
 
     """
     Case3. Peer height == our height and our latest blocks are the same.

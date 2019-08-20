@@ -52,7 +52,8 @@ def reverify_peer(ip):
     if peer:
         try:
             peer.verify_peer()
-        except Exception:  # TODO: be more specific
+        except Exception as e:  # TODO: be more specific
+            print("Peer {}:{} failed verification: {}".format(peer.ip, peer.port, e))
             peer_manager.suspend_peer(peer)
         else:
             print("Peer {}:{} successfully reverified".format(peer.ip, peer.port))

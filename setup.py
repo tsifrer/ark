@@ -17,7 +17,7 @@ with open("README.rst", "r") as f:
 setuptools.setup(
     name="ark",
     version=version,
-    description="Python implementation of Ark Blokchain.",
+    description="Python implementation of Ark Blockchain.",
     long_description=readme,
     long_description_content_type="text/x-rst",
     author="tsifrer",

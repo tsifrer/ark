@@ -1,8 +1,7 @@
 [tool.black]
 line-length = 88
 target-version = ['py37', 'py38']
-skip-numeric-underscore-normalization = true
-include = '\.py$'
+include = '\.pyi?$'
 exclude = '''
 /(
     \.git
@@ -14,9 +13,5 @@ exclude = '''
   | buck-out
   | build
   | dist
-
-  # The following are specific to Black, you probably don't want those.
-  | blib2to3
-  | tests/data
 )/
 '''
