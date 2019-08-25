@@ -409,7 +409,7 @@ class Blockchain(object):
     def process_block(self, block, last_block):
         logger.info("***************************")
         logger.info("Started processing block %s", block.id)
-        logger.info("Last block height: %", last_block.height)
+        logger.info("Last block height: %s", last_block.height)
 
         if is_block_exception(block):
             return self._handle_exception_block(block)
