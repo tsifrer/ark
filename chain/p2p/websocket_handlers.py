@@ -9,17 +9,25 @@ from chain.crypto.objects.block import Block
 class Handlers(object):
     def __init__(self):
         super().__init__()
-        print("WEBSOCKET HANDLER INITIALIZED")
         self.db = load_plugin("chain.plugins.database")
         self.process_queue = load_plugin("chain.plugins.process_queue")
         self.transaction_pool = load_plugin("chain.plugins.transaction_pool")
+
+    @property
+    def socket(self):
+        if self._socket:
+            return self._socket
+        raise Exception("Socket is not set")
+
+    def set_socket(self, socket):
+        self._socket = socket
 
     async def get_last_block(self):
         last_block = self.db.get_last_block()
         return last_block
 
     async def get_blocks(self, data):
-        print(data)
+        self.socket.log_info(data)
         block_height = int(data["lastBlockHeight"]) + 1
         block_limit = int(data.get("blockLimit") or 400)
         headers_only = data.get("headersOnly") or False
@@ -31,7 +39,7 @@ class Handlers(object):
         return [block.to_json() for block in blocks]
 
     async def get_common_blocks(self, data):
-        print(data)
+        self.socket.log_info(data)
         ids = data["ids"]
         last_block = self.db.get_last_block()
         if ids:
@@ -89,33 +97,33 @@ class Handlers(object):
         #     )
 
         block = Block.from_dict(block_data)
-        print(
-            "Received new block at height {} with {} transactions, from {}".format(
-                block.height, block.number_of_transactions, ip
-            )
+        self.socket.log_info(
+            "Received new block at height %s with %s transactions, from %s",
+            block.height,
+            block.number_of_transactions,
+            ip,
         )
 
         is_verified, errors = block.verify()
         if not is_verified:
-            print(errors)  # TODO:
+            self.socket.log_error(errors)  # TODO:
             raise Exception("Verification failed")
 
         last_block = self.db.get_last_block()
 
         if last_block.height >= block.height:
-            print(
-                "Received block with height {} which was already processed. Our last "
-                "block height {}. Skipping process queue.".format(
-                    block.height, last_block.height
-                )
+            self.socket.log_info(
+                "Received block with height %s which was already processed. Our last "
+                "block height %s. Skipping process queue.",
+                block.height,
+                last_block.height,
             )
             return
 
         if self.process_queue.block_exists(block):
-            print(
-                "Received block with height {} is already in process queue.".format(
-                    block.height
-                )
+            self.socket.log_info(
+                "Received block with height %s is already in process queue.",
+                block.height,
             )
             return
 
@@ -126,15 +134,15 @@ class Handlers(object):
             # Put the block to process queue
             self.process_queue.push_block(block)
         else:
-            print(
-                "Discarded block {} because it takes a future slot".format(block.height)
+            self.socket.log_info(
+                "Discarded block %s because it takes a future slot", block.height
             )
 
     async def post_transactions(self, data, ip):
         # TODO: Wrap everything in try except
         transactions_data = data.get("transactions")
         result = self.transaction_pool.process_transactions(transactions_data)
-        print("Result of process_transactions", result)
+        self.socket.log_info("Result of process_transactions: %s", result)
         if len(result["invalid"]) > 0:
             # TODO: exception?
             raise Exception("There was an error with one or more transactions")

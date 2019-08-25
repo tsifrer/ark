@@ -1,6 +1,9 @@
 import asyncio
+import logging
 from collections import Counter
 from time import time
+
+logger = logging.getLogger(__name__)
 
 
 class AsyncRateLimiter(object):
@@ -37,8 +40,8 @@ class AsyncRateLimiter(object):
                 if block_end < time():
                     del self.blocked_ips[ip]
                 else:
-                    print(
-                        "{}: Exceeding rate limit blocks you for one minute.".format(ip)
+                    logger.info(
+                        "%s: Exceeding rate limit blocks you for one minute.", ip
                     )
                     return True
 
@@ -55,5 +58,5 @@ class AsyncRateLimiter(object):
 
             if self.counter[key] > self.event_settings.get(event, self.default_limit):
                 self.blocked_ips[str(ip)] = time() + self.block_duration
-                print("{}: Rate limit exceeded".format(ip))
+                logger.info("%s: Rate limit exceeded", ip)
                 return True
