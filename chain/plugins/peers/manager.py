@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 
@@ -17,6 +18,8 @@ from chain.plugins.peers.peer import (
 )
 from chain.plugins.peers.tasks import add_peer
 from chain.plugins.peers.utils import ip_is_whitelisted
+
+logger = logging.getLogger(__name__)
 
 
 class PeerManager(object):
@@ -46,13 +49,13 @@ class PeerManager(object):
         keys.extend(self.redis.keys(self.key_suspended.format("*")))
         if keys:
             num = self.redis.delete(*keys)
-            print("Deleted {} peers from redis".format(num))
+            logger.info("Deleted %s peers from redis", num)
         self._populate_seed_peers()
 
     def peers(self):
         keys = self.redis.keys(self.key_active.format("*"))
         peers = self.redis.mget(keys)
-        print("Got {} peers from redis".format(len(peers)))
+        logger.info("Got %s peers from redis", len(peers))
         return [Peer.from_json(peer) for peer in peers if peer]
 
     def get_peer_by_ip(self, ip):
@@ -96,8 +99,8 @@ class PeerManager(object):
         tries = 3
         while True:
             peer = self.get_random_peer()
-            print(
-                "Downloading blocks from height {} via {}".format(from_height, peer.ip)
+            logger.info(
+                "Downloading blocks from height %s via %s", from_height, peer.ip
             )
             try:
                 return peer.fetch_blocks_from_height(from_height)
@@ -109,21 +112,19 @@ class PeerManager(object):
             ) as e:
                 # TODO: suspend peer
                 # self.suspend_peer(peer)
-                print(str(e))
+                logger.info(str(e))
                 tries -= 1
                 if tries == 0:
                     raise e
 
     def suspend_peer(self, peer):
         if ip_is_whitelisted(peer.ip):
-            print(
-                "Peer {}:{} can't be suspended as it's whitelisted".format(
-                    peer.ip, peer.port
-                )
+            logger.info(
+                "Peer %s:%s can't be suspended as it's whitelisted", peer.ip, peer.port
             )
             return None
 
-        print("Suspending peer {}:{}".format(peer.ip, peer.port))
+        logger.warning("Suspending peer %s:%s", peer.ip, peer.port)
         self.redis.delete(self.key_active.format(peer.ip))
         # TODO: also record for how long peer needs to be suspended
         self.redis.set(self.key_suspended.format(peer.ip), peer.to_json())

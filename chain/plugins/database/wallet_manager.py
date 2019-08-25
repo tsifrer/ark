@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 
@@ -22,6 +23,8 @@ from chain.crypto.utils import is_transaction_exception
 
 from .models.block import Block
 from .models.transaction import Transaction
+
+logger = logging.getLogger(__name__)
 
 
 def get_memory_precent():
@@ -127,10 +130,10 @@ class WalletManager(object):
             wallet.balance -= int(transaction.fee)
 
             if wallet.balance < 0 and not self.is_genesis_address(wallet.address):
-                print(
-                    "Negative wallet balance: {} {}".format(
+                logger.error(
+                    "Negative wallet balance: %s %s",
                         wallet.address, wallet.balance
-                    )
+                    
                 )
             self.save_wallet(wallet)
 
@@ -215,7 +218,7 @@ class WalletManager(object):
                 self.save_wallet(wallet)
 
     def build(self):
-        print("Clearing existing wallets from redis")
+        logger.info("Clearing existing wallets from redis")
         keys = self.redis.keys(self._key.format("*"))
         if keys:
             self.redis.delete(*keys)
@@ -225,37 +228,37 @@ class WalletManager(object):
 
         # Execution order of functions below is very important!
         start = datetime.now()
-        print("Memory percent:", get_memory_precent())
-        print("Building wallets Step 1 of 8: Received Transactions")
+        logger.info("Memory percent: %s", get_memory_precent())
+        logger.info("Building wallets Step 1 of 8: Received Transactions")
         self._build_received_transactions()
-        print(datetime.now() - start)
-        print("Memory percent:", get_memory_precent())
-        print("Building wallets Step 2 of 8: Block Rewards")
+        logger.info(datetime.now() - start)
+        logger.info("Memory percent: %s", get_memory_precent())
+        logger.info("Building wallets Step 2 of 8: Block Rewards")
         self._build_block_rewards()
-        print(datetime.now() - start)
+        logger.info(datetime.now() - start)
         # TODO: This step seems useless
         # print('Building wallets Step 3 of 8: Last Forged Blocks')
         # self._build_last_forged_blocks()
-        print("Memory percent:", get_memory_precent())
-        print("Building wallets Step 4 of 8: Sent Transactions")
+        logger.info("Memory percent: %s", get_memory_precent())
+        logger.info("Building wallets Step 4 of 8: Sent Transactions")
         self._build_sent_transactions()
-        print(datetime.now() - start)
-        print("Memory percent:", get_memory_precent())
-        print("Building wallets Step 5 of 8: Second Signatures")
+        logger.info(datetime.now() - start)
+        logger.info("Memory percent: %s", get_memory_precent())
+        logger.info("Building wallets Step 5 of 8: Second Signatures")
         self._build_second_signatures()
-        print(datetime.now() - start)
-        print("Memory percent:", get_memory_precent())
-        print("Building wallets Step 6 of 8: Votes")
+        logger.info(datetime.now() - start)
+        logger.info("Memory percent: %s", get_memory_precent())
+        logger.info("Building wallets Step 6 of 8: Votes")
         self._build_votes()
-        print(datetime.now() - start)
-        print("Memory percent:", get_memory_precent())
-        print("Building wallets Step 7 of 8: Delegates")
+        logger.info(datetime.now() - start)
+        logger.info("Memory percent: %s", get_memory_precent())
+        logger.info("Building wallets Step 7 of 8: Delegates")
         self._build_delegates()
-        print(datetime.now() - start)
+        logger.info(datetime.now() - start)
 
-        print("Building wallets Step 8 of 8: Multi Signatures")
+        logger.info("Building wallets Step 8 of 8: Multi Signatures")
         self._build_multi_signatures()
-        print(datetime.now() - start)
+        logger.info(datetime.now() - start)
 
         # TODO: Verify that no wallet has negative balance!
 
@@ -362,9 +365,9 @@ class WalletManager(object):
         # Handle transaction exceptions and verify that we can apply the transaction
         # to the sender
         if is_transaction_exception(transaction.id):
-            print(
-                "Transaction {} forcibly applied because it has been added as an "
-                "exception.".format(transaction.id)
+            logger.warning(
+                "Transaction %s forcibly applied because it has been added as an "
+                "exception.", transaction.id
             )
         else:
             if not transaction.can_be_applied_to_wallet(sender, self, block.height):
@@ -405,7 +408,7 @@ class WalletManager(object):
                 self.apply_transaction(transaction, block)
                 applied_transactions.append(transaction)
         except Exception as e:  # TODO: better exception handling, not so broad
-            print(
+            logger.exception(
                 "Failed to apply all transactions in block - reverting previous "
                 "transactions"
             )
@@ -453,7 +456,7 @@ class WalletManager(object):
         #     print(wallet.username, wallet.public_key, wallet.balance)
 
         delegate_wallets = delegate_wallets[:max_delegates]
-        print("Loaded {} active delegates".format(len(delegate_wallets)))
+        logger.info("Loaded %s active delegates", len(delegate_wallets))
         return delegate_wallets
 
     def revert_transaction(self, transaction):

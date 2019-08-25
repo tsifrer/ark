@@ -1,3 +1,4 @@
+import logging
 from binascii import hexlify, unhexlify
 from hashlib import sha256
 from struct import pack
@@ -32,6 +33,8 @@ from chain.crypto.objects.base import (
     StrField,
 )
 from chain.crypto.utils import is_transaction_exception, verify_hash
+
+logger = logging.getLogger(__name__)
 
 
 class BaseTransaction(CryptoObject):
@@ -572,27 +575,27 @@ class BaseTransaction(CryptoObject):
         :returns (bool): True if can be applied, False otherwise
         """
         if wallet.multisignature:
-            print("Multi signatures are currently not supported")
+            logger.error("Multi signatures are currently not supported")
             return False
 
         if self.sender_public_key != wallet.public_key:
-            print("Sender public key does not match the wallet")
+            logger.error("Sender public key does not match the wallet")
             return False
 
         balance = wallet.balance - self.amount - self.fee
         if balance < 0:
-            print("Insufficient balance in the wallet")
+            logger.error("Insufficient balance in the wallet")
             return False
 
         if wallet.second_public_key:
             if not self.verify_second_signature(wallet.second_public_key):
-                print("Failed to verify second-signature")
+                logger.error("Failed to verify second-signature")
                 return False
         elif self.second_signature or self.sign_signature:
             milestone = config.get_milestone(block_height)
             # Accept invalid second signature fields prior the applied patch
             if not milestone["ignoreInvalidSecondSignatureField"]:
-                print("Wallet does not allow second signatures")
+                logger.error("Wallet does not allow second signatures")
                 return False
 
         return True

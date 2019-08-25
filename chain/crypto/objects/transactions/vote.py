@@ -1,4 +1,8 @@
+import logging
+
 from .base import BaseTransaction
+
+logger = logging.getLogger(__name__)
 
 
 class VoteTransaction(BaseTransaction):
@@ -6,18 +10,18 @@ class VoteTransaction(BaseTransaction):
         vote = self.asset["votes"][0]
         if vote.startswith("+"):
             if wallet.vote:
-                print("Wallet already votes")
+                logger.warning("Wallet already votes")
                 return False
         else:
             if not wallet.vote:
-                print("Wallet hasn't voted yet")
+                logger.error("Wallet hasn't voted yet")
                 return False
             elif wallet.vote != vote[1:]:
-                print("Wallet vote doesn't match")
+                logger.error("Wallet vote doesn't match")
                 return False
 
         if not wallet_manager.is_delegate(vote[1:]):
-            print("Only delegates can be voted for")
+            logger.error("Only delegates can be voted for")
             return False
 
         return super().can_be_applied_to_wallet(wallet, wallet_manager, block_height)

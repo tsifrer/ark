@@ -1,3 +1,4 @@
+import logging
 import os
 from collections import defaultdict
 from hashlib import sha256
@@ -13,6 +14,8 @@ from .models.pool_transaction import PoolTransaction
 from .models.round import Round
 from .models.transaction import Transaction
 from .wallet_manager import WalletManager
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: inherit from interface
@@ -61,7 +64,7 @@ class Database(object):
             return crypto_block
 
     def save_block(self, block):
-        print("Saving block {}".format(block.id))
+        logger.info("Saving block %s", block.id)
         if not isinstance(block, CryptoBlock):
             raise Exception(
                 "Block must be a type of crypto.objects.Block"
@@ -72,9 +75,9 @@ class Database(object):
                 db_block = Block.from_crypto(block)
                 db_block.save(force_insert=True)
             except Exception as e:  # TODO: Make this not so broad!
-                print("Got an exception while saving a block")
+                logger.error("Got an exception while saving a block")
                 db_txn.rollback()
-                print(e)  # TODO: replace with logger.error
+                logger.error(e)
                 return
 
         with self.db.atomic() as db_txn:
@@ -83,23 +86,22 @@ class Database(object):
                     db_transaction = Transaction.from_crypto(transaction)
                     db_transaction.save(force_insert=True)
             except Exception as e:  # TODO: Make this not so broad!
-                print("Got an exception while saving transactions")
+                logger.error("Got an exception while saving transactions")
                 db_txn.rollback()
                 db_block.delete_instance()
-                print(e)  # TODO: replace with logger.error
+                logger.error(e)  # TODO: replace with logger.error
                 raise e
-                return
 
     def apply_round(self, height):
         next_height = 1 if height == 1 else height + 1
-        print("Apply round next height: {}".format(next_height))
+        logger.info("Apply round next height: %s", next_height)
         current_round, _, max_delegates = calculate_round(next_height)
-        print("Current round {}".format(current_round))
+        logger.info("Current round %s", current_round)
         if next_height % max_delegates == 1:
             # TODO: Apparently forger can apply a round multiple times, so we need to
             # make sure that it only applies it once! Look at the code in ark core
             # to get the bigger picture of how it's done there
-            print("Starting round {}".format(current_round))
+            logger.info("Starting round %s", current_round)
 
             # TODO: This is to update missed blocks on the wallet
             # self.update_delegate_stats(self.forging_delegates)
@@ -109,13 +111,10 @@ class Database(object):
             # Get the active delegate list from in-memory wallet manager
             delegate_wallets = self.wallets.load_active_delegate_wallets(next_height)
 
-            # for wallet in delegate_wallets:
-            #     print(wallet.username, wallet.public_key, wallet.vote_balance)
-
             # TODO: ark core states that this is saving next round delegate list into
             # the db. Is that true? Or are we saving the current round delegate list
             # into the db?
-            print("STORING CURRENT ROUND", current_round)
+            logger.info("STORING CURRENT ROUND %s", current_round)
             with self.db.atomic() as db_txn:
                 try:
                     for wallet in delegate_wallets:
@@ -125,9 +124,9 @@ class Database(object):
                             round=current_round,
                         )
                 except Exception as e:  # TODO: make this not so broad!
-                    print("Got an exception while saving a round")
+                    logger.error("Got an exception while saving a round")
                     db_txn.rollback()
-                    print(e)  # TODO: replace with logger.error
+                    logger.error(e)
                     raise e
 
     def apply_block(self, block):
@@ -222,21 +221,22 @@ class Database(object):
         if not self._active_delegates or (
             self._active_delegates and self._active_delegates[0].round != delegate_round
         ):
-            print("Load delegates for round {}".format(delegate_round))
+            logger.info("Load delegates for round %s", delegate_round)
             delegates = list(
                 Round.select()
                 .where(Round.round == delegate_round)
                 .order_by(Round.balance.desc(), Round.public_key.asc())
             )
 
-            for delegate in delegates:
-                wallet = self.wallets.find_by_public_key(delegate.public_key)
-                print(
-                    delegate.public_key,
-                    delegate.balance,
-                    wallet.vote_balance,
-                    wallet.username,
-                )
+            # for delegate in delegates:
+            #     wallet = self.wallets.find_by_public_key(delegate.public_key)
+            #     logger.info(
+            #         "%s %s %s %s",
+            #         delegate.public_key,
+            #         delegate.balance,
+            #         wallet.vote_balance,
+            #         wallet.username,
+            #     )
 
             if delegates:
                 seed = sha256(str(delegate_round).encode("utf-8")).digest()
@@ -361,12 +361,12 @@ class Database(object):
             Transaction.block_id.in_(block_select_query)
         )
         deleted_transactions = transaction_query.execute()
-        print("Deleted transactions: {}".format(deleted_transactions))
+        logger.info("Deleted transactions: %s", deleted_transactions)
 
         block_query = Block.delete().where(Block.height >= height)
         deleted_blocks = block_query.execute()
-        print("Deleted blocks: {}".format(deleted_blocks))
+        logger.info("Deleted blocks: %s", deleted_blocks)
 
         round_query = Round.delete().where(Round.round > to_round)
         deleted_rounds = round_query.execute()
-        print("Deleted rounds: {}".format(deleted_rounds))
+        logger.info("Deleted rounds: %s", deleted_rounds)

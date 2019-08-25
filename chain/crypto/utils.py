@@ -1,8 +1,11 @@
+import logging
 import math
 
 from coincurve import PublicKey
 
 from chain.common.config import config
+
+logger = logging.getLogger(__name__)
 
 
 def verify_hash(message, signature, public_key):
@@ -15,11 +18,9 @@ def verify_hash(message, signature, public_key):
     try:
         is_verified = pub_key.verify(signature, message)
     except ValueError as e:
-        print(str(e))
-        print(
-            "Signature that could not be parsed {}, message: {}".format(
-                signature, message
-            )
+        logger.error(str(e))
+        logger.error(
+            "Signature that could not be parsed %s, message: %s", signature, message
         )
         return False
     return is_verified

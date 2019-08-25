@@ -1,18 +1,22 @@
+import logging
+
 from chain.crypto.constants import TRANSACTION_TYPE_DELEGATE_REGISTRATION
 from chain.plugins.database.models.pool_transaction import PoolTransaction
 
 from .base import BaseTransaction
+
+logger = logging.getLogger(__name__)
 
 
 class DelegateRegistrationTransaction(BaseTransaction):
     def can_be_applied_to_wallet(self, wallet, wallet_manager, block_height):
         username = self.asset["delegate"].get("username")
         if not username:
-            print("Delegate username can't be empty")
+            logger.error("Delegate username can't be empty")
             return False
 
         if wallet_manager.delegate_exists(username):
-            print("Delegate with the same name ({}) already exists".format(username))
+            logger.error("Delegate with the same name (%s) already exists", username)
             return False
 
         return super().can_be_applied_to_wallet(wallet, wallet_manager, block_height)
@@ -71,7 +75,7 @@ class DelegateRegistrationTransaction(BaseTransaction):
                                    set
         :param (WalletManager) wallet_manager: Wallet manager object
         """
-        print("Registering delegate {}".format(sender.username))
+        logger.info("Registering delegate %s", sender.username)
         wallet_manager.redis.set(
             wallet_manager.key_for_username(sender.username), sender.address
         )

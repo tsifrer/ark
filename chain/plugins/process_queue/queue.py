@@ -1,8 +1,11 @@
+import logging
 import os
 
 from redis import Redis
 
 from chain.common.config import config
+
+logger = logging.getLogger(__name__)
 
 
 class Queue(object):
@@ -40,5 +43,5 @@ class Queue(object):
             return False
 
     def clear(self):
-        print("Clearing process queue")
+        logger.info("Clearing process queue")
         self.db.delete(self.list_name)

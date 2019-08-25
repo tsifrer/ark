@@ -334,7 +334,6 @@ class Block(CryptoObject):
         ]
 
         if len(invalid_transactions) > 0:
-            print(invalid_transactions[0].id)
             errors.append("One or more transactions are not verified")
 
         # Check that number of transactions and block.number_of_transactions match

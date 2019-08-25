@@ -1,6 +1,11 @@
+import logging
+
 from chain.common.config import config
 from chain.common.plugins import load_plugin
 from chain.crypto.utils import calculate_round
+
+
+logger = logging.getLogger(__name__)
 
 
 def ip_is_blacklisted(ip):
@@ -31,9 +36,12 @@ def _get_sample_heights(min_height, max_height, n_samples):
 
 def _find_highest_common_between_heights(peer, heights):
     database = load_plugin("chain.plugins.database")
-    print(
-        "Checking for the highest common block height. Currently checking for heights "
-        "{}".format(heights)
+    logger.info(
+        (
+            "Checking for the highest common block height. Currently checking for "
+            "heights %s"
+        ),
+        heights,
     )
     our_blocks = database.get_blocks_by_heights(heights)
     if len(our_blocks) != len(heights):
@@ -49,17 +57,23 @@ def _find_highest_common_between_heights(peer, heights):
 
     common = peer.fetch_common_block_by_ids(list(heights_by_id.keys()))
     if not common:
-        print(
-            "Couldn't find a common block for peer {}:{} for block heights {}".format(
-                peer.ip, peer.port, heights
-            )
+        logger.info(
+            "Couldn't find a common block for peer %s:%s for block heights %s",
+            peer.ip,
+            peer.port,
+            heights,
         )
         return None
 
     if heights_by_id.get(common["id"]) != common["height"]:
-        print(
-            "Our block height {} does not match with peer height {} for block with id "
-            "{}".format(heights_by_id.get(common["id"]), common["height"], common["id"])
+        logger.info(
+            (
+                "Our block height %s does not match with peer height %s for block with "
+                "id %s"
+            ),
+            heights_by_id.get(common["id"]),
+            common["height"],
+            common["id"],
         )
         return None
     return common["height"]
@@ -93,25 +107,27 @@ def _is_valid_block(block, height, current_round, delegate_keys):
     verified, errors = block.verify()
 
     if not verified:
-        print(
-            "Peer's block at height {} does not pass crypto validation".format(height)
-        )
+        logger.info("Peer's block at height %s does not pass crypto validation", height)
         return False
 
     if block.height != height:
-        print(
-            "Peer's block height {} is different than the expected height {}".format(
-                block.height.height
-            )
+        logger.info(
+            "Peer's block height %s is different than the expected height %s",
+            block.height.height,
         )
         return False
 
     if block.generator_public_key in delegate_keys:
         return True
 
-    print(
-        "Peer's block with id {} and height {} is not signed by any of the delegates "
-        "for the corresponding round {}".format(block.id, block.height, current_round)
+    logger.info(
+        (
+            "Peer's block with id %s and height %s is not signed by any of the "
+            "delegates for the corresponding round %s"
+        ),
+        block.id,
+        block.height,
+        current_round,
     )
     return False
 
@@ -144,10 +160,10 @@ def _verify_peer_blocks(peer, start_height, peer_height):
             if not is_valid:
                 return False
         else:
-            print(
-                "Could not find block with height {} in mapping {}".format(
-                    height, height_block_map
-                )
+            logger.info(
+                "Could not find block with height %s in mapping %s",
+                height,
+                height_block_map,
             )
             return False
 
@@ -200,9 +216,13 @@ def verify_peer_status(peer, state):
       This means that our chains are the same.
     """
     if last_block.height == peer_height and last_block.id == peer_id:
-        print(
-            "Peer's latest block is the same as our latest block (height={}, id={}). "
-            "Identical chains.".format(last_block.height, last_block.id)
+        logger.info(
+            (
+                "Peer's latest block is the same as our latest block "
+                "(height=%s, id=%s). Identical chains."
+            ),
+            last_block.height,
+            last_block.id,
         )
         return {
             "my_height": last_block.height,

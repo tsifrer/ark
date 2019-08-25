@@ -1,8 +1,11 @@
+import logging
 from binascii import unhexlify
 
 from chain.crypto.utils import verify_hash
 
 from .base import BaseTransaction
+
+logger = logging.getLogger(__name__)
 
 
 class MultiSignatureTransaction(BaseTransaction):
@@ -42,21 +45,21 @@ class MultiSignatureTransaction(BaseTransaction):
 
     def can_be_applied_to_wallet(self, wallet, wallet_manager, block_height):
         if wallet.multisignature:
-            print("Multisignature is already registered for this wallet")
+            logger.error("Multisignature is already registered for this wallet")
             return False
 
         keysgroup = self.asset["multisignature"]["keysgroup"]
         min_length = self.asset["multisignature"]["min"]
         if len(keysgroup) < min_length:
-            print("Specified key count does not meet minimum key count")
+            logger.error("Specified key count does not meet minimum key count")
             return False
 
         if len(keysgroup) != len(self.signatures):
-            print("Specified key count does not equal signature count")
+            logger.error("Specified key count does not equal signature count")
             return False
 
         if not self._verify_signatures():
-            print("Failed to verify multi-signatures")
+            logger.error("Failed to verify multi-signatures")
             return False
 
         return super().can_be_applied_to_wallet(wallet, wallet_manager, block_height)

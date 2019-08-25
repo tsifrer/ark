@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from ipaddress import ip_address
 
@@ -8,6 +9,8 @@ from chain.common.config import config
 from chain.crypto.objects.block import Block
 
 from .utils import ip_is_blacklisted, ip_is_whitelisted, verify_peer_status
+
+logger = logging.getLogger(__name__)
 
 
 class PeerRateLimitExceeded(Exception):
@@ -104,10 +107,11 @@ class Peer(object):
         ws.close()
 
         if not result:
-            print(
-                "Got an empty response ({}) from peer {}:{} ".format(
-                    result, self.ip, self.port
-                )
+            logger.warning(
+                "Got an empty response (%s) from peer %s:%s ",
+                result,
+                self.ip,
+                self.port,
             )
             return []
 
@@ -123,7 +127,7 @@ class Peer(object):
         try:
             data = result["data"]["data"]
         except KeyError as e:
-            print(result)
+            logger.error(result)
             raise e
         return data
 
@@ -132,19 +136,19 @@ class Peer(object):
             return True
 
         if ip_is_blacklisted(self.ip):
-            print("Peer is blacklisted {}".format(self.ip))
+            logger.warning("Peer is blacklisted %s", self.ip)
             return False
 
         try:
             ip = ip_address(self.ip)
         except ValueError:
-            print(
-                "Peer is invalid, because the IP is not a valid ip {}".format(self.ip)
+            logger.warning(
+                "Peer is invalid, because the IP is not a valid ip %s", self.ip
             )
             return False
 
         if ip.is_private:
-            print("Peer is invalid, because the IP is private IP")
+            logger.warning("Peer is invalid, because the IP is private IP")
             return False
 
         # TODO: check for valid network version
@@ -156,7 +160,7 @@ class Peer(object):
     def fetch_common_block_by_ids(self, block_ids):
         payload = {"ids": block_ids}
         response = self._fetch("p2p.peer.getCommonBlocks", payload)
-        print(response)
+        logger.info(response)
         return response.get("common")
 
     def fetch_blocks_from_height(self, from_height):
@@ -165,9 +169,9 @@ class Peer(object):
         return [Block.from_dict(block) for block in blocks]
 
     def fetch_peers(self):
-        print("Fetching a fresh peer list from {}:{}".format(self.ip, self.port))
+        logger.info("Fetching a fresh peer list from %s:%s", self.ip, self.port)
         response = self._fetch("p2p.peer.getPeers")
-        print(response)
+        logger.info(response)
         peers = []
         for peer in response:
             if not ip_is_blacklisted(peer["ip"]):

@@ -1,8 +1,8 @@
+import logging
 import math
 from datetime import datetime
 from random import randint
 from time import sleep
-
 
 from chain.blockchain.constants import (
     BLOCK_ACCEPTED,
@@ -16,6 +16,8 @@ from chain.common.plugins import load_plugin
 from chain.crypto import slots, time
 from chain.crypto.objects.block import Block
 from chain.crypto.utils import calculate_round, is_block_exception, is_new_round
+
+logger = logging.getLogger(__name__)
 
 
 class Blockchain(object):
@@ -35,7 +37,7 @@ class Blockchain(object):
         """Starts the blockchain. Depending of the state of the blockchain it will
         decide what needs to be done in order to correctly start syncing.
         """
-        print("Starting the blockchain")
+        logger.info("Starting the blockchain")
 
         apply_genesis_round = False
         try:
@@ -43,10 +45,10 @@ class Blockchain(object):
 
             # If block is not found in the db, insert a genesis block
             if not block:
-                print("No block found in the database")
+                logger.info("No block found in the database")
                 block = Block.from_dict(config.genesis_block)
                 if block.payload_hash != config.network["nethash"]:
-                    print(
+                    logger.error(
                         "FATAL: The genesis block payload hash is different from "
                         "the configured nethash"
                     )
@@ -57,7 +59,7 @@ class Blockchain(object):
                     self.database.save_block(block)
                     apply_genesis_round = True
 
-            print("Verifying database integrity")
+            logger.info("Verifying database integrity")
             is_valid = False
             errors = None
             for _ in range(5):
@@ -65,7 +67,7 @@ class Blockchain(object):
                 if is_valid:
                     break
                 else:
-                    print("Database is corrupted: {}".format(errors))
+                    logger.error("Database is corrupted: {}".format(errors))
                     milestone = config.get_milestone(block.height)
                     previous_round = math.floor(
                         (block.height - 1) / milestone["activeDelegates"]
@@ -75,16 +77,16 @@ class Blockchain(object):
                             "FATAL: Database is corrupted: {}".format(errors)
                         )
 
-                    print("Rolling back to round {}".format(previous_round))
+                    logger.info("Rolling back to round {}".format(previous_round))
                     self.database.rollback_to_round(previous_round)
-                    print("Rolled back to round {}".format(previous_round))
+                    logger.info("Rolled back to round {}".format(previous_round))
             else:
                 raise Exception(
                     "FATAL: After rolling back for 5 rounds, database is still "
                     "corrupted: {}".format(errors)
                 )
 
-            print("Verified database integrity")
+            logger.info("Verified database integrity")
 
             # if (stateStorage.networkStart) {
             #     await blockchain.database.buildWallets(block.data.height);
@@ -95,15 +97,16 @@ class Blockchain(object):
             #     return blockchain.dispatch("STARTED");
             # }
 
-            print("Last block in database: {}".format(block.height))
+            logger.info("Last block in database: %s", block.height)
 
             # if the node is shutdown between round, the round has already been applied
             # so we delete it to start a new, fresh round
             if is_new_round(block.height + 1):
                 current_round, _, _ = calculate_round(block.height + 1)
-                print(
-                    "Start of new round detected {}. Removing it in order to correctly "
-                    "start the chain with new round.".format(current_round)
+                logger.info(
+                    "Start of new round detected %s. Removing it in order to correctly "
+                    "start the chain with new round.",
+                    current_round,
                 )
                 self.database.delete_round(current_round)
 
@@ -116,7 +119,7 @@ class Blockchain(object):
 
             self.sync_chain()
 
-            print("Blockhain is syced!")
+            logger.info("Blockhain is syced!")
 
             # Blockchain was just synced, so remove all blocks from process queue
             # as it was just synced. We clear it only on the start of the chain, to
@@ -138,28 +141,29 @@ class Blockchain(object):
 
         :param Block last_block: Last crypto Block object that is in the database
         """
-        print()
-        print()
-        print("Fetching blocks from height {}".format(last_block.height))
+        logger.info("###############################")
+        logger.info("Fetching blocks from height %s", last_block.height)
         blocks = self.peers.fetch_blocks(last_block.height)
 
         if blocks:
-            print("chained", is_block_chained(last_block, blocks[0]))
-            print("exception", is_block_exception(blocks[0]))
+            logger.info("chained", is_block_chained(last_block, blocks[0]))
+            logger.info("exception", is_block_exception(blocks[0]))
             is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(
                 blocks[0]
             )
             if is_chained:
-                print(
-                    "Downloaded {} new blocks accounting for a total of {} "
-                    "transactions".format(
-                        len(blocks), sum([x.number_of_transactions for x in blocks])
-                    )
+                logger.info(
+                    (
+                        "Downloaded %s new blocks accounting for a total of %s "
+                        "transactions"
+                    ),
+                    len(blocks),
+                    sum([x.number_of_transactions for x in blocks]),
                 )
 
                 for block in blocks:
                     status = self.process_block(block, last_block)
-                    print("Block {} was {}".format(block.id, status))
+                    logger.info("Block %s was %s", block.id, status)
                     if status == BLOCK_ACCEPTED:
                         last_block = block
                     else:
@@ -168,51 +172,52 @@ class Blockchain(object):
 
                         # TODO: Think about banning the peer at this point as it's most
                         # likely that it's a bad peer
-                        print(block.to_json())
-                        print(
-                            "Block {} was {}. Skipping all other blocks in this "
-                            "batch".format(block.id, status)
+                        logger.info(block.to_json())
+                        logger.info(
+                            "Block %s was %s. Skipping all other blocks in this batch",
+                            block.id,
+                            status,
                         )
             else:
                 # TODO: Think about banning the peer at this point as it's most
                 # likely that it's a bad peer
-                print(
+                logger.warning(
                     "First block in the current batch of block is not chained. "
                     "Skipping all blocks in this batch."
                 )
         else:
-            print("No new block found on this peer")
+            logger.info("No new block found on this peer")
 
     def sync_chain(self):
         """Syncs the chain up to the latest height by fetching the blocks from random
         peers.
         """
         start = datetime.now()
-        print("Started synching", start)
+        logger.info("Started synching %s", start)
         while True:
             last_block = self.database.get_last_block()
             if not self.is_synced(last_block):
                 try:
                     self.sync_blocks_from_random_peer(last_block)
                 except PeerNotFoundException as e:
-                    print(str(e))
-                    print(
+                    logger.error(str(e))
+                    logger.info(
                         "Waiting for 1 second before continuing to give peers time to "
                         "populate"
                     )
                     sleep(1)
             else:
                 break
-            print("Time taken", datetime.now() - start)
-        print("Done syncing", datetime.now() - start)
+            logger.info("Time taken %s", datetime.now() - start)
+        logger.info("Done syncing %s", datetime.now() - start)
 
     def stop(self):
-        print("Stopping blockchain")
+        logger.info("Stopping blockchain")
 
     def recover_from_fork(self):
         """Recover from fork. Reverts a random number of blocks.
         """
-        print("Starting fork recovery")
+        logger.info("Starting fork recovery")
         # Revert a random number of blocks. Somewhere between 4 and 102
         n_blocks = randint(4, 102)
         self.revert_blocks(n_blocks)
@@ -230,14 +235,14 @@ class Blockchain(object):
         :param int n_blocks: number of blocks to revert
         """
         block = self.database.get_last_block()
-        print(
-            "Reverting {} blocks. Reverting to height {}".format(
-                n_blocks, block.height - n_blocks
-            )
+        logger.warning(
+            "Reverting %s blocks. Reverting to height %s",
+            n_blocks,
+            block.height - n_blocks,
         )
         for _ in range(n_blocks):
             if block.height == 1:
-                print("Can't revert genesis block.")
+                logger.error("Can't revert genesis block.")
                 break
 
             self.database.revert_block(block)
@@ -245,7 +250,7 @@ class Blockchain(object):
             # if (this.transactionPool) {
             #     await this.transactionPool.addTransactions(lastBlock.transactions);
             # }
-            print("Successfully reverted block {}".format(block.id))
+            logger.info("Successfully reverted block %s", block.id)
 
             block = self.database.get_last_block()
 
@@ -265,7 +270,7 @@ class Blockchain(object):
         if forged_block:
             return BLOCK_REJECTED
 
-        print("Block {} ({}) forcibly accecpted".format(block.height, block.id))
+        logger.error("Block %s (%s) forcibly accecpted", block.height, block.id)
         return self._handle_accepted_block(block)
 
     def _hande_verification_failed(self, block):
@@ -274,7 +279,7 @@ class Blockchain(object):
         return BLOCK_REJECTED
 
     def _handle_accepted_block(self, block):
-        print("====== Handle apply block ======")
+        logger.info("====== Handle apply block ======")
         self.database.apply_block(block)
 
         self.transaction_pool.accept_chained_block(block)
@@ -284,7 +289,7 @@ class Blockchain(object):
     def _validate_generator(self, block):
         delegates = self.database.get_active_delegates(block.height)
         if not delegates:
-            print("Could not find delegates for block height {}".format(block.height))
+            logger.error("Could not find delegates for block height %s", block.height)
             return False
         slot_number = slots.get_slot_number(block.height, block.timestamp)
         generator_username = self.database.wallets.find_by_public_key(
@@ -301,66 +306,69 @@ class Blockchain(object):
             forging_username = self.database.wallets.find_by_public_key(
                 forging_delegate.public_key
             ).username
-            print(
-                "Delegate {} ({}) not allowed to forge, should be {} ({})".format(
-                    generator_username,
-                    block.generator_public_key,
-                    forging_username,
-                    forging_delegate.public_key,
-                )
+            logger.error(
+                "Delegate %s (%s) not allowed to forge, should be %s (%s)",
+                generator_username,
+                block.generator_public_key,
+                forging_username,
+                forging_delegate.public_key,
             )
             return False
         # TODO: this seems weird as we can't decide if delegate is allowed to forge, but
         # we still accept it as a valid generator
         if not forging_delegate:
-            print(
-                "Could not decide if delegate {} ({}) is allowed to forge block "
-                "{}".format(
-                    generator_username, block.generator_public_key, block.height
-                )
+            logger.info(
+                "Could not decide if delegate %s (%s) is allowed to forge block %s",
+                generator_username,
+                block.generator_public_key,
+                block.height,
             )
             # TODO: This return is not in the official ark core implementation!
             return False
 
-        print(
-            "Delegate {} ({}) allowed to forge block {}".format(
-                generator_username, block.generator_public_key, block.height
-            )
+        logger.info(
+            "Delegate %s (%s) allowed to forge block %s",
+            generator_username,
+            block.generator_public_key,
+            block.height,
         )
         return True
 
     def _handle_unchained_block(self, block, last_block, is_valid_generator):
         if block.height > last_block.height + 1:
-            print(
+            logger.info(
                 (
-                    "Blockchain not ready to accept new block at height {}. "
-                    "Last block: {}"
-                ).format(block.height, last_block.height)
+                    "Blockchain not ready to accept new block at height %s. "
+                    "Last block: %s"
+                ),
+                block.height,
+                last_block.height,
             )
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
         elif block.height < last_block.height:
-            print(
-                "Block {} disregarded because it's already in blockchain".format(
-                    block.height
-                )
+            logger.info(
+                "Block %s disregarded because it's already in blockchain", block.height
             )
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
         elif block.height == last_block.height and block.id == last_block.id:
-            print("Block {} just received".format(block.height))
+            logger.info("Block %s just received", block.height)
             return BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED
 
         elif block.timestamp < last_block.timestamp:
-            print(
-                "Block {} disregarded, because the timestamp is lower than the previous"
-                " timestamp".format(block.height)
+            logger.info(
+                "Block %s disregarded, because the timestamp is lower than the previous"
+                " timestamp",
+                block.height,
             )
             return BLOCK_REJECTED
 
         else:
             if is_valid_generator:
-                print("Detect double forging by {}".format(block.generator_public_key))
+                logger.warning(
+                    "Detect double forging by %s", block.generator_public_key
+                )
                 delegates = self.database.get_active_delegates(block.height)
 
                 is_active_delegate = False
@@ -373,11 +381,12 @@ class Blockchain(object):
                     self.recover_from_fork()
                 return BLOCK_REJECTED
 
-            print(
+            logger.warning(
                 (
                     "Forked block disregarded because it is not allowed to be forged. "
-                    "Caused by delegate {}"
-                ).format(block.generator_public_key)
+                    "Caused by delegate %s"
+                ),
+                block.generator_public_key,
             )
             return BLOCK_REJECTED
 
@@ -386,25 +395,28 @@ class Blockchain(object):
             transaction_ids = [transaction.id for transaction in block.transactions]
             forged_ids = self.database.get_forged_transaction_ids(transaction_ids)
             if len(forged_ids) > 0:
-                print(
-                    "Block {} disregarded, because it contains already forged "
-                    "transactions"
+                logger.info(
+                    (
+                        "Block %s (%s) disregarded, because it contains already forged "
+                        "transactions"
+                    ),
+                    block.id,
+                    block.height,
                 )
                 return True
         return False
 
     def process_block(self, block, last_block):
-        print()
-        print()
-        print("Started processing block {}".format(block.id))
-        print("Last block height: {}".format(last_block.height))
+        logger.info("***************************")
+        logger.info("Started processing block %s", block.id)
+        logger.info("Last block height: %", last_block.height)
 
         if is_block_exception(block):
             return self._handle_exception_block(block)
 
         is_verified, errors = block.verify()
         if not is_verified:
-            print(errors)
+            logger.error(errors)
             return self._hande_verification_failed(block)
 
         is_valid_generator = self._validate_generator(block)
@@ -429,17 +441,17 @@ class Blockchain(object):
                 last_block = self.database.get_last_block()
                 block = Block.from_serialized(serialized_block)
                 status = self.process_block(block, last_block)
-                print(status)
+                logger.info(status)
                 if status in [BLOCK_ACCEPTED, BLOCK_DISCARDED_BUT_CAN_BE_BROADCASTED]:
                     # TODO: Broadcast only current block
                     milestone = config.get_milestone(block.height)
                     current_slot = slots.get_slot_number(block.height, time.get_time())
                     if current_slot * milestone["blocktime"] <= block.timestamp:
                         # TODO: THIS IS MISSING
-                        print("MISSING: IMPLEMENT BROADCASTING")
+                        logger.error("MISSING: IMPLEMENT BROADCASTING")
             else:
                 # TODO: change this
-                print("Nothing to process. Sleeping for 1 sec")
+                logger.info("Nothing to process. Sleeping for 1 sec")
                 sleep(1)
 
             # Our chain can get out of sync when it doesn't receive all the blocks
@@ -447,6 +459,6 @@ class Blockchain(object):
             # block
             last_block = self.database.get_last_block()
             if not self.is_synced(last_block):
-                print("Force syncing with the network as we got out of sync")
+                logger.info("Force syncing with the network as we got out of sync")
                 self.sync_chain()
-                print("Done force syncing")
+                logger.info("Done force syncing")

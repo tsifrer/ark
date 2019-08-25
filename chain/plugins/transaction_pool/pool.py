@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from redis import Redis
@@ -11,6 +12,8 @@ from chain.plugins.database.models.pool_transaction import PoolTransaction
 
 from .fees import valid_fee_for_broadcast, valid_fee_for_pool
 from .pool_wallet_manager import PoolWalletManager
+
+logger = logging.getLogger(__name__)
 
 
 class Pool(object):
@@ -62,17 +65,17 @@ class Pool(object):
                 transaction.apply_to_sender_wallet(sender_wallet)
                 self.wallets.save_wallet(sender_wallet)
             else:
-                print(
-                    "Transaction {} can't be applied to wallet {}".format(
-                        transaction.id, sender_wallet.address
-                    )
+                logger.warning(
+                    "Transaction %s can't be applied to wallet %s",
+                    transaction.id,
+                    sender_wallet.address,
                 )
                 self._purge_sender(transaction.sender_public_key)
 
-        print("Transaction pool wallets have been successfully built")
+        logger.info("Transaction pool wallets have been successfully built")
 
     def _purge_sender(self, sender_public_key):
-        print("Purging sender {} from pool wallet manager")
+        logger.info("Purging sender %s from pool wallet manager", sender_public_key)
 
         PoolTransaction.delete().where(
             PoolTransaction.sender_public_key == sender_public_key
@@ -112,9 +115,12 @@ class Pool(object):
         """
         self._purge_expired()
         if sender_public_key in config.pool["allowed_senders"]:
-            print(
-                "Sender with public key {} is an allowed sender, thus skipping "
-                "throttling".format(sender_public_key)
+            logger.info(
+                (
+                    "Sender with public key %s is an allowed sender, thus skipping "
+                    "throttling"
+                ),
+                sender_public_key,
             )
             return False
 

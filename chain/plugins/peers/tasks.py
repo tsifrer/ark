@@ -1,3 +1,4 @@
+import logging
 import random
 
 from huey import crontab
@@ -6,6 +7,8 @@ from chain.common.plugins import load_plugin
 from chain.hughie.config import huey
 
 from .peer import Peer
+
+logger = logging.getLogger(__name__)
 
 
 @huey.task()
@@ -17,11 +20,11 @@ def add_peer(ip, port, chain_version, nethash, os):
     peer = Peer(ip=ip, port=port, chain_version=chain_version, nethash=nethash, os=os)
 
     if not peer.is_valid() or peer_manager.is_peer_suspended(peer):
-        print("Peer {}:{} is invalid or suspended.".format(peer.ip, peer.port))
+        logger.warning("Peer %s:%s is invalid or suspended.", peer.ip, peer.port)
         return
 
     if peer_manager.peer_with_ip_exists(peer.ip):
-        print("Peer {}:{} already exists.".format(peer.ip, peer.port))
+        logger.warning("Peer %s:%s already exists.", peer.ip, peer.port)
         return
 
     # Wait for a bit more than 3s for response in case the node you're pinging is
@@ -33,13 +36,14 @@ def add_peer(ip, port, chain_version, nethash, os):
     try:
         peer.verify_peer()
     except Exception as e:  # TODO: Be more specific
-        print("Suspended peer because {}".format(str(e)))
+        logger.exception("Suspended peer because %s", str(e))
         peer_manager.suspend_peer(peer)
     else:
-        print(
-            "Accepting peer {}:{}. Vefification: {}".format(
-                peer.ip, peer.port, peer.verification
-            )
+        logger.info(
+            "Accepting peer %s:%s. Vefification: %s",
+            peer.ip,
+            peer.port,
+            peer.verification,
         )
         peer_manager.redis.set(peer_manager.key_active.format(peer.ip), peer.to_json())
 
@@ -48,27 +52,27 @@ def add_peer(ip, port, chain_version, nethash, os):
 def reverify_peer(ip):
     peer_manager = load_plugin("chain.plugins.peers")
     peer = peer_manager.get_peer_by_ip(ip)
-    print("Reverifying peer {}:{}".format(peer.ip, peer.port))
+    logger.info("Reverifying peer %s:%s", peer.ip, peer.port)
     if peer:
         try:
             peer.verify_peer()
         except Exception as e:  # TODO: be more specific
-            print("Peer {}:{} failed verification: {}".format(peer.ip, peer.port, e))
+            logger.error("Peer %s:%s failed verification: %s", peer.ip, peer.port, e)
             peer_manager.suspend_peer(peer)
         else:
-            print("Peer {}:{} successfully reverified".format(peer.ip, peer.port))
+            logger.info("Peer %s:%s successfully reverified", peer.ip, peer.port)
             peer_manager.redis.set(
                 peer_manager.key_active.format(peer.ip), peer.to_json()
             )
     else:
-        print("Couldn't find a peer to reverify")
+        logger.warning("Couldn't find a peer to reverify")
 
 
 @huey.task()
 def reverify_all_peers():
     peer_manager = load_plugin("chain.plugins.peers")
     peers = peer_manager.peers()
-    print("Reverifying all {} peers".format(len(peers)))
+    logger.info("Reverifying all %s peers", len(peers))
     for peer in peers:
         reverify_peer(peer.ip)
 

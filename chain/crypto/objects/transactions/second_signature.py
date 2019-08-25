@@ -1,10 +1,14 @@
+import logging
+
 from .base import BaseTransaction
+
+logger = logging.getLogger(__name__)
 
 
 class SecondSignatureTransaction(BaseTransaction):
     def can_be_applied_to_wallet(self, wallet, wallet_manager, block_height):
         if wallet.second_public_key:
-            print("Wallet already has a second public key")
+            logger.warning("Wallet already has a second public key")
             return False
 
         return super().can_be_applied_to_wallet(wallet, wallet_manager, block_height)

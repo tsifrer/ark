@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from redis import Redis
@@ -7,6 +8,8 @@ from chain.common.plugins import load_plugin
 from chain.crypto.address import address_from_public_key
 from chain.crypto.models.wallet import Wallet
 from chain.crypto.utils import is_transaction_exception
+
+logger = logging.getLogger(__name__)
 
 
 class PoolWalletManager(object):
@@ -94,13 +97,18 @@ class PoolWalletManager(object):
                 transaction.sender_public_key
             )
             if db_wallet.balance == 0:
-                print("Wallet is not allowed to send as it doesn't have any funds")
+                logger.warning(
+                    "Wallet is not allowed to send as it doesn't have any funds"
+                )
                 return False
 
         if is_transaction_exception(transaction.id):
-            print(
-                "Transaction forcibly applied because it has been added as an "
-                "exception".format(transaction.id)
+            logger.warning(
+                (
+                    "Transaction forcibly applied because it has been added as an "
+                    "exception"
+                ),
+                transaction.id,
             )
             return True
         sender = self.find_by_public_key(transaction.sender_public_key)
