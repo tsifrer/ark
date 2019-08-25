@@ -1,4 +1,4 @@
-import logging
+import logging.config
 from importlib import import_module
 
 from chain.common.log import DEFAULT_LOGGING

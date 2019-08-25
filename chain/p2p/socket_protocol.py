@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import logging.config
 
 import websockets
 from websockets.exceptions import ConnectionClosed

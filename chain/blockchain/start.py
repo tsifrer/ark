@@ -1,4 +1,4 @@
-import logging
+import logging.config
 
 from chain.blockchain.blockchain import Blockchain
 from chain.common.log import DEFAULT_LOGGING
