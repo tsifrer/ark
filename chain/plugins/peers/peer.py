@@ -122,7 +122,8 @@ class Peer(object):
             else:
                 error = result["error"]
                 raise PeerErrorResponse(
-                    "{}: {}".format(error["name"], error["message"])
+                    "{}: {}".format(error["name"], error["message"]),
+                    result
                 )
         try:
             data = result["data"]["data"]

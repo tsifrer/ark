@@ -146,8 +146,6 @@ class Blockchain(object):
         blocks = self.peers.fetch_blocks(last_block.height)
 
         if blocks:
-            logger.info("chained", is_block_chained(last_block, blocks[0]))
-            logger.info("exception", is_block_exception(blocks[0]))
             is_chained = is_block_chained(last_block, blocks[0]) or is_block_exception(
                 blocks[0]
             )
