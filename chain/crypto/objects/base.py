@@ -1,47 +1,19 @@
-class Field(object):
-    accepted_types = None
-
-    def __init__(self, attr, required=True, default=None):
-        """
-        `attr` is the json field name e.g. previousBlockHex
-        """
-        super().__init__()
-        self.attr = attr
-        self.required = required
-        self._default = default
-
-    @property
-    def default(self):
-        return self._default
-
-    @staticmethod
-    def to_value(value):
-        return value
-
-    @staticmethod
-    def to_json_value(value):
-        return value
+import avocato
 
 
-class DictField(Field):
-    def __init__(self, attr, required=True):
-        super().__init__(attr, required)
-
-    @property
-    def default(self):
-        return {}
+class Field(avocato.Field):
+    pass
 
 
-class ListField(Field):
-    def __init__(self, attr, required=True):
-        super().__init__(attr, required)
-
-    @property
-    def default(self):
-        return []
+class DictField(avocato.DictField):
+    pass
 
 
-class BigIntField(Field):
+class ListField(avocato.ListField):
+    pass
+
+
+class BigIntField(avocato.Field):
     """
     Python doesn't need this field. It's here because we need to convert int to str
     when responding as json, so other nodes know what we're doing.
@@ -66,7 +38,7 @@ class BigIntField(Field):
         return str(value)
 
 
-class IntField(Field):
+class IntField(avocato.Field):
     accepted_types = (str, int)
 
     @staticmethod
@@ -76,7 +48,7 @@ class IntField(Field):
         return int(value)
 
 
-class StrField(Field):
+class StrField(avocato.Field):
     accepted_types = (str, bytes)
 
     @staticmethod
@@ -88,7 +60,7 @@ class StrField(Field):
         return value
 
 
-class BytesField(Field):
+class BytesField(avocato.Field):
     accepted_types = (str, bytes)
 
     @staticmethod
@@ -104,33 +76,3 @@ class BytesField(Field):
         if value is None:
             return value
         return value.decode("utf-8")
-
-
-class CryptoObjectMeta(type):
-    def __call__(cls, *args, **kwargs):
-        obj = super().__call__(*args, **kwargs)
-        # Set fields on object and set default values
-        for field in obj._fields:
-            setattr(obj, field.name, field.default)
-        return obj
-
-    def __new__(cls, name, bases, attrs):
-        # Take all the Fields from the attributes and parent classes.
-        fields = {}
-        for base in bases:
-            if isinstance(base, CryptoObjectMeta):
-                for parent_field in base._fields:
-                    fields[parent_field.name] = parent_field
-
-        for attr_name, field in attrs.items():
-            if isinstance(field, Field):
-                field.name = attr_name
-                fields[attr_name] = field
-
-        real_cls = super().__new__(cls, name, bases, attrs)
-        real_cls._fields = list(fields.values())
-        return real_cls
-
-
-class CryptoObject(object, metaclass=CryptoObjectMeta):
-    pass

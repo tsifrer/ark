@@ -1,3 +1,4 @@
+import avocato
 import logging
 from binascii import hexlify, unhexlify
 from hashlib import sha256
@@ -25,7 +26,6 @@ from chain.crypto.constants import (
 from chain.crypto.objects.base import (
     BigIntField,
     BytesField,
-    CryptoObject,
     DictField,
     Field,
     IntField,
@@ -37,7 +37,7 @@ from chain.crypto.utils import is_transaction_exception, verify_hash
 logger = logging.getLogger(__name__)
 
 
-class BaseTransaction(CryptoObject):
+class BaseTransaction(avocato.AvocatoObject):
     version = IntField(attr="version", required=False, default=None)
     network = IntField(attr="network", required=False, default=None)
     type = IntField(attr="type", required=True, default=None)
@@ -57,9 +57,11 @@ class BaseTransaction(CryptoObject):
     signatures = ListField(attr="signatures", required=False)
     block_id = StrField(attr="blockId", required=False, default=None)
     sequence = IntField(attr="sequence", required=False, default=0)
+    # TODO: What kind of a field is this?
     timelock = Field(attr="timelock", required=False, default=None)
     timelock_type = IntField(attr="timelockType", required=False, default=None)
     ipfs_hash = BytesField(attr="ipfsHash", required=False, default=None)
+    # TODO: What kind of a field is this?
     payments = Field(attr="payments", required=False)
 
     # TODO: test

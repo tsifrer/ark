@@ -1,19 +1,14 @@
 from binascii import hexlify, unhexlify
 from hashlib import sha256
 
+import avocato
+
 from binary.unsigned_integer import write_bit32, write_bit64
 
 from chain.common.config import config
 from chain.crypto import slots, time
 from chain.crypto.bytebuffer import ByteBuffer
-from chain.crypto.objects.base import (
-    BigIntField,
-    BytesField,
-    CryptoObject,
-    IntField,
-    ListField,
-    StrField,
-)
+from chain.crypto.objects.base import BigIntField, BytesField, StrField, IntField, ListField
 from chain.crypto.objects.transactions import (
     BaseTransaction,
     from_dict,
@@ -22,7 +17,7 @@ from chain.crypto.objects.transactions import (
 from chain.crypto.utils import verify_hash
 
 
-class Block(CryptoObject):
+class Block(avocato.AvocatoObject):
     id = StrField(attr="id", required=False, default=None)
     id_hex = BytesField(attr="idHex", required=False, default=None)
     timestamp = IntField(attr="timestamp", required=True, default=None)
@@ -31,7 +26,9 @@ class Block(CryptoObject):
     previous_block_hex = BytesField(
         attr="previousBlockHex", required=False, default=None
     )
-    previous_block = StrField(attr="previousBlock", required=False, default=None)
+    previous_block = StrField(
+        attr="previousBlock", required=False, default=None
+    )
     number_of_transactions = IntField(
         attr="numberOfTransactions", required=True, default=0
     )
@@ -43,7 +40,9 @@ class Block(CryptoObject):
     generator_public_key = StrField(
         attr="generatorPublicKey", required=True, default=None
     )
-    block_signature = StrField(attr="blockSignature", required=False, default=None)
+    block_signature = StrField(
+        attr="blockSignature", required=False, default=None
+    )
     transactions = ListField(attr="transactions", required=False)
 
     @staticmethod
