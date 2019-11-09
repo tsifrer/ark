@@ -1,8 +1,7 @@
 from binascii import hexlify, unhexlify
 from hashlib import sha256
 
-import avocato
-
+# import avocato
 from binary.unsigned_integer import write_bit32, write_bit64
 
 from chain.common.config import config
@@ -21,9 +20,12 @@ from chain.crypto.objects.transactions import (
     from_serialized,
 )
 from chain.crypto.utils import verify_hash
+from chain.crypto.objects.base import BaseObject
 
 
-class Block(avocato.AvocatoObject):
+
+
+class Block(BaseObject):
     id = StrField(attr="id", required=False, default=None)
     id_hex = BytesField(attr="idHex", required=False, default=None)
     timestamp = IntField(attr="timestamp", required=True, default=None)
@@ -67,6 +69,7 @@ class Block(avocato.AvocatoObject):
             # "// TODO genesis block calculated id is wrong for some reason"
             self.id_hex = Block.to_bytes_hex(self.id)
         else:
+            # TODO: make these faster
             self.id_hex = self.get_id_hex()
             self.id = self.get_id()
 
@@ -96,26 +99,26 @@ class Block(avocato.AvocatoObject):
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise TypeError("data must be dict")
-        cls = cls()
-        for field in cls._fields:
-            value = data.get(field.attr, field.default)
+        cls = cls(data=data)
+        # for field in cls._fields:
+        #     value = data.get(field.attr, field.default)
 
-            if value is None and field.required:
-                raise ValueError("Attribute {} is required".format(field.name))
+        #     if value is None and field.required:
+        #         raise ValueError("Attribute {} is required".format(field.name))
 
-            if (
-                value is not None
-                and field.accepted_types
-                and not isinstance(value, field.accepted_types)
-            ):
-                raise TypeError(
-                    "Attribute {} ({}) must be of type {}".format(
-                        field.name, type(value), field.accepted_types
-                    )
-                )
+        #     if (
+        #         value is not None
+        #         and field.accepted_types
+        #         and not isinstance(value, field.accepted_types)
+        #     ):
+        #         raise TypeError(
+        #             "Attribute {} ({}) must be of type {}".format(
+        #                 field.name, type(value), field.accepted_types
+        #             )
+        #         )
 
-            value = field.to_value(value)
-            setattr(cls, field.name, value)
+        #     value = field.to_value(value)
+        #     setattr(cls, field.name, value)
 
         if cls.transactions and isinstance(cls.transactions, list):
             transactions = []
@@ -135,25 +138,26 @@ class Block(avocato.AvocatoObject):
     def from_object(cls, data):
         # if not isinstance(data, dict):
         #     raise TypeError('Data must be in dictionary format')
-        cls = cls()
-        for field in cls._fields:
-            value = getattr(data, field.name, field.default)
-            if value is None and field.required:
-                raise ValueError("Attribute {} is required".format(field.name))
+        # fields = cls._fields
+        cls = cls(instance=data)
+        # for field in fields:
+        #     value = getattr(data, field.name, field.default)
+        #     if value is None and field.required:
+        #         raise ValueError("Attribute {} is required".format(field.name))
 
-            if (
-                value is not None
-                and field.accepted_types
-                and not isinstance(value, field.accepted_types)
-            ):
-                raise TypeError(
-                    "Attribute {} ({}) must be of type {}".format(
-                        field.name, type(value), field.accepted_types
-                    )
-                )
+        #     if (
+        #         value is not None
+        #         and field.accepted_types
+        #         and not isinstance(value, field.accepted_types)
+        #     ):
+        #         raise TypeError(
+        #             "Attribute {} ({}) must be of type {}".format(
+        #                 field.name, type(value), field.accepted_types
+        #             )
+        #         )
 
-            value = field.to_value(value)
-            setattr(cls, field.name, value)
+        #     value = field.to_value(value)
+        #     setattr(cls, field.name, value)
 
         if cls.transactions:
             for _ in cls.transactions:
@@ -386,7 +390,7 @@ class Block(avocato.AvocatoObject):
                 continue
 
             value = getattr(self, field.name)
-            data[field.attr] = field.to_json_value(value)
+            data[field.attr] = field.serialize(value)
         return data
 
     def to_json(self):

@@ -62,7 +62,7 @@ def test_from_dict_raises_value_error_if_field_is_required(dummy_transaction):
     del dummy_transaction["timestamp"]
     with pytest.raises(ValueError) as excinfo:
         BaseTransaction.from_dict(dummy_transaction)
-    assert str(excinfo.value) == "Attribute timestamp is required"
+    assert str(excinfo.value) == 'Attribute "timestamp" is required'
 
 
 def test_from_dict_raises_type_error_if_value_invalid_type(dummy_transaction):
@@ -119,6 +119,7 @@ def test_from_serialized_raises_type_error_if_data_is_not_dict(data):
 
 
 def test_from_object(crypto_transaction):
+    print(crypto_transaction)
     transaction = BaseTransaction.from_object(crypto_transaction)
 
     assert transaction.version is None
@@ -152,24 +153,6 @@ def test_from_object(crypto_transaction):
         transaction.id
         == "f861b25c9a87fc8913282da8855ee63b9cbaa9324543377a5bdfc5afccb92aaa"
     )
-
-
-def test_from_object_raises_for_required_fields(crypto_transaction):
-    crypto_transaction.timestamp = None
-    with pytest.raises(ValueError) as excinfo:
-        BaseTransaction.from_object(crypto_transaction)
-    assert str(excinfo.value) == "Attribute timestamp is required"
-
-
-def test_from_object_raises_for_wrong_field_type(crypto_transaction):
-    crypto_transaction.vendor_field = 1234
-    with pytest.raises(TypeError) as excinfo:
-        BaseTransaction.from_object(crypto_transaction)
-    assert str(excinfo.value) == (
-        "Attribute vendor_field (<class 'int'>) must be of type (<class 'str'>, "
-        "<class 'bytes'>)"
-    )
-
 
 def test_serialize_correctly_serializes_transaction(
     dummy_transaction_hash, crypto_transaction

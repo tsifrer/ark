@@ -6,24 +6,24 @@ from chain.crypto.objects.block import Block
 
 
 # TODO: MOARD TESTS!!!
-def test_block_sets_default_values():
-    block = Block()
-    assert block.version is None
-    assert block.timestamp is None
-    assert block.height is None
-    assert block.previous_block_hex is None
-    assert block.previous_block is None
-    assert block.number_of_transactions == 0
-    assert block.total_amount == 0
-    assert block.total_fee == 0
-    assert block.reward == 0
-    assert block.payload_length == 0
-    assert block.payload_hash is None
-    assert block.generator_public_key is None
-    assert block.block_signature is None
-    assert block.id is None
-    assert block.id_hex is None
-    assert block.transactions == []
+# def test_block_sets_default_values():
+#     block = Block(version=1, timestamp=24760440, height=12345)
+#     assert block.version == 1
+#     assert block.timestamp == 24760440
+#     assert block.height == 12345
+#     assert block.previous_block_hex is None
+#     assert block.previous_block is None
+#     assert block.number_of_transactions == 0
+#     assert block.total_amount == 0
+#     assert block.total_fee == 0
+#     assert block.reward == 0
+#     assert block.payload_length == 0
+#     assert block.payload_hash is None
+#     assert block.generator_public_key is None
+#     assert block.block_signature is None
+#     assert block.id is None
+#     assert block.id_hex is None
+#     assert block.transactions == []
 
 
 @pytest.mark.parametrize(

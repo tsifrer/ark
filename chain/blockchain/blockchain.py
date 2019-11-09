@@ -170,7 +170,7 @@ class Blockchain(object):
 
                         # TODO: Think about banning the peer at this point as it's most
                         # likely that it's a bad peer
-                        logger.info(block.to_json())
+                        logger.info(block.serialize())
                         logger.info(
                             "Block %s was %s. Skipping all other blocks in this batch",
                             block.id,

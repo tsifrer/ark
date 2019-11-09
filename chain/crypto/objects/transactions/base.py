@@ -3,7 +3,7 @@ from binascii import hexlify, unhexlify
 from hashlib import sha256
 from struct import pack
 
-import avocato
+from chain.crypto.objects.base import BaseObject
 
 from base58 import b58decode_check, b58encode_check
 
@@ -38,7 +38,7 @@ from chain.crypto.utils import is_transaction_exception, verify_hash
 logger = logging.getLogger(__name__)
 
 
-class BaseTransaction(avocato.AvocatoObject):
+class BaseTransaction(BaseObject):
     version = IntField(attr="version", required=False, default=None)
     network = IntField(attr="network", required=False, default=None)
     type = IntField(attr="type", required=True, default=None)
@@ -73,25 +73,25 @@ class BaseTransaction(avocato.AvocatoObject):
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise TypeError("data must be dict")
-        cls = cls()
-        for field in cls._fields:
-            value = data.get(field.attr, field.default)
-            if value is None and field.required:
-                raise ValueError("Attribute {} is required".format(field.name))
+        cls = cls(data=data)
+        # for field in cls._fields:
+        #     value = data.get(field.attr, field.default)
+        #     if value is None and field.required:
+        #         raise ValueError("Attribute {} is required".format(field.name))
 
-            if (
-                value is not None
-                and field.accepted_types
-                and not isinstance(value, field.accepted_types)
-            ):
-                raise TypeError(
-                    "Attribute {} ({}) must be of type {}".format(
-                        field.name, type(value), field.accepted_types
-                    )
-                )
+        #     if (
+        #         value is not None
+        #         and field.accepted_types
+        #         and not isinstance(value, field.accepted_types)
+        #     ):
+        #         raise TypeError(
+        #             "Attribute {} ({}) must be of type {}".format(
+        #                 field.name, type(value), field.accepted_types
+        #             )
+        #         )
 
-            value = field.to_value(value)
-            setattr(cls, field.name, value)
+        #     value = field.to_value(value)
+        #     setattr(cls, field.name, value)
         cls._construct_common()
         return cls
 
@@ -114,25 +114,26 @@ class BaseTransaction(avocato.AvocatoObject):
 
     @classmethod
     def from_object(cls, data):
-        cls = cls()
-        for field in cls._fields:
-            value = getattr(data, field.name, field.default)
-            if value is None and field.required:
-                raise ValueError("Attribute {} is required".format(field.name))
+        print(data.__dict__)
+        cls = cls(instance=data)
+        # for field in cls._fields:
+        #     value = getattr(data, field.name, field.default)
+        #     if value is None and field.required:
+        #         raise ValueError("Attribute {} is required".format(field.name))
 
-            if (
-                value is not None
-                and field.accepted_types
-                and not isinstance(value, field.accepted_types)
-            ):
-                raise TypeError(
-                    "Attribute {} ({}) must be of type {}".format(
-                        field.name, type(value), field.accepted_types
-                    )
-                )
+        #     if (
+        #         value is not None
+        #         and field.accepted_types
+        #         and not isinstance(value, field.accepted_types)
+        #     ):
+        #         raise TypeError(
+        #             "Attribute {} ({}) must be of type {}".format(
+        #                 field.name, type(value), field.accepted_types
+        #             )
+        #         )
 
-            value = field.to_value(value)
-            setattr(cls, field.name, value)
+        #     value = field.to_value(value)
+        #     setattr(cls, field.name, value)
         cls._construct_common()
         return cls
 
@@ -529,14 +530,14 @@ class BaseTransaction(avocato.AvocatoObject):
         return transaction_id
 
     def to_json(self):
-        """Convers transaction to dictiionary with camelCase field names
+        """Convers to dictionary with camelCase field names
 
         :returns (dict): dictionary with camelCase field names
         """
         data = {}
         for field in self._fields:
             value = getattr(self, field.name)
-            data[field.attr] = field.to_json_value(value)
+            data[field.attr] = field.serialize(value)
         return data
 
     def calculate_expires_at(self, max_transaction_age):
