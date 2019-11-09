@@ -28,10 +28,10 @@ class Handlers(object):
 
     async def get_blocks(self, data):
         self.socket.log_info(data)
-        block_height = int(data.last_block_height) + 1
-        block_limit = data.block_limit
-        headers_only = data.headers_only
-        serialized = data.serialized
+        block_height = data['last_block_height'] + 1
+        block_limit = data['block_limit']
+        headers_only = data['headers_only']
+        serialized = data['serialized']
 
         blocks = self.db.get_blocks(
             block_height, block_limit, serialized, not headers_only

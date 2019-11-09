@@ -225,6 +225,8 @@ class BaseObject(Field, metaclass=BaseObjectMeta):
     def __init__(self, data=None, instance=None, **kwargs):
         super().__init__()
         if data:
+            if not isinstance(data, dict):
+                raise TypeError("data must be dict")
             self._populate_from_dict(data)
         elif instance:
             self._populate_from_instance(instance)

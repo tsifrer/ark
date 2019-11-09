@@ -74,24 +74,6 @@ class BaseTransaction(BaseObject):
         if not isinstance(data, dict):
             raise TypeError("data must be dict")
         cls = cls(data=data)
-        # for field in cls._fields:
-        #     value = data.get(field.attr, field.default)
-        #     if value is None and field.required:
-        #         raise ValueError("Attribute {} is required".format(field.name))
-
-        #     if (
-        #         value is not None
-        #         and field.accepted_types
-        #         and not isinstance(value, field.accepted_types)
-        #     ):
-        #         raise TypeError(
-        #             "Attribute {} ({}) must be of type {}".format(
-        #                 field.name, type(value), field.accepted_types
-        #             )
-        #         )
-
-        #     value = field.to_value(value)
-        #     setattr(cls, field.name, value)
         cls._construct_common()
         return cls
 
@@ -116,24 +98,6 @@ class BaseTransaction(BaseObject):
     def from_object(cls, data):
         print(data.__dict__)
         cls = cls(instance=data)
-        # for field in cls._fields:
-        #     value = getattr(data, field.name, field.default)
-        #     if value is None and field.required:
-        #         raise ValueError("Attribute {} is required".format(field.name))
-
-        #     if (
-        #         value is not None
-        #         and field.accepted_types
-        #         and not isinstance(value, field.accepted_types)
-        #     ):
-        #         raise TypeError(
-        #             "Attribute {} ({}) must be of type {}".format(
-        #                 field.name, type(value), field.accepted_types
-        #             )
-        #         )
-
-        #     value = field.to_value(value)
-        #     setattr(cls, field.name, value)
         cls._construct_common()
         return cls
 
@@ -332,9 +296,10 @@ class BaseTransaction(BaseObject):
             raise Exception("Transaction type is invalid")  # TODO: better exception
 
     def _deserialize_signature(self, buff):
-        # if self.version == 1:
-        self._deserialize_ECDSA(buff)
-        # else:
+        if self.version == 1:
+            self._deserialize_ECDSA(buff)
+        else:
+            raise Exception('only v1 is supported atm')
         #     self._deserialize_schnorr(buff)
 
     def _deserialize_ECDSA(self, buff):

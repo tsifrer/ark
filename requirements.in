@@ -5,6 +5,7 @@ black
 click
 coincurve
 factory_boy
+fastjsonschema
 flake8
 flake8-broken-line
 flake8-bugbear

@@ -1,21 +1,36 @@
-import avocato
+import fastjsonschema
 
 
-class GetBlocksSchema(avocato.AvocatoObject):
-    """Schema for p2p.peer.getBlocks
-    """
+GET_BLOCKS_SCHEMA = {
+    "type": "object",
+    "required": ["lastBlockHeight"],
+    "additionalProperties": False,
+    "properties": {
+        "lastBlockHeight": {"type": "integer", "minimum": 1},
+        "blockLimit": {"type": "integer", "minimum": 1, "maximum": 400},
+        "headersOnly": {"type": "boolean"},
+        "serialized": {"type": "boolean"},
+    },
+}
 
-    last_block_height = avocato.IntField(attr="lastBlockHeight", required=True)
-    block_limit = avocato.IntField(attr="blockLimit", required=False, default=400)
-    headers_only = avocato.BoolField(attr="headersOnly", required=False, default=False)
-    serialized = avocato.BoolField(required=False, default=False)
+
+MAPPING = {"p2p.peer.getBlocks": GET_BLOCKS_SCHEMA}
 
 
-class GetCommonBlocks(avocato.AvocatoObject):
-    """Schema for p2p.peer.getBlocks
-    """
+class Schemas(object):
+    def __init__(self):
+        super().___init__()
 
-    ids = avocato.ListField(attr="lastBlockHeight", required=True)
-    block_limit = avocato.IntField(attr="blockLimit", required=False, default=400)
-    headers_only = avocato.BoolField(attr="headersOnly", required=False, default=False)
-    serialized = avocato.BoolField(required=False, default=False)
+        self._validators = {}
+
+        for key, schema in MAPPING.items():
+            self._validators[key] = fastjsonschema.compile(schema)
+
+    def validate(self, schema_key, data):
+        try:
+            self.validators[schema_key](data)
+        except fastjsonschema.JsonSchemaException as e:
+            # TODO
+            raise e
+
+        return True, "error?"

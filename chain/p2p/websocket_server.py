@@ -11,7 +11,7 @@ import websockets
 from chain.common.log import DEFAULT_LOGGING
 from chain.common.utils import get_chain_version
 from chain.p2p.rate_limiter import AsyncRateLimiter
-from chain.p2p.schemas import GetBlocksSchema
+from chain.p2p.schemas import Schemas
 from chain.p2p.socket_protocol import SCSocketServerProtocol
 from chain.p2p.websocket_handlers import Handlers
 from chain.plugins.peers.tasks import add_peer
@@ -22,12 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 class ChainSocketHandler(object):
-    def __init__(self, websocket, handlers):
+    def __init__(self, websocket, handlers, schemas):
         super().__init__()
         self.ws = websocket
         self.ip = self.ws.remote_address[0]
         self.handlers = handlers
         self.handlers.set_socket(self)
+        self.schemas = schemas
 
     def log_error(self, msg, *args):
         logger.error("{}: {}".format(self.ip, msg), *args)
@@ -61,26 +62,24 @@ class ChainSocketHandler(object):
 
     async def handle_event(self, cid, event, data):
         if event == "p2p.peer.getBlocks":
-            obj = GetBlocksSchema(data=data)
-            if not obj.is_valid():
+            is_valid, error = self.schemas.validate("p2p.peer.getBlocks", data)
+            if not is_valid:
                 self.log_debug(
-                    "Invalid schema for p2p.peer.getBlocks. Errors:  %s", obj.errors
+                    "Invalid schema for p2p.peer.getBlocks. Errors:  %s", error
                 )
                 await self.send(
                     json.dumps(
                         {
                             "rid": cid,
                             "error": {
-                                "message": "Data validation error: {}".format(
-                                    obj.errors
-                                )
+                                "message": "Data validation error: {}".format(error)
                             },
                         }
                     )
                 )
                 return
 
-            blocks = await self.handlers.get_blocks(obj)
+            blocks = await self.handlers.get_blocks(data)
             await self.send(cid, blocks)
 
         elif event == "p2p.peer.postBlock":
@@ -120,8 +119,8 @@ class ChainSocketHandler(object):
         )
 
 
-async def ws_handler(websocket, path, handlers, rate_limiter):
-    socket = ChainSocketHandler(websocket, handlers)
+async def ws_handler(websocket, path, handlers, rate_limiter, schemas):
+    socket = ChainSocketHandler(websocket, handlers, schemas)
     socket.log_info("Weboscket connected")
 
     if await rate_limiter.exceeds_rate_limit(socket.ip):
@@ -184,8 +183,9 @@ def start_server():
 
     rate_limiter = AsyncRateLimiter()
     handlers = Handlers()
+    schemas = Schemas()
     bound_handler = functools.partial(
-        ws_handler, handlers=handlers, rate_limiter=rate_limiter
+        ws_handler, handlers=handlers, rate_limiter=rate_limiter, schemas=schemas
     )
     start_server = websockets.serve(
         bound_handler,
