@@ -100,7 +100,7 @@ def migrate(migrator, database, fake=False, **kwargs):
         vendor_field = pw.CharField(max_length=255, null=True)
         amount = pw.BigIntegerField()
         fee = pw.BigIntegerField()
-        serialized = pw.BytesField()
+        serialized = pw.BlobField()
         asset = pw_pext.JSONField(null=True)
 
         class Meta:
