@@ -36,7 +36,7 @@ class MultiSignatureTransaction(BaseTransaction):
 
         num_valid_signatures = 0
         for key in keysgroup:
-            signature = self._verify_transaction_signatures(self, key)
+            signature = self._verify_transaction_signatures(key)
             if signature:
                 num_valid_signatures += 1
                 if num_valid_signatures == multisignature["min"]:
