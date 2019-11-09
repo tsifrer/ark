@@ -66,11 +66,11 @@ def test_from_dict_raises_value_error_if_field_is_required(dummy_transaction):
 
 
 def test_from_dict_raises_type_error_if_value_invalid_type(dummy_transaction):
-    dummy_transaction["vendorFieldHex"] = 1234
+    dummy_transaction["vendorField"] = 1234
     with pytest.raises(TypeError) as excinfo:
         BaseTransaction.from_dict(dummy_transaction)
     assert str(excinfo.value) == (
-        "Attribute vendor_field_hex (<class 'int'>) must be of type (<class 'str'>, "
+        "Attribute vendor_field (<class 'int'>) must be of type (<class 'str'>, "
         "<class 'bytes'>)"
     )
 
@@ -92,7 +92,6 @@ def test_from_serialized(dummy_transaction_hash):
     assert transaction.recipient_id == "AFnw7orqn9B4HBKrKawJgfn5dvoL7zr38B"
     assert transaction.asset == {}
     assert transaction.vendor_field == "Patrick Star"
-    assert transaction.vendor_field_hex == b"5061747269636b2053746172"
     assert transaction.signature == (
         "3045022100f0e49ea11b99410ecb3a3b449659496f934ab5af8028701108f4df41c8e1feac0220"
         "5c2cfd5e7c11d6dd8b206e631a445f676f8b23ea0ccc74bc802eb03abbec8092"
@@ -136,7 +135,6 @@ def test_from_object(crypto_transaction):
     assert transaction.recipient_id == "AFnw7orqn9B4HBKrKawJgfn5dvoL7zr38B"
     assert transaction.asset == {}
     assert transaction.vendor_field == "Patrick Star"
-    assert transaction.vendor_field_hex is None
     assert transaction.signature == (
         "3045022100f0e49ea11b99410ecb3a3b449659496f934ab5af8028701108f4df41c8e1feac0220"
         "5c2cfd5e7c11d6dd8b206e631a445f676f8b23ea0ccc74bc802eb03abbec8092"
@@ -164,11 +162,11 @@ def test_from_object_raises_for_required_fields(crypto_transaction):
 
 
 def test_from_object_raises_for_wrong_field_type(crypto_transaction):
-    crypto_transaction.vendor_field_hex = 1234
+    crypto_transaction.vendor_field = 1234
     with pytest.raises(TypeError) as excinfo:
         BaseTransaction.from_object(crypto_transaction)
     assert str(excinfo.value) == (
-        "Attribute vendor_field_hex (<class 'int'>) must be of type (<class 'str'>, "
+        "Attribute vendor_field (<class 'int'>) must be of type (<class 'str'>, "
         "<class 'bytes'>)"
     )
 
@@ -200,25 +198,23 @@ def test_can_have_vendor_field(transaction_type, expected):
 
 
 @pytest.mark.parametrize(
-    "vendor_field,vendor_field_hex,transaction_type,expected",
+    "vendor_field,transaction_type,expected",
     [
-        ("Patrick Star", None, TRANSACTION_TYPE_TRANSFER, b"\x0cPatrick Star"),
-        (None, b"686172616d6265", TRANSACTION_TYPE_TRANSFER, b"\x07686172616d6265"),
-        ("Patrick Star", None, TRANSACTION_TYPE_VOTE, b"\x00"),
-        (None, b"686172616d6265", TRANSACTION_TYPE_VOTE, b"\x00"),
+        ("Patrick Star", TRANSACTION_TYPE_TRANSFER, b"\x0cPatrick Star"),
+        (None, TRANSACTION_TYPE_TRANSFER, b"\x00"),
+        ("Patrick Star", TRANSACTION_TYPE_VOTE, b"\x00"),
+        (None, TRANSACTION_TYPE_VOTE, b"\x00"),
         (
             "⊁⊁⊁",
-            None,
             TRANSACTION_TYPE_TRANSFER,
             b"\t\xe2\x8a\x81\xe2\x8a\x81\xe2\x8a\x81",
         ),
     ],
 )
 def test_serialize_vendor_field(
-    vendor_field, vendor_field_hex, transaction_type, expected, crypto_transaction
+    vendor_field, transaction_type, expected, crypto_transaction
 ):
     crypto_transaction.vendor_field = vendor_field
-    crypto_transaction.vendor_field_hex = vendor_field_hex
     crypto_transaction.type = transaction_type
     data = crypto_transaction._serialize_vendor_field()
     assert data == expected
@@ -861,14 +857,6 @@ def test_apply_v1_compatibility_sets_keysgroup():
     }
 
 
-def test_apply_v1_compatibility_sets_vendor_field_from_vendor_field_hex():
-    transaction = BaseTransaction()
-    transaction.version = 1
-    transaction.vendor_field_hex = b"5061747269636b2053746172"
-    transaction._apply_v1_compatibility()
-    assert transaction.vendor_field == "Patrick Star"
-
-
 # def test_serialize(crypto_transaction, dummy_transaction_hash):
 #     serialized = crypto_transaction.serialize()
 #     assert serialized == dummy_transaction_hash
@@ -886,7 +874,7 @@ def test_deserialize(dummy_transaction_hash):
         "034affdee0ef07d4f07fda19fc2be5b80adccc842445a187b2f80f2bb45c72c498"
     )
     assert transaction.fee == 342000
-    assert transaction.vendor_field_hex == b"5061747269636b2053746172"
+    assert transaction.vendor_field == "Patrick Star"
     assert transaction.amount == 100000000
     assert transaction.expiration == 0
     assert transaction.recipient_id == "AFnw7orqn9B4HBKrKawJgfn5dvoL7zr38B"
@@ -907,10 +895,6 @@ def test_deserialize_of_special_characters_works_correctly():
     )
     transaction = BaseTransaction.from_serialized(serialized)
     assert transaction.vendor_field == "⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁⊁"
-    assert transaction.vendor_field_hex == (
-        b"e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a81e28a8"
-        b"1e28a81e28a81e28a81"
-    )
 
 
 def test_get_bytes(crypto_transaction):
@@ -1096,26 +1080,8 @@ def test_get_bytes_transaction_exception(crypto_transaction, mocker):
     )
 
 
-def test_get_bytes_vendor_field_hex(crypto_transaction):
-    crypto_transaction.vendor_field = "Patrick Star"
-    crypto_transaction.vendor_field_hex = b"5061747269636b2053746172"
-    bytes_data = crypto_transaction.get_bytes(True, True)
-    assert isinstance(bytes_data, bytes)
-    assert len(bytes_data) == 139
-    assert bytes_data == (
-        b"\x00\xf5\x15\xff\x03\x03J\xff\xde\xe0\xef\x07\xd4\xf0\x7f\xda\x19\xfc+\xe5"
-        b"\xb8\n\xdc\xcc\x84$E\xa1\x87\xb2\xf8\x0f+\xb4\\r\xc4\x98\x17\x003P4Bp2\xfb,."
-        b"\xee\x9cY\xe7\xf7\xc0\xea\xe0\xc0\xdePatrick Star\x00\x00\x00\x00\x00\x00\x00"
-        b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        b"\x00\x00\x00\x00\x00\x00\x00\x00\xe1\xf5\x05\x00\x00\x00\x00\xf07\x05\x00\x00"
-        b"\x00\x00\x00"
-    )
-
-
 def test_get_bytes_vendor_field(crypto_transaction):
     crypto_transaction.vendor_field = "Patrick Star"
-    crypto_transaction.vendor_field_hex = None
     bytes_data = crypto_transaction.get_bytes(True, True)
     assert isinstance(bytes_data, bytes)
     assert len(bytes_data) == 139
@@ -1132,7 +1098,6 @@ def test_get_bytes_vendor_field(crypto_transaction):
 
 def test_get_bytes_no_vendor_field(crypto_transaction):
     crypto_transaction.vendor_field = None
-    crypto_transaction.vendor_field_hex = None
     bytes_data = crypto_transaction.get_bytes(True, True)
     assert isinstance(bytes_data, bytes)
     assert len(bytes_data) == 139
@@ -1210,7 +1175,6 @@ def test_to_json(crypto_transaction):
         "recipientId": "AFnw7orqn9B4HBKrKawJgfn5dvoL7zr38B",
         "asset": {},
         "vendorField": "Patrick Star",
-        "vendorFieldHex": None,
         "id": "f861b25c9a87fc8913282da8855ee63b9cbaa9324543377a5bdfc5afccb92aaa",
         "signature": (
             "3045022100f0e49ea11b99410ecb3a3b449659496f934ab5af8028701108f4df41c8e1feac"

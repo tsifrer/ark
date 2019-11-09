@@ -8,6 +8,7 @@ _build/
 *.py[co]
 *.python-version
 *.pytest_cache
+*.rdb
 build/
 dist/
 htmlcov/
