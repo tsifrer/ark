@@ -1,3 +1,4 @@
+import time
 import logging
 import os
 import random
@@ -114,6 +115,7 @@ class PeerManager(object):
                 # self.suspend_peer(peer)
                 logger.info(str(e))
                 tries -= 1
+                time.sleep(1)
                 if tries == 0:
                     raise e
 

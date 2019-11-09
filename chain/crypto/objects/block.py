@@ -352,7 +352,7 @@ class Block(BaseObject):
         ):
             errors.append("Too many transactions")
 
-        # Check if transactions add u pto the block values
+        # Check if transactions add up to the block values
         applied_transactions = []
         total_amount = 0
         total_fee = 0

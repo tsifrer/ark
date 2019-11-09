@@ -40,6 +40,9 @@ database:
 	docker-compose up -d chain-db
 	@docker-compose exec chain-db bash -c "echo -n 'Waiting for chain-db to be ready: '; while true ; do if ! psql -l -U $${POSTGRES_DB_USER:-postgres} >/dev/null 2>&1 ; then echo -n '.' ; sleep 0.2 ; else echo ' Done.' ; break ; fi ; done"
 
+rollback:
+	docker-compose run blockchain python scripts/rollback_to_round.py
+
 start:
 	make database
 	make migrate
