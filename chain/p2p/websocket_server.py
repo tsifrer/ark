@@ -84,6 +84,7 @@ class ChainSocketHandler(object):
             await self.send(cid, blocks)
 
         elif event == "p2p.peer.postBlock":
+            # TODO: Schema validation
             await self.handlers.post_block(data, self.ip)
             await self.send(cid, {})
 

@@ -9,3 +9,13 @@ class GetBlocksSchema(avocato.AvocatoObject):
     block_limit = avocato.IntField(attr="blockLimit", required=False, default=400)
     headers_only = avocato.BoolField(attr="headersOnly", required=False, default=False)
     serialized = avocato.BoolField(required=False, default=False)
+
+
+class GetCommonBlocks(avocato.AvocatoObject):
+    """Schema for p2p.peer.getBlocks
+    """
+
+    ids = avocato.ListField(attr="lastBlockHeight", required=True)
+    block_limit = avocato.IntField(attr="blockLimit", required=False, default=400)
+    headers_only = avocato.BoolField(attr="headersOnly", required=False, default=False)
+    serialized = avocato.BoolField(required=False, default=False)

@@ -1,8 +1,9 @@
-import avocato
 import logging
 from binascii import hexlify, unhexlify
 from hashlib import sha256
 from struct import pack
+
+import avocato
 
 from base58 import b58decode_check, b58encode_check
 
