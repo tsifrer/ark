@@ -38,7 +38,8 @@ def migrate(migrator, database, fake=False, **kwargs):
 
     migrator.rename_field('pool_transactions', 'vendor_field_hex', 'vendor_field')
     migrator.change_fields('pool_transactions', vendor_field=pw.CharField(max_length=255, null=True))
-    
+
+    migrator.rename_field('transactions', 'vendor_field_hex', 'vendor_field')
     migrator.change_fields('transactions', vendor_field=pw.CharField(max_length=255, null=True))
 
 
