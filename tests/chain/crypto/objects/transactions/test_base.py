@@ -32,7 +32,6 @@ def test_from_dict(dummy_transaction):
     assert transaction.recipient_id == "AFnw7orqn9B4HBKrKawJgfn5dvoL7zr38B"
     assert transaction.asset == {}
     assert transaction.vendor_field == "Patrick Star"
-    assert transaction.vendor_field_hex is None
     assert transaction.signature == (
         "3045022100f0e49ea11b99410ecb3a3b449659496f934ab5af8028701108f4df41c8e1feac0220"
         "5c2cfd5e7c11d6dd8b206e631a445f676f8b23ea0ccc74bc802eb03abbec8092"

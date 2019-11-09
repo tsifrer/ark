@@ -23,7 +23,7 @@ class Transaction(Model):
     sender_public_key = CharField(max_length=66, index=True)
     recipient_id = CharField(max_length=66, null=True, index=True)
     type = SmallIntegerField()
-    vendor_field_hex = BytesField(null=True)
+    vendor_field = CharField(max_length=255, null=True)
     amount = BigIntegerField()
     fee = BigIntegerField()
     serialized = BytesField()
@@ -33,7 +33,7 @@ class Transaction(Model):
         table_name = "transactions"
         indexes = (
             (
-                ("sender_public_key", "recipient_id", "vendor_field_hex", "timestamp"),
+                ("sender_public_key", "recipient_id", "vendor_field", "timestamp"),
                 False,
             ),
         )
@@ -50,7 +50,7 @@ class Transaction(Model):
         model.sender_public_key = transaction.sender_public_key
         model.recipient_id = transaction.recipient_id
         model.type = transaction.type
-        model.vendor_field_hex = transaction.vendor_field_hex
+        model.vendor_field = transaction.vendor_field
         model.amount = transaction.amount
         model.fee = transaction.fee
         model.asset = transaction.asset

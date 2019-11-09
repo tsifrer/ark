@@ -50,7 +50,6 @@ class BaseTransaction(avocato.AvocatoObject):
     recipient_id = StrField(attr="recipientId", required=False, default=None)
     asset = DictField(attr="asset", required=False)
     vendor_field = StrField(attr="vendorField", required=False, default=None)
-    vendor_field_hex = BytesField(attr="vendorFieldHex", required=False, default=None)
     id = StrField(attr="id", required=False, default=None)
     signature = StrField(attr="signature", required=False, default=None)
     second_signature = StrField(attr="secondSignature", required=False, default=None)
@@ -148,20 +147,14 @@ class BaseTransaction(avocato.AvocatoObject):
         """Serialize vendor field of the transaction
         """
         bytes_data = bytes()
-        if BaseTransaction.can_have_vendor_field(self.type):
-            if self.vendor_field:
-                data = self.vendor_field.encode("utf-8")
-                bytes_data += write_bit8(len(data))
-                bytes_data += data
-                return bytes_data
-            elif self.vendor_field_hex:
-                data = self.vendor_field_hex
-                bytes_data += write_bit8(len(data) // 2)
-                bytes_data += data
-                return bytes_data
-
-        bytes_data += write_bit8(0x00)
-        return bytes_data
+        if BaseTransaction.can_have_vendor_field(self.type) and self.vendor_field:
+            data = self.vendor_field.encode("utf-8")
+            bytes_data += write_bit8(len(data))
+            bytes_data += data
+            return bytes_data
+        else:
+            bytes_data += write_bit8(0x00)
+            return bytes_data
 
     def _serialize_type(self):
         """Serialize transaction specific data (eg. delegate registration)
@@ -397,9 +390,6 @@ class BaseTransaction(avocato.AvocatoObject):
                 keysgroup.append(key)
             self.asset["multisignature"]["keysgroup"] = keysgroup
 
-        if self.vendor_field_hex:
-            self.vendor_field = unhexlify(self.vendor_field_hex).decode("utf-8")
-
     def deserialize(self, serialized_hex):
         buff = ByteBuffer(unhexlify(serialized_hex))
         buff.pop_bytes(1)  # skip 0xFF marker
@@ -412,7 +402,7 @@ class BaseTransaction(avocato.AvocatoObject):
         vendor_length = buff.pop_uint8()
         if vendor_length > 0:
             if BaseTransaction.can_have_vendor_field(self.type):
-                self.vendor_field_hex = hexlify(buff.pop_bytes(vendor_length))
+                self.vendor_field = buff.pop_bytes(vendor_length).decode("utf-8")
             else:
                 buff.pop_bytes(vendor_length)
 
@@ -447,12 +437,7 @@ class BaseTransaction(avocato.AvocatoObject):
         else:
             bytes_data += b58decode_check(self.recipient_id)
 
-        if self.vendor_field_hex:
-            bytes_data += unhexlify(self.vendor_field_hex)
-            num_of_zeroes = 64 - len(unhexlify(self.vendor_field_hex))
-            if num_of_zeroes > 0:
-                bytes_data += pack("{}x".format(num_of_zeroes))
-        elif self.vendor_field:
+        if self.vendor_field:
             encoded_vendor_field = self.vendor_field.encode("utf-8")
             bytes_data += encoded_vendor_field
             num_of_zeroes = 64 - len(encoded_vendor_field)

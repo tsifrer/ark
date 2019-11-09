@@ -2,10 +2,7 @@ from peewee import BigIntegerField, CharField, IntegerField, Model, SmallInteger
 
 from playhouse.postgres_ext import JSONField
 
-
 from chain.common.config import config
-
-from .fields import BytesField
 
 
 class PoolTransaction(Model):
@@ -16,7 +13,7 @@ class PoolTransaction(Model):
     sender_public_key = CharField(max_length=66, index=True)
     recipient_id = CharField(max_length=66, null=True, index=True)
     type = SmallIntegerField()
-    vendor_field_hex = BytesField(null=True)
+    vendor_field = CharField(max_length=255, null=True)
     amount = BigIntegerField()
     fee = BigIntegerField()
     asset = JSONField(null=True)
@@ -36,7 +33,7 @@ class PoolTransaction(Model):
         model.sender_public_key = transaction.sender_public_key
         model.recipient_id = transaction.recipient_id
         model.type = transaction.type
-        model.vendor_field_hex = transaction.vendor_field_hex
+        model.vendor_field = transaction.vendor_field
         model.amount = transaction.amount
         model.fee = transaction.fee
         model.asset = transaction.asset
