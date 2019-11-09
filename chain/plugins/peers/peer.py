@@ -122,8 +122,7 @@ class Peer(object):
             else:
                 error = result["error"]
                 raise PeerErrorResponse(
-                    "{}: {}".format(error["name"], error["message"]),
-                    result
+                    "{}: {}".format(error["name"], error["message"]), result
                 )
         try:
             data = result["data"]["data"]
@@ -165,7 +164,11 @@ class Peer(object):
         return response.get("common")
 
     def fetch_blocks_from_height(self, from_height):
-        payload = {"lastBlockHeight": from_height, "serialized": True}
+        payload = {
+            "lastBlockHeight": from_height,
+            "serialized": True,
+            "headersOnly": False,
+        }
         blocks = self._fetch("p2p.peer.getBlocks", payload)
         return [Block.from_dict(block) for block in blocks]
 
